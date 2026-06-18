@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Music } from "lucide-react"
 import { useBande } from "@/hooks/useBande"
@@ -22,6 +23,15 @@ export default function BandaSelectPage() {
     navigate("/", { replace: true })
   }
 
+  // With a single banda there's nothing to choose: auto-select and redirect.
+  const autoSelect = !isLoading && bande?.length === 1
+  useEffect(() => {
+    if (autoSelect && bande) {
+      setBanda(bande[0])
+      navigate("/", { replace: true })
+    }
+  }, [autoSelect, bande, setBanda, navigate])
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md">
@@ -34,7 +44,7 @@ export default function BandaSelectPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          {isLoading ? (
+          {isLoading || autoSelect ? (
             Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-14 w-full" />
             ))

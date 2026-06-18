@@ -1,14 +1,202 @@
-import { Card, CardContent } from "@/components/ui/card"
+import { useMemo, useState } from "react"
+import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  useLookupRuoliBanda,
+  useLookupStrumenti,
+  useSoci,
+} from "@/hooks/useSoci"
+import type { Socio } from "@/types/socio"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import SocioFormDialog from "@/components/soci/SocioFormDialog"
+import DeleteSocioDialog from "@/components/soci/DeleteSocioDialog"
+
+const PAGE_SIZE = 20
 
 export default function SociPage() {
+  const [page, setPage] = useState(1)
+  const { data, isLoading, isError } = useSoci(page, PAGE_SIZE)
+  const strumenti = useLookupStrumenti()
+  const ruoli = useLookupRuoliBanda()
+
+  const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<Socio | null>(null)
+  const [deleting, setDeleting] = useState<Socio | null>(null)
+
+  const strumentoLabels = useMemo(() => {
+    const map = new Map<number, string>()
+    strumenti.data?.forEach((s) => map.set(s.codice, s.descrizione))
+    return map
+  }, [strumenti.data])
+
+  const ruoloLabels = useMemo(() => {
+    const map = new Map<number, string>()
+    ruoli.data?.forEach((r) => map.set(r.codice, r.descrizione))
+    return map
+  }, [ruoli.data])
+
+  const soci = data?.items ?? []
+  const totalPages = data?.meta.total_pages ?? 1
+
+  const openCreate = () => {
+    setEditing(null)
+    setFormOpen(true)
+  }
+
+  const openEdit = (socio: Socio) => {
+    setEditing(socio)
+    setFormOpen(true)
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Soci</h1>
-      <Card>
-        <CardContent className="py-16 text-center text-muted-foreground">
-          Sezione in costruzione
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Soci</h1>
+        <Button onClick={openCreate}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nuovo socio
+        </Button>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>Cognome</TableHead>
+              <TableHead>Codice Socio</TableHead>
+              <TableHead>Strumento</TableHead>
+              <TableHead>Ruolo Banda</TableHead>
+              <TableHead>Stato</TableHead>
+              <TableHead className="text-right">Azioni</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  {Array.from({ length: 7 }).map((__, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className="h-5 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : isError ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className="py-12 text-center text-muted-foreground"
+                >
+                  Errore nel caricamento dei soci.
+                </TableCell>
+              </TableRow>
+            ) : soci.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className="py-12 text-center text-muted-foreground"
+                >
+                  Nessun socio trovato
+                </TableCell>
+              </TableRow>
+            ) : (
+              soci.map((socio) => (
+                <TableRow key={socio.id}>
+                  <TableCell>{socio.persona.nome}</TableCell>
+                  <TableCell>{socio.persona.cognome}</TableCell>
+                  <TableCell>{socio.codice_socio}</TableCell>
+                  <TableCell>
+                    {socio.strumento_codice != null
+                      ? strumentoLabels.get(socio.strumento_codice) ??
+                        socio.strumento_codice
+                      : "—"}
+                  </TableCell>
+                  <TableCell>
+                    {socio.ruolo_banda_codice != null
+                      ? ruoloLabels.get(socio.ruolo_banda_codice) ??
+                        socio.ruolo_banda_codice
+                      : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={socio.attivo ? "default" : "secondary"}>
+                      {socio.attivo ? "Attivo" : "Inattivo"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(socio)}
+                        aria-label="Modifica"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleting(socio)}
+                        aria-label="Rimuovi"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Pagina {data?.meta.page ?? page} di {totalPages}
+        </p>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1 || isLoading}
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Precedente
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages || isLoading}
+          >
+            Successiva
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <SocioFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        socio={editing}
+      />
+      <DeleteSocioDialog
+        open={deleting !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(null)
+        }}
+        socio={deleting}
+      />
     </div>
   )
 }

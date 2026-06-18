@@ -1,5 +1,3 @@
-import type { Persona } from "@/types/socio"
-
 export type { Persona, PagedResponse, PageMeta } from "@/types/socio"
 
 export interface Esterno {
@@ -9,5 +7,13 @@ export interface Esterno {
   tariffa_oraria: number | null
   attivo: boolean
   persona_id: number
-  persona: Persona
+  persona?: {
+    id: number
+    nome: string
+    cognome: string
+    codice_fiscale: string | null
+    data_nascita: string | null
+  } | null
+  strumento_codice: number
+  strumento?: { codice: number; descrizione: string } | null
 }

@@ -7,6 +7,7 @@ import {
 import {
   useCreatePersona,
   useLookupComuni,
+  useLookupStrumenti,
   useSearchPersone,
 } from "@/hooks/useSoci"
 import { getErrorMessage } from "@/lib/api"
@@ -47,6 +48,7 @@ interface DatiEsternoState {
   codice_esterno: string
   specializzazione: string
   tariffa_oraria: string
+  strumento_codice: string
   attivo: boolean
 }
 
@@ -54,6 +56,7 @@ const emptyDatiEsterno: DatiEsternoState = {
   codice_esterno: "",
   specializzazione: "",
   tariffa_oraria: "",
+  strumento_codice: NONE_VALUE,
   attivo: true,
 }
 
@@ -78,6 +81,7 @@ export default function EsternoFormDialog({
   const createEsterno = useCreateEsterno()
   const updateEsterno = useUpdateEsterno()
   const comuni = useLookupComuni()
+  const strumenti = useLookupStrumenti()
 
   // Step 1 — persona (create mode only)
   const [personaMode, setPersonaMode] = useState<PersonaMode>("nuova")
@@ -107,6 +111,10 @@ export default function EsternoFormDialog({
           esterno.tariffa_oraria != null
             ? String(esterno.tariffa_oraria)
             : "",
+        strumento_codice:
+          esterno.strumento_codice != null
+            ? String(esterno.strumento_codice)
+            : NONE_VALUE,
         attivo: esterno.attivo,
       })
     } else {
@@ -129,6 +137,11 @@ export default function EsternoFormDialog({
       setError("La tariffa oraria deve essere un numero valido.")
       return
     }
+    if (dati.strumento_codice === NONE_VALUE) {
+      setError("Strumento obbligatorio")
+      return
+    }
+    const strumento_codice = Number(dati.strumento_codice)
     const specializzazione = dati.specializzazione.trim() || null
 
     try {
@@ -139,6 +152,7 @@ export default function EsternoFormDialog({
             codice_esterno: dati.codice_esterno,
             specializzazione,
             tariffa_oraria,
+            strumento_codice,
             attivo: dati.attivo,
           },
         })
@@ -175,6 +189,7 @@ export default function EsternoFormDialog({
           codice_esterno: dati.codice_esterno,
           specializzazione,
           tariffa_oraria,
+          strumento_codice,
           attivo: dati.attivo,
           persona_id,
           banda_codice: banda!.codice,
@@ -428,6 +443,29 @@ export default function EsternoFormDialog({
                     setDati((d) => ({ ...d, tariffa_oraria: e.target.value }))
                   }
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="strumento">Strumento *</Label>
+                <Select
+                  value={dati.strumento_codice}
+                  onValueChange={(value) =>
+                    setDati((d) => ({ ...d, strumento_codice: value }))
+                  }
+                >
+                  <SelectTrigger id="strumento">
+                    <SelectValue placeholder="Seleziona…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {strumenti.data?.map((strumento) => (
+                      <SelectItem
+                        key={strumento.codice}
+                        value={String(strumento.codice)}
+                      >
+                        {strumento.descrizione}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

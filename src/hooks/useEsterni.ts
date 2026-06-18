@@ -8,6 +8,7 @@ export interface CreateEsternoInput {
   codice_esterno: string
   specializzazione?: string | null
   tariffa_oraria?: number | null
+  strumento_codice: number
   attivo: boolean
   persona_id: number
   banda_codice: number

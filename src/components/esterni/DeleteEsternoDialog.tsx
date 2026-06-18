@@ -51,7 +51,7 @@ export default function DeleteEsternoDialog({
           <DialogTitle>Rimuovi esterno</DialogTitle>
           <DialogDescription>
             {esterno
-              ? `Sei sicuro di voler rimuovere ${esterno.persona.nome} ${esterno.persona.cognome} dagli esterni?`
+              ? `Sei sicuro di voler rimuovere ${esterno.persona?.nome ?? "—"} ${esterno.persona?.cognome ?? ""} dagli esterni?`
               : ""}
           </DialogDescription>
         </DialogHeader>

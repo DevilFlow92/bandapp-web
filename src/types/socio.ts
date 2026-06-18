@@ -14,7 +14,9 @@ export interface Socio {
   data_ingresso: string
   attivo: boolean
   strumento_codice: number | null
+  strumento?: { codice: number; descrizione: string } | null
   ruolo_banda_codice: number | null
+  ruolo_banda?: { codice: number; descrizione: string } | null
   persona_id: number
   persona?: Persona
 }

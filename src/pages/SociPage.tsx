@@ -1,10 +1,6 @@
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
-import {
-  useLookupRuoliBanda,
-  useLookupStrumenti,
-  useSoci,
-} from "@/hooks/useSoci"
+import { useSoci } from "@/hooks/useSoci"
 import { useBanda } from "@/context/BandaContext"
 import type { Socio } from "@/types/socio"
 import { Button } from "@/components/ui/button"
@@ -32,24 +28,9 @@ export default function SociPage() {
     banda!.codice,
     !!banda
   )
-  const strumenti = useLookupStrumenti()
-  const ruoli = useLookupRuoliBanda()
-
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Socio | null>(null)
   const [deleting, setDeleting] = useState<Socio | null>(null)
-
-  const strumentoLabels = useMemo(() => {
-    const map = new Map<number, string>()
-    strumenti.data?.forEach((s) => map.set(s.codice, s.descrizione))
-    return map
-  }, [strumenti.data])
-
-  const ruoloLabels = useMemo(() => {
-    const map = new Map<number, string>()
-    ruoli.data?.forEach((r) => map.set(r.codice, r.descrizione))
-    return map
-  }, [ruoli.data])
 
   const soci = data?.items ?? []
   const totalPages = data?.meta.total_pages ?? 1
@@ -122,18 +103,8 @@ export default function SociPage() {
                   <TableCell>{socio.persona?.nome ?? "—"}</TableCell>
                   <TableCell>{socio.persona?.cognome ?? "—"}</TableCell>
                   <TableCell>{socio.codice_socio}</TableCell>
-                  <TableCell>
-                    {socio.strumento_codice != null
-                      ? strumentoLabels.get(socio.strumento_codice) ??
-                        socio.strumento_codice
-                      : "—"}
-                  </TableCell>
-                  <TableCell>
-                    {socio.ruolo_banda_codice != null
-                      ? ruoloLabels.get(socio.ruolo_banda_codice) ??
-                        socio.ruolo_banda_codice
-                      : "—"}
-                  </TableCell>
+                  <TableCell>{socio.strumento?.descrizione ?? "—"}</TableCell>
+                  <TableCell>{socio.ruolo_banda?.descrizione ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant={socio.attivo ? "default" : "secondary"}>
                       {socio.attivo ? "Attivo" : "Inattivo"}

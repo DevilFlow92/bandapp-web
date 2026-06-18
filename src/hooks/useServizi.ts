@@ -1,0 +1,94 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import api from "@/lib/api"
+import type { Indirizzo, PagedResponse, Servizio } from "@/types/servizio"
+
+export const SERVIZI_KEY = ["servizi"] as const
+
+export interface CreateServizioInput {
+  titolo: string
+  data: string
+  ora_inizio?: string | null
+  ora_fine?: string | null
+  luogo: string
+  note?: string | null
+  indirizzo_id?: number | null
+}
+
+export type UpdateServizioInput = Partial<CreateServizioInput>
+
+/** Lists servizi with server-side pagination, optionally filtered by year. */
+export function useServizi(page: number, pageSize: number, anno?: number) {
+  return useQuery({
+    queryKey: [...SERVIZI_KEY, page, pageSize, anno ?? null],
+    queryFn: async () => {
+      const params: Record<string, number> = { page, page_size: pageSize }
+      if (anno !== undefined) params.anno = anno
+      const { data } = await api.get<PagedResponse<Servizio>>("/servizi/", {
+        params,
+      })
+      return data
+    },
+    placeholderData: (previous) => previous,
+  })
+}
+
+/** Creates a new servizio. */
+export function useCreateServizio() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: CreateServizioInput) => {
+      const { data } = await api.post<Servizio>("/servizi/", input)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SERVIZI_KEY })
+    },
+  })
+}
+
+/** Updates an existing servizio. */
+export function useUpdateServizio() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: number
+      input: UpdateServizioInput
+    }) => {
+      const { data } = await api.patch<Servizio>(`/servizi/${id}`, input)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SERVIZI_KEY })
+    },
+  })
+}
+
+/** Deletes a servizio. Fails with 409 if it has associated receipts. */
+export function useDeleteServizio() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/servizi/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SERVIZI_KEY })
+    },
+  })
+}
+
+/** Loads the indirizzi lookup (up to 100 entries) for the address picker. */
+export function useLookupIndirizzi() {
+  return useQuery({
+    queryKey: ["lookup", "indirizzi"],
+    queryFn: async () => {
+      const { data } = await api.get<PagedResponse<Indirizzo>>("/indirizzi/", {
+        params: { page_size: 100 },
+      })
+      return data.items
+    },
+    staleTime: 10 * 60 * 1000,
+  })
+}

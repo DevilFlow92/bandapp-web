@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react"
 import {
   useCreatePersona,
   useCreateSocio,
+  useLookupComuni,
   useLookupRuoliBanda,
   useLookupStrumenti,
   useSearchPersone,
@@ -63,7 +64,7 @@ const emptyNuovaPersona = {
   cognome: "",
   codice_fiscale: "",
   data_nascita: "",
-  luogo_nascita: "",
+  comune_nascita_codice: NONE_VALUE,
 }
 
 export default function SocioFormDialog({
@@ -80,6 +81,7 @@ export default function SocioFormDialog({
   const updateSocio = useUpdateSocio()
   const strumenti = useLookupStrumenti()
   const ruoli = useLookupRuoliBanda()
+  const comuni = useLookupComuni()
 
   // Step 1 — persona (create mode only)
   const [personaMode, setPersonaMode] = useState<PersonaMode>("nuova")
@@ -162,7 +164,10 @@ export default function SocioFormDialog({
             cognome: nuovaPersona.cognome.trim(),
             codice_fiscale: nuovaPersona.codice_fiscale.trim() || null,
             data_nascita: nuovaPersona.data_nascita || null,
-            luogo_nascita: nuovaPersona.luogo_nascita.trim() || null,
+            comune_nascita_codice:
+              nuovaPersona.comune_nascita_codice === NONE_VALUE
+                ? null
+                : Number(nuovaPersona.comune_nascita_codice),
             banda_codice: banda!.codice,
           })
           persona_id = persona.id
@@ -293,17 +298,31 @@ export default function SocioFormDialog({
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="luogo_nascita">Luogo di nascita</Label>
-                    <Input
-                      id="luogo_nascita"
-                      value={nuovaPersona.luogo_nascita}
-                      onChange={(e) =>
+                    <Label htmlFor="comune_nascita">Comune di nascita</Label>
+                    <Select
+                      value={nuovaPersona.comune_nascita_codice}
+                      onValueChange={(value) =>
                         setNuovaPersona((p) => ({
                           ...p,
-                          luogo_nascita: e.target.value,
+                          comune_nascita_codice: value,
                         }))
                       }
-                    />
+                    >
+                      <SelectTrigger id="comune_nascita">
+                        <SelectValue placeholder="Seleziona…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE_VALUE}>Nessuno</SelectItem>
+                        {comuni.data?.map((comune) => (
+                          <SelectItem
+                            key={comune.codice}
+                            value={String(comune.codice)}
+                          >
+                            {comune.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               ) : (

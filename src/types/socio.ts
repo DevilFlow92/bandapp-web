@@ -4,7 +4,8 @@ export interface Persona {
   cognome: string
   codice_fiscale: string | null
   data_nascita: string | null
-  luogo_nascita: string | null
+  comune_nascita_codice: number | null
+  comune_nascita?: { codice: number; nome: string } | null
 }
 
 export interface Socio {
@@ -15,7 +16,7 @@ export interface Socio {
   strumento_codice: number | null
   ruolo_banda_codice: number | null
   persona_id: number
-  persona: Persona
+  persona?: Persona
 }
 
 export interface PageMeta {

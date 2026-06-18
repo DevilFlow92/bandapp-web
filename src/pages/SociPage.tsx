@@ -119,8 +119,8 @@ export default function SociPage() {
             ) : (
               soci.map((socio) => (
                 <TableRow key={socio.id}>
-                  <TableCell>{socio.persona.nome}</TableCell>
-                  <TableCell>{socio.persona.cognome}</TableCell>
+                  <TableCell>{socio.persona?.nome ?? "—"}</TableCell>
+                  <TableCell>{socio.persona?.cognome ?? "—"}</TableCell>
                   <TableCell>{socio.codice_socio}</TableCell>
                   <TableCell>
                     {socio.strumento_codice != null

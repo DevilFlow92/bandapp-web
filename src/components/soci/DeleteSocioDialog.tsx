@@ -51,7 +51,7 @@ export default function DeleteSocioDialog({
           <DialogTitle>Rimuovi socio</DialogTitle>
           <DialogDescription>
             {socio
-              ? `Sei sicuro di voler rimuovere ${socio.persona.nome} ${socio.persona.cognome} dai soci?`
+              ? `Sei sicuro di voler rimuovere ${socio.persona?.nome ?? "—"} ${socio.persona?.cognome ?? ""} dai soci?`
               : ""}
           </DialogDescription>
         </DialogHeader>

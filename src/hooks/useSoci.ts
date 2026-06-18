@@ -26,8 +26,13 @@ export interface CreatePersonaInput {
   cognome: string
   codice_fiscale?: string | null
   data_nascita?: string | null
-  luogo_nascita?: string | null
+  comune_nascita_codice?: number | null
   banda_codice: number
+}
+
+export interface Comune {
+  codice: number
+  nome: string
 }
 
 export interface PersonaSearchParams {
@@ -158,6 +163,38 @@ export function useLookupRuoliBanda() {
         params: { page_size: 100 },
       })
       return data.items
+    },
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+const COMUNI_PAGE_SIZE = 100
+
+async function fetchComuniPage(page: number) {
+  const { data } = await api.get<PagedResponse<Comune>>("/comuni/", {
+    params: { page, page_size: COMUNI_PAGE_SIZE },
+  })
+  return data
+}
+
+/**
+ * Loads the full comuni lookup. Comuni can exceed a single page, so we fetch
+ * page 1, then fan out the remaining pages in parallel and merge all items.
+ */
+export function useLookupComuni() {
+  return useQuery({
+    queryKey: ["lookup", "comuni"],
+    queryFn: async () => {
+      const first = await fetchComuniPage(1)
+      const totalPages = first.meta.total_pages
+      if (totalPages <= 1) return first.items
+
+      const rest = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, i) =>
+          fetchComuniPage(i + 2)
+        )
+      )
+      return rest.reduce((acc, page) => acc.concat(page.items), first.items)
     },
     staleTime: 10 * 60 * 1000,
   })

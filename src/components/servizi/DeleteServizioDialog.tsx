@@ -55,7 +55,7 @@ export default function DeleteServizioDialog({
           <DialogTitle>Elimina servizio</DialogTitle>
           <DialogDescription>
             {servizio
-              ? `Sei sicuro di voler eliminare il servizio «${servizio.titolo}»?`
+              ? `Sei sicuro di voler eliminare il servizio «${servizio.descrizione_servizio}»?`
               : ""}
           </DialogDescription>
         </DialogHeader>

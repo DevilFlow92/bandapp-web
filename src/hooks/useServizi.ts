@@ -5,13 +5,12 @@ import type { Indirizzo, PagedResponse, Servizio } from "@/types/servizio"
 export const SERVIZI_KEY = ["servizi"] as const
 
 export interface CreateServizioInput {
-  titolo: string
-  data: string
-  ora_inizio?: string | null
-  ora_fine?: string | null
-  luogo: string
+  banda_codice: number
+  anno: number
+  descrizione_servizio: string
+  data_servizio: string
+  indirizzo_id: number
   note?: string | null
-  indirizzo_id?: number | null
 }
 
 export type UpdateServizioInput = Partial<CreateServizioInput>

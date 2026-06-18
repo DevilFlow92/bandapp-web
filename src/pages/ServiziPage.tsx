@@ -21,7 +21,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import ServizioFormDialog from "@/components/servizi/ServizioFormDialog"
+import ServizioFormDialog, {
+  formatIndirizzo,
+} from "@/components/servizi/ServizioFormDialog"
 import DeleteServizioDialog from "@/components/servizi/DeleteServizioDialog"
 
 const PAGE_SIZE = 20
@@ -36,16 +38,18 @@ const YEAR_OPTIONS = [
   CURRENT_YEAR - 2,
 ]
 
-function formatData(iso: string): string {
-  const [year, month, day] = iso.slice(0, 10).split("-")
+/** Formats an ISO datetime string as "DD/MM/YYYY HH:MM". */
+function formatDataServizio(iso: string): string {
+  const [datePart, timePart = ""] = iso.split("T")
+  const [year, month, day] = datePart.split("-")
   if (!year || !month || !day) return iso
-  return `${day}/${month}/${year}`
+  const time = timePart.slice(0, 5)
+  return time ? `${day}/${month}/${year} ${time}` : `${day}/${month}/${year}`
 }
 
-function formatOrario(servizio: Servizio): string {
-  const { ora_inizio, ora_fine } = servizio
-  if (!ora_inizio && !ora_fine) return "—"
-  return `${ora_inizio ?? "—"}–${ora_fine ?? "—"}`
+function formatNote(note: string | null): string {
+  if (!note) return "—"
+  return note.length > 50 ? `${note.slice(0, 50)}…` : note
 }
 
 export default function ServiziPage() {
@@ -116,10 +120,11 @@ export default function ServiziPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Titolo</TableHead>
+              <TableHead>Descrizione</TableHead>
+              <TableHead>Anno</TableHead>
               <TableHead>Data</TableHead>
-              <TableHead>Orario</TableHead>
-              <TableHead>Luogo</TableHead>
+              <TableHead>Indirizzo</TableHead>
+              <TableHead>Note</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
           </TableHeader>
@@ -127,7 +132,7 @@ export default function ServiziPage() {
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 5 }).map((__, j) => (
+                  {Array.from({ length: 6 }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
@@ -137,7 +142,7 @@ export default function ServiziPage() {
             ) : isError ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="py-12 text-center text-muted-foreground"
                 >
                   Errore nel caricamento dei servizi.
@@ -146,7 +151,7 @@ export default function ServiziPage() {
             ) : servizi.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="py-12 text-center text-muted-foreground"
                 >
                   Nessun servizio trovato
@@ -156,11 +161,18 @@ export default function ServiziPage() {
               servizi.map((servizio) => (
                 <TableRow key={servizio.id}>
                   <TableCell className="font-medium">
-                    {servizio.titolo}
+                    {servizio.descrizione_servizio}
                   </TableCell>
-                  <TableCell>{formatData(servizio.data)}</TableCell>
-                  <TableCell>{formatOrario(servizio)}</TableCell>
-                  <TableCell>{servizio.luogo}</TableCell>
+                  <TableCell>{servizio.anno}</TableCell>
+                  <TableCell>
+                    {formatDataServizio(servizio.data_servizio)}
+                  </TableCell>
+                  <TableCell>
+                    {servizio.indirizzo
+                      ? formatIndirizzo(servizio.indirizzo)
+                      : servizio.indirizzo_id}
+                  </TableCell>
+                  <TableCell>{formatNote(servizio.note)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button

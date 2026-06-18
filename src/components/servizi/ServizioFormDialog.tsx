@@ -7,6 +7,7 @@ import {
 } from "@/hooks/useServizi"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { useBanda } from "@/context/BandaContext"
 import type { Indirizzo, Servizio } from "@/types/servizio"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,10 +29,12 @@ import {
 } from "@/components/ui/select"
 
 const NONE_VALUE = "__none__"
+const CURRENT_YEAR = new Date().getFullYear()
 
 export function formatIndirizzo(indirizzo: Indirizzo): string {
   const street = [indirizzo.via, indirizzo.civico].filter(Boolean).join(" ")
-  return `${street} — ${indirizzo.comune.nome}`
+  const comune = indirizzo?.comune?.descrizione ?? ""
+  return comune ? `${street} — ${comune}` : street
 }
 
 interface ServizioFormDialogProps {
@@ -42,23 +45,19 @@ interface ServizioFormDialogProps {
 }
 
 interface ServizioFormState {
-  titolo: string
-  data: string
-  ora_inizio: string
-  ora_fine: string
-  luogo: string
-  note: string
+  descrizione_servizio: string
+  anno: string
+  data_servizio: string
   indirizzo_id: string
+  note: string
 }
 
 const emptyForm: ServizioFormState = {
-  titolo: "",
-  data: "",
-  ora_inizio: "",
-  ora_fine: "",
-  luogo: "",
-  note: "",
+  descrizione_servizio: "",
+  anno: String(CURRENT_YEAR),
+  data_servizio: "",
   indirizzo_id: NONE_VALUE,
+  note: "",
 }
 
 export default function ServizioFormDialog({
@@ -68,6 +67,7 @@ export default function ServizioFormDialog({
 }: ServizioFormDialogProps) {
   const isEdit = Boolean(servizio)
   const { toast } = useToast()
+  const { banda } = useBanda()
 
   const createServizio = useCreateServizio()
   const updateServizio = useUpdateServizio()
@@ -81,16 +81,12 @@ export default function ServizioFormDialog({
     setError(null)
     if (servizio) {
       setForm({
-        titolo: servizio.titolo,
-        data: servizio.data?.slice(0, 10) ?? "",
-        ora_inizio: servizio.ora_inizio ?? "",
-        ora_fine: servizio.ora_fine ?? "",
-        luogo: servizio.luogo,
+        descrizione_servizio: servizio.descrizione_servizio,
+        anno: String(servizio.anno),
+        // datetime-local expects "YYYY-MM-DDTHH:MM".
+        data_servizio: servizio.data_servizio?.slice(0, 16) ?? "",
+        indirizzo_id: String(servizio.indirizzo_id),
         note: servizio.note ?? "",
-        indirizzo_id:
-          servizio.indirizzo_id != null
-            ? String(servizio.indirizzo_id)
-            : NONE_VALUE,
       })
     } else {
       setForm(emptyForm)
@@ -103,23 +99,39 @@ export default function ServizioFormDialog({
     event.preventDefault()
     setError(null)
 
-    const payload = {
-      titolo: form.titolo.trim(),
-      data: form.data,
-      ora_inizio: form.ora_inizio || null,
-      ora_fine: form.ora_fine || null,
-      luogo: form.luogo.trim(),
-      note: form.note.trim() || null,
-      indirizzo_id:
-        form.indirizzo_id === NONE_VALUE ? null : Number(form.indirizzo_id),
+    if (form.indirizzo_id === NONE_VALUE) {
+      setError("L'indirizzo è obbligatorio.")
+      return
+    }
+
+    const anno = Number(form.anno)
+    if (Number.isNaN(anno)) {
+      setError("L'anno deve essere un numero valido.")
+      return
     }
 
     try {
       if (isEdit && servizio) {
-        await updateServizio.mutateAsync({ id: servizio.id, input: payload })
+        await updateServizio.mutateAsync({
+          id: servizio.id,
+          input: {
+            anno,
+            descrizione_servizio: form.descrizione_servizio.trim(),
+            data_servizio: form.data_servizio,
+            indirizzo_id: Number(form.indirizzo_id),
+            note: form.note.trim() || null,
+          },
+        })
         toast({ title: "Servizio aggiornato" })
       } else {
-        await createServizio.mutateAsync(payload)
+        await createServizio.mutateAsync({
+          banda_codice: banda!.codice,
+          anno,
+          descrizione_servizio: form.descrizione_servizio.trim(),
+          data_servizio: form.data_servizio,
+          indirizzo_id: Number(form.indirizzo_id),
+          note: form.note.trim() || null,
+        })
         toast({ title: "Servizio creato" })
       }
       onOpenChange(false)
@@ -153,68 +165,49 @@ export default function ServizioFormDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="titolo">Titolo *</Label>
+            <Label htmlFor="descrizione_servizio">Descrizione *</Label>
             <Input
-              id="titolo"
+              id="descrizione_servizio"
               required
-              value={form.titolo}
+              value={form.descrizione_servizio}
               onChange={(e) =>
-                setForm((f) => ({ ...f, titolo: e.target.value }))
+                setForm((f) => ({
+                  ...f,
+                  descrizione_servizio: e.target.value,
+                }))
               }
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="data">Data *</Label>
+              <Label htmlFor="anno">Anno *</Label>
               <Input
-                id="data"
-                type="date"
+                id="anno"
+                type="number"
                 required
-                value={form.data}
+                value={form.anno}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, data: e.target.value }))
+                  setForm((f) => ({ ...f, anno: e.target.value }))
                 }
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ora_inizio">Ora inizio</Label>
+              <Label htmlFor="data_servizio">Data e ora *</Label>
               <Input
-                id="ora_inizio"
-                type="time"
-                value={form.ora_inizio}
+                id="data_servizio"
+                type="datetime-local"
+                required
+                value={form.data_servizio}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, ora_inizio: e.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ora_fine">Ora fine</Label>
-              <Input
-                id="ora_fine"
-                type="time"
-                value={form.ora_fine}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, ora_fine: e.target.value }))
+                  setForm((f) => ({ ...f, data_servizio: e.target.value }))
                 }
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="luogo">Luogo *</Label>
-            <Input
-              id="luogo"
-              required
-              value={form.luogo}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, luogo: e.target.value }))
-              }
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="indirizzo">Indirizzo</Label>
+            <Label htmlFor="indirizzo">Indirizzo *</Label>
             <Select
               value={form.indirizzo_id}
               onValueChange={(value) =>
@@ -225,7 +218,6 @@ export default function ServizioFormDialog({
                 <SelectValue placeholder="Seleziona…" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE_VALUE}>Nessuno</SelectItem>
                 {indirizzi.data?.map((indirizzo) => (
                   <SelectItem key={indirizzo.id} value={String(indirizzo.id)}>
                     {formatIndirizzo(indirizzo)}

@@ -16,12 +16,25 @@ export interface CreateServizioInput {
 
 export type UpdateServizioInput = Partial<CreateServizioInput>
 
-/** Lists servizi with server-side pagination, optionally filtered by year. */
-export function useServizi(page: number, pageSize: number, anno?: number) {
+/**
+ * Lists servizi with server-side pagination, scoped to the selected banda and
+ * optionally filtered by year.
+ */
+export function useServizi(
+  page: number,
+  pageSize: number,
+  bandaCodice: number,
+  anno?: number,
+  enabled = true
+) {
   return useQuery({
-    queryKey: [...SERVIZI_KEY, page, pageSize, anno ?? null],
+    queryKey: [...SERVIZI_KEY, bandaCodice, page, pageSize, anno ?? null],
     queryFn: async () => {
-      const params: Record<string, number> = { page, page_size: pageSize }
+      const params: Record<string, number> = {
+        page,
+        page_size: pageSize,
+        banda_codice: bandaCodice,
+      }
       if (anno !== undefined) params.anno = anno
       const { data } = await api.get<PagedResponse<Servizio>>("/servizi/", {
         params,
@@ -29,6 +42,7 @@ export function useServizi(page: number, pageSize: number, anno?: number) {
       return data
     },
     placeholderData: (previous) => previous,
+    enabled,
   })
 }
 

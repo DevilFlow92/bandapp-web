@@ -10,23 +10,30 @@ export interface CreateEsternoInput {
   tariffa_oraria?: number | null
   attivo: boolean
   persona_id: number
+  banda_codice: number
 }
 
 export type UpdateEsternoInput = Partial<
   Omit<CreateEsternoInput, "persona_id">
 >
 
-/** Lists esterni with server-side pagination. */
-export function useEsterni(page: number, pageSize: number) {
+/** Lists esterni with server-side pagination, scoped to the selected banda. */
+export function useEsterni(
+  page: number,
+  pageSize: number,
+  bandaCodice: number,
+  enabled = true
+) {
   return useQuery({
-    queryKey: [...ESTERNI_KEY, page, pageSize],
+    queryKey: [...ESTERNI_KEY, bandaCodice, page, pageSize],
     queryFn: async () => {
       const { data } = await api.get<PagedResponse<Esterno>>("/esterni/", {
-        params: { page, page_size: pageSize },
+        params: { page, page_size: pageSize, banda_codice: bandaCodice },
       })
       return data
     },
     placeholderData: (previous) => previous,
+    enabled,
   })
 }
 

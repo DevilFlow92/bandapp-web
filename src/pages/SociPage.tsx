@@ -5,6 +5,7 @@ import {
   useLookupStrumenti,
   useSoci,
 } from "@/hooks/useSoci"
+import { useBanda } from "@/context/BandaContext"
 import type { Socio } from "@/types/socio"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,8 +24,14 @@ import DeleteSocioDialog from "@/components/soci/DeleteSocioDialog"
 const PAGE_SIZE = 20
 
 export default function SociPage() {
+  const { banda } = useBanda()
   const [page, setPage] = useState(1)
-  const { data, isLoading, isError } = useSoci(page, PAGE_SIZE)
+  const { data, isLoading, isError } = useSoci(
+    page,
+    PAGE_SIZE,
+    banda!.codice,
+    !!banda
+  )
   const strumenti = useLookupStrumenti()
   const ruoli = useLookupRuoliBanda()
 

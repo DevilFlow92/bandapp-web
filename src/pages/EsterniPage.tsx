@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useEsterni } from "@/hooks/useEsterni"
+import { useBanda } from "@/context/BandaContext"
 import type { Esterno } from "@/types/esterno"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -24,8 +25,14 @@ function formatTariffa(value: number | null): string {
 }
 
 export default function EsterniPage() {
+  const { banda } = useBanda()
   const [page, setPage] = useState(1)
-  const { data, isLoading, isError } = useEsterni(page, PAGE_SIZE)
+  const { data, isLoading, isError } = useEsterni(
+    page,
+    PAGE_SIZE,
+    banda!.codice,
+    !!banda
+  )
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Esterno | null>(null)

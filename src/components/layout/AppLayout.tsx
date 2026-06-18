@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom"
+import { NavLink, Outlet, useNavigate } from "react-router-dom"
 import {
   LayoutDashboard,
   Users,
@@ -7,8 +7,10 @@ import {
   FileText,
   Wallet,
   LogOut,
+  Repeat,
 } from "lucide-react"
 import { useCurrentUser, useLogout } from "@/hooks/useAuth"
+import { useBanda } from "@/context/BandaContext"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
@@ -24,6 +26,13 @@ const navItems = [
 export default function AppLayout() {
   const { data: user } = useCurrentUser()
   const logout = useLogout()
+  const { banda, clearBanda } = useBanda()
+  const navigate = useNavigate()
+
+  const handleChangeBanda = () => {
+    clearBanda()
+    navigate("/banda")
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -78,10 +87,21 @@ export default function AppLayout() {
       </aside>
 
       <div className="pl-60">
-        <header className="sticky top-0 z-20 flex h-16 items-center border-b bg-background px-6">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-background px-6">
           <h1 className="text-lg font-semibold">
             Gestionale Associazione Musicale
           </h1>
+          <div className="flex items-center gap-3">
+            {banda && (
+              <span className="text-sm text-muted-foreground">
+                Banda: <span className="font-medium text-foreground">{banda.descrizione}</span>
+              </span>
+            )}
+            <Button variant="outline" size="sm" onClick={handleChangeBanda}>
+              <Repeat className="mr-2 h-4 w-4" />
+              Cambia banda
+            </Button>
+          </div>
         </header>
         <main className="p-6">
           <Outlet />

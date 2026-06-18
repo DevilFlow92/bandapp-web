@@ -1,9 +1,12 @@
-import { Navigate, Outlet } from "react-router-dom"
+import { Navigate, Outlet, useLocation } from "react-router-dom"
 import { Loader2 } from "lucide-react"
 import { useCurrentUser } from "@/hooks/useAuth"
+import { useBanda } from "@/context/BandaContext"
 
 export default function AuthGuard() {
   const { data: user, isLoading } = useCurrentUser()
+  const { banda } = useBanda()
+  const location = useLocation()
 
   if (isLoading) {
     return (
@@ -15,6 +18,11 @@ export default function AuthGuard() {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  // Logged in but no banda selected: force selection before the app.
+  if (!banda && location.pathname !== "/banda") {
+    return <Navigate to="/banda" replace />
   }
 
   return <Outlet />

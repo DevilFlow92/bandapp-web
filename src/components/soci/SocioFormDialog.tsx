@@ -10,6 +10,7 @@ import {
 } from "@/hooks/useSoci"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { useBanda } from "@/context/BandaContext"
 import type { Persona, Socio } from "@/types/socio"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -72,6 +73,7 @@ export default function SocioFormDialog({
 }: SocioFormDialogProps) {
   const isEdit = Boolean(socio)
   const { toast } = useToast()
+  const { banda } = useBanda()
 
   const createPersona = useCreatePersona()
   const createSocio = useCreateSocio()
@@ -161,6 +163,7 @@ export default function SocioFormDialog({
             codice_fiscale: nuovaPersona.codice_fiscale.trim() || null,
             data_nascita: nuovaPersona.data_nascita || null,
             luogo_nascita: nuovaPersona.luogo_nascita.trim() || null,
+            banda_codice: banda!.codice,
           })
           persona_id = persona.id
         } else {
@@ -178,6 +181,7 @@ export default function SocioFormDialog({
           strumento_codice,
           ruolo_banda_codice,
           persona_id,
+          banda_codice: banda!.codice,
         })
         toast({ title: "Socio creato" })
       }

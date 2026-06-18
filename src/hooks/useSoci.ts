@@ -16,6 +16,7 @@ export interface CreateSocioInput {
   strumento_codice?: number | null
   ruolo_banda_codice?: number | null
   persona_id: number
+  banda_codice: number
 }
 
 export type UpdateSocioInput = Partial<Omit<CreateSocioInput, "persona_id">>
@@ -26,6 +27,7 @@ export interface CreatePersonaInput {
   codice_fiscale?: string | null
   data_nascita?: string | null
   luogo_nascita?: string | null
+  banda_codice: number
 }
 
 export interface PersonaSearchParams {
@@ -34,17 +36,23 @@ export interface PersonaSearchParams {
   codice_fiscale?: string
 }
 
-/** Lists soci with server-side pagination. */
-export function useSoci(page: number, pageSize: number) {
+/** Lists soci with server-side pagination, scoped to the selected banda. */
+export function useSoci(
+  page: number,
+  pageSize: number,
+  bandaCodice: number,
+  enabled = true
+) {
   return useQuery({
-    queryKey: [...SOCI_KEY, page, pageSize],
+    queryKey: [...SOCI_KEY, bandaCodice, page, pageSize],
     queryFn: async () => {
       const { data } = await api.get<PagedResponse<Socio>>("/soci/", {
-        params: { page, page_size: pageSize },
+        params: { page, page_size: pageSize, banda_codice: bandaCodice },
       })
       return data
     },
     placeholderData: (previous) => previous,
+    enabled,
   })
 }
 

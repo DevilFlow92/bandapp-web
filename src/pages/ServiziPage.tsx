@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useServizi } from "@/hooks/useServizi"
+import { useBanda } from "@/context/BandaContext"
 import type { Servizio } from "@/types/servizio"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -48,10 +49,17 @@ function formatOrario(servizio: Servizio): string {
 }
 
 export default function ServiziPage() {
+  const { banda } = useBanda()
   const [page, setPage] = useState(1)
   const [yearFilter, setYearFilter] = useState<string>(ALL_YEARS)
   const anno = yearFilter === ALL_YEARS ? undefined : Number(yearFilter)
-  const { data, isLoading, isError } = useServizi(page, PAGE_SIZE, anno)
+  const { data, isLoading, isError } = useServizi(
+    page,
+    PAGE_SIZE,
+    banda!.codice,
+    anno,
+    !!banda
+  )
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Servizio | null>(null)

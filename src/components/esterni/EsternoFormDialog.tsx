@@ -7,6 +7,7 @@ import {
 import { useCreatePersona, useSearchPersone } from "@/hooks/useSoci"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { useBanda } from "@/context/BandaContext"
 import type { Esterno, Persona } from "@/types/esterno"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,6 +59,7 @@ export default function EsternoFormDialog({
 }: EsternoFormDialogProps) {
   const isEdit = Boolean(esterno)
   const { toast } = useToast()
+  const { banda } = useBanda()
 
   const createPersona = useCreatePersona()
   const createEsterno = useCreateEsterno()
@@ -141,6 +143,7 @@ export default function EsternoFormDialog({
             codice_fiscale: nuovaPersona.codice_fiscale.trim() || null,
             data_nascita: nuovaPersona.data_nascita || null,
             luogo_nascita: nuovaPersona.luogo_nascita.trim() || null,
+            banda_codice: banda!.codice,
           })
           persona_id = persona.id
         } else {
@@ -157,6 +160,7 @@ export default function EsternoFormDialog({
           tariffa_oraria,
           attivo: dati.attivo,
           persona_id,
+          banda_codice: banda!.codice,
         })
         toast({ title: "Esterno creato" })
       }

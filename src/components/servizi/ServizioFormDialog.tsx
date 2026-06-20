@@ -9,7 +9,7 @@ import {
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useBanda } from "@/context/BandaContext"
-import type { Indirizzo, Servizio } from "@/types/servizio"
+import type { IndirizzoInServizio, Servizio } from "@/types/servizio"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,10 +34,18 @@ const CURRENT_YEAR = new Date().getFullYear()
 /** Default tipo indirizzo "Servizio" (codice 4), pre-selected for new servizi. */
 const DEFAULT_TIPO_INDIRIZZO_CODICE = "4"
 
-export function formatIndirizzo(indirizzo: Indirizzo): string {
-  const street = [indirizzo.via, indirizzo.civico].filter(Boolean).join(" ")
-  const comune = indirizzo?.comune?.descrizione ?? ""
-  return comune ? `${street} — ${comune}` : street
+export function formatIndirizzoServizio(
+  ind: IndirizzoInServizio | null | undefined
+): string {
+  if (!ind) return "—"
+  const parts = [
+    ind.prima_riga,
+    ind.numero_civico,
+    ind.cap,
+    ind.comune?.descrizione,
+    ind.comune?.provincia?.sigla ? `(${ind.comune.provincia.sigla})` : null,
+  ].filter(Boolean)
+  return parts.length > 0 ? parts.join(" ") : "—"
 }
 
 interface ServizioFormDialogProps {
@@ -253,9 +261,10 @@ export default function ServizioFormDialog({
 
             {isEdit ? (
               <div className="space-y-1 rounded-md border px-3 py-2 text-sm">
-                <p>Indirizzo già associato (ID: {servizio?.indirizzo_id})</p>
+                <p>{formatIndirizzoServizio(servizio?.indirizzo)}</p>
                 <p className="text-xs text-muted-foreground">
-                  Per modificare l'indirizzo, gestirlo separatamente.
+                  Indirizzo già associato (ID: {servizio?.indirizzo_id}). Per
+                  modificare l'indirizzo, gestirlo separatamente.
                 </p>
               </div>
             ) : (

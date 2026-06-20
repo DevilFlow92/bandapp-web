@@ -8,13 +8,24 @@ export interface Servizio {
   data_servizio: string // ISO datetime
   indirizzo_id: number
   note: string | null
-  indirizzo?: Indirizzo | null
+  indirizzo?: IndirizzoInServizio | null
 }
 
-export interface Indirizzo {
+export interface ProvinciaInServizio {
+  codice: number
+  sigla: string
+}
+
+export interface ComuneInServizio {
+  codice: number
+  descrizione: string
+  provincia?: ProvinciaInServizio | null
+}
+
+export interface IndirizzoInServizio {
   id: number
-  via: string
-  civico: string | null
-  comune_codice: number
-  comune?: { codice: number; descrizione: string } | null
+  prima_riga: string | null
+  numero_civico: string | null
+  cap: string | null
+  comune?: ComuneInServizio | null
 }

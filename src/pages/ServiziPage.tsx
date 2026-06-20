@@ -31,7 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import ServizioFormDialog, {
-  formatIndirizzo,
+  formatIndirizzoServizio,
 } from "@/components/servizi/ServizioFormDialog"
 import DeleteServizioDialog from "@/components/servizi/DeleteServizioDialog"
 import RicevutaFormDialog from "@/components/ricevute/RicevutaFormDialog"
@@ -322,9 +322,7 @@ export default function ServiziPage() {
                         {formatDataServizio(servizio.data_servizio)}
                       </TableCell>
                       <TableCell>
-                        {servizio.indirizzo
-                          ? formatIndirizzo(servizio.indirizzo)
-                          : servizio.indirizzo_id}
+                        {formatIndirizzoServizio(servizio.indirizzo)}
                       </TableCell>
                       <TableCell>{formatNote(servizio.note)}</TableCell>
                       <TableCell className="text-right">

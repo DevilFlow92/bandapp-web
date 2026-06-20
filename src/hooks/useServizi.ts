@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type { Indirizzo, PagedResponse, Servizio } from "@/types/servizio"
+import type {
+  IndirizzoInServizio,
+  PagedResponse,
+  Servizio,
+} from "@/types/servizio"
 import type { Lookup } from "@/types/socio"
 
 export const SERVIZI_KEY = ["servizi"] as const
@@ -122,7 +126,10 @@ export function useLookupTipiIndirizzo() {
 export function useCreateIndirizzo() {
   return useMutation({
     mutationFn: async (input: CreateIndirizzoInput) => {
-      const { data } = await api.post<Indirizzo>("/indirizzi/", input)
+      const { data } = await api.post<IndirizzoInServizio>(
+        "/indirizzi/",
+        input
+      )
       return data
     },
   })

@@ -54,6 +54,7 @@ export async function downloadDocumento(
 export interface CreateSpartitoInput {
   file: File
   note?: string | null
+  banda_codice: number
   tipo_spartito_codice: number
   strumento_codice?: number | null
   scaffale?: string | null

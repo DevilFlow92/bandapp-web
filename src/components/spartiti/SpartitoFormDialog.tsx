@@ -9,6 +9,7 @@ import {
 import { useLookupStrumenti } from "@/hooks/useSoci"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { useBanda } from "@/context/BandaContext"
 import type { Spartito } from "@/types/spartito"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -61,6 +62,7 @@ export default function SpartitoFormDialog({
 }: SpartitoFormDialogProps) {
   const isEdit = Boolean(spartito)
   const { toast } = useToast()
+  const { banda } = useBanda()
 
   const createSpartito = useCreateSpartito()
   const updateSpartito = useUpdateSpartito()
@@ -140,6 +142,7 @@ export default function SpartitoFormDialog({
         await createSpartito.mutateAsync({
           file,
           note: note.trim() || null,
+          banda_codice: banda!.codice,
           ...common,
         })
         toast({ title: "Spartito creato" })

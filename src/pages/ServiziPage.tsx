@@ -143,7 +143,12 @@ function ServizioRicevutePanel({
                 ) : (
                   ricevute.map((ricevuta) => (
                     <TableRow key={ricevuta.id}>
-                      <TableCell>{ricevuta.esterno_id ?? "—"}</TableCell>
+                      <TableCell>
+                        {ricevuta.esterno
+                          ? `${ricevuta.esterno.persona?.nome ?? ""} ${ricevuta.esterno.persona?.cognome ?? ""}`.trim() ||
+                            ricevuta.esterno.codice_esterno
+                          : "—"}
+                      </TableCell>
                       <TableCell>{formatData(ricevuta.data_ricevuta)}</TableCell>
                       <TableCell>{formatImporto(ricevuta.importo)}</TableCell>
                       <TableCell>{formatNote(ricevuta.note_in_stampa)}</TableCell>

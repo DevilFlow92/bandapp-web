@@ -1,5 +1,17 @@
 export type { PagedResponse, PageMeta } from "@/types/socio"
 
+export interface PersonaInRicevuta {
+  id: number
+  nome: string | null
+  cognome: string | null
+}
+
+export interface EsternoInRicevuta {
+  id: number
+  codice_esterno: string
+  persona: PersonaInRicevuta | null
+}
+
 export interface Ricevuta {
   id: number
   servizio_id: number | null
@@ -9,4 +21,5 @@ export interface Ricevuta {
   importo: number
   note_in_stampa: string | null
   note_fuori_stampa: string | null
+  esterno?: EsternoInRicevuta | null
 }

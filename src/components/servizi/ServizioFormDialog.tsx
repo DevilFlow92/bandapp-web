@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Loader2 } from "lucide-react"
 import {
+  useCreateIndirizzo,
   useCreateServizio,
-  useLookupIndirizzi,
+  useLookupTipiIndirizzo,
   useUpdateServizio,
 } from "@/hooks/useServizi"
 import { getErrorMessage } from "@/lib/api"
@@ -27,9 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import ComuneSelect from "@/components/ui/ComuneSelect"
 
-const NONE_VALUE = "__none__"
 const CURRENT_YEAR = new Date().getFullYear()
+/** Default tipo indirizzo "Servizio" (codice 4), pre-selected for new servizi. */
+const DEFAULT_TIPO_INDIRIZZO_CODICE = "4"
 
 export function formatIndirizzo(indirizzo: Indirizzo): string {
   const street = [indirizzo.via, indirizzo.civico].filter(Boolean).join(" ")
@@ -48,7 +51,6 @@ interface ServizioFormState {
   descrizione_servizio: string
   anno: string
   data_servizio: string
-  indirizzo_id: string
   note: string
 }
 
@@ -56,8 +58,23 @@ const emptyForm: ServizioFormState = {
   descrizione_servizio: "",
   anno: String(CURRENT_YEAR),
   data_servizio: "",
-  indirizzo_id: NONE_VALUE,
   note: "",
+}
+
+interface IndirizzoFormState {
+  tipo_indirizzo_codice: string
+  prima_riga: string
+  numero_civico: string
+  cap: string
+  comune_codice: number | null
+}
+
+const emptyIndirizzo: IndirizzoFormState = {
+  tipo_indirizzo_codice: DEFAULT_TIPO_INDIRIZZO_CODICE,
+  prima_riga: "",
+  numero_civico: "",
+  cap: "",
+  comune_codice: null,
 }
 
 export default function ServizioFormDialog({
@@ -71,21 +88,23 @@ export default function ServizioFormDialog({
 
   const createServizio = useCreateServizio()
   const updateServizio = useUpdateServizio()
-  const indirizzi = useLookupIndirizzi()
+  const createIndirizzo = useCreateIndirizzo()
+  const tipiIndirizzo = useLookupTipiIndirizzo()
 
   const [form, setForm] = useState<ServizioFormState>(emptyForm)
+  const [indirizzo, setIndirizzo] = useState<IndirizzoFormState>(emptyIndirizzo)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
     setError(null)
+    setIndirizzo(emptyIndirizzo)
     if (servizio) {
       setForm({
         descrizione_servizio: servizio.descrizione_servizio,
         anno: String(servizio.anno),
         // datetime-local expects "YYYY-MM-DDTHH:MM".
         data_servizio: servizio.data_servizio?.slice(0, 16) ?? "",
-        indirizzo_id: String(servizio.indirizzo_id),
         note: servizio.note ?? "",
       })
     } else {
@@ -93,16 +112,14 @@ export default function ServizioFormDialog({
     }
   }, [open, servizio])
 
-  const isSubmitting = createServizio.isPending || updateServizio.isPending
+  const isSubmitting =
+    createServizio.isPending ||
+    updateServizio.isPending ||
+    createIndirizzo.isPending
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
-
-    if (form.indirizzo_id === NONE_VALUE) {
-      setError("L'indirizzo è obbligatorio.")
-      return
-    }
 
     const anno = Number(form.anno)
     if (Number.isNaN(anno)) {
@@ -112,24 +129,49 @@ export default function ServizioFormDialog({
 
     try {
       if (isEdit && servizio) {
+        // Edit mode keeps the existing indirizzo; it is not re-created here.
         await updateServizio.mutateAsync({
           id: servizio.id,
           input: {
             anno,
             descrizione_servizio: form.descrizione_servizio.trim(),
             data_servizio: form.data_servizio,
-            indirizzo_id: Number(form.indirizzo_id),
             note: form.note.trim() || null,
           },
         })
         toast({ title: "Servizio aggiornato" })
       } else {
+        // Create an indirizzo inline only when address details were entered.
+        const primaRiga = indirizzo.prima_riga.trim()
+        const anyAddressFilled =
+          primaRiga !== "" ||
+          indirizzo.numero_civico.trim() !== "" ||
+          indirizzo.cap.trim() !== "" ||
+          indirizzo.comune_codice !== null
+
+        if (anyAddressFilled && !primaRiga) {
+          setError("La via / piazza è obbligatoria se inserisci un indirizzo.")
+          return
+        }
+
+        let indirizzo_id: number | undefined
+        if (primaRiga) {
+          const created = await createIndirizzo.mutateAsync({
+            tipo_indirizzo_codice: Number(indirizzo.tipo_indirizzo_codice),
+            prima_riga: primaRiga,
+            numero_civico: indirizzo.numero_civico.trim() || null,
+            cap: indirizzo.cap.trim() || null,
+            comune_codice: indirizzo.comune_codice,
+          })
+          indirizzo_id = created.id
+        }
+
         await createServizio.mutateAsync({
           banda_codice: banda!.codice,
           anno,
           descrizione_servizio: form.descrizione_servizio.trim(),
           data_servizio: form.data_servizio,
-          indirizzo_id: Number(form.indirizzo_id),
+          indirizzo_id,
           note: form.note.trim() || null,
         })
         toast({ title: "Servizio creato" })
@@ -206,26 +248,100 @@ export default function ServizioFormDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="indirizzo">Indirizzo *</Label>
-            <Select
-              value={form.indirizzo_id}
-              onValueChange={(value) =>
-                setForm((f) => ({ ...f, indirizzo_id: value }))
-              }
-            >
-              <SelectTrigger id="indirizzo">
-                <SelectValue placeholder="Seleziona…" />
-              </SelectTrigger>
-              <SelectContent>
-                {indirizzi.data?.map((indirizzo) => (
-                  <SelectItem key={indirizzo.id} value={String(indirizzo.id)}>
-                    {formatIndirizzo(indirizzo)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <fieldset className="space-y-4">
+            <legend className="text-sm font-semibold">Indirizzo</legend>
+
+            {isEdit ? (
+              <div className="space-y-1 rounded-md border px-3 py-2 text-sm">
+                <p>Indirizzo già associato (ID: {servizio?.indirizzo_id})</p>
+                <p className="text-xs text-muted-foreground">
+                  Per modificare l'indirizzo, gestirlo separatamente.
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Facoltativo. Compila la via per creare e associare un nuovo
+                  indirizzo.
+                </p>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="tipo_indirizzo">Tipo</Label>
+                    <Select
+                      value={indirizzo.tipo_indirizzo_codice}
+                      onValueChange={(value) =>
+                        setIndirizzo((i) => ({
+                          ...i,
+                          tipo_indirizzo_codice: value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger id="tipo_indirizzo">
+                        <SelectValue placeholder="Seleziona…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tipiIndirizzo.data?.map((tipo) => (
+                          <SelectItem
+                            key={tipo.codice}
+                            value={String(tipo.codice)}
+                          >
+                            {tipo.descrizione}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="numero_civico">Numero civico</Label>
+                    <Input
+                      id="numero_civico"
+                      value={indirizzo.numero_civico}
+                      onChange={(e) =>
+                        setIndirizzo((i) => ({
+                          ...i,
+                          numero_civico: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="prima_riga">Via / Piazza</Label>
+                  <Input
+                    id="prima_riga"
+                    value={indirizzo.prima_riga}
+                    onChange={(e) =>
+                      setIndirizzo((i) => ({
+                        ...i,
+                        prima_riga: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2 sm:max-w-[12rem]">
+                  <Label htmlFor="cap">CAP</Label>
+                  <Input
+                    id="cap"
+                    value={indirizzo.cap}
+                    onChange={(e) =>
+                      setIndirizzo((i) => ({ ...i, cap: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <ComuneSelect
+                  value={indirizzo.comune_codice}
+                  onChange={(codice) =>
+                    setIndirizzo((i) => ({ ...i, comune_codice: codice }))
+                  }
+                  label="Comune"
+                />
+              </>
+            )}
+          </fieldset>
 
           <div className="space-y-2">
             <Label htmlFor="note">Note</Label>

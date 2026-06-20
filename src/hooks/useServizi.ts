@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import type { Indirizzo, PagedResponse, Servizio } from "@/types/servizio"
+import type { Lookup } from "@/types/socio"
 
 export const SERVIZI_KEY = ["servizi"] as const
 
@@ -9,11 +10,19 @@ export interface CreateServizioInput {
   anno: number
   descrizione_servizio: string
   data_servizio: string
-  indirizzo_id: number
+  indirizzo_id?: number | null
   note?: string | null
 }
 
 export type UpdateServizioInput = Partial<CreateServizioInput>
+
+export interface CreateIndirizzoInput {
+  tipo_indirizzo_codice: number
+  prima_riga: string
+  numero_civico?: string | null
+  cap?: string | null
+  comune_codice?: number | null
+}
 
 /**
  * Lists servizi with server-side pagination, scoped to the selected banda and
@@ -92,16 +101,29 @@ export function useDeleteServizio() {
   })
 }
 
-/** Loads the indirizzi lookup (up to 100 entries) for the address picker. */
-export function useLookupIndirizzi() {
+/** Loads the tipi-indirizzo lookup (up to 20 entries) for the address form. */
+export function useLookupTipiIndirizzo() {
   return useQuery({
-    queryKey: ["lookup", "indirizzi"],
+    queryKey: ["lookup", "tipi-indirizzo"],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<Indirizzo>>("/indirizzi/", {
-        params: { page_size: 100 },
+      const { data } = await api.get<PagedResponse<Lookup>>("/tipi-indirizzo/", {
+        params: { page_size: 20 },
       })
       return data.items
     },
     staleTime: 10 * 60 * 1000,
+  })
+}
+
+/**
+ * Creates a new indirizzo and returns it. Indirizzi are created inline as part
+ * of the servizio flow, so there is no list to invalidate.
+ */
+export function useCreateIndirizzo() {
+  return useMutation({
+    mutationFn: async (input: CreateIndirizzoInput) => {
+      const { data } = await api.post<Indirizzo>("/indirizzi/", input)
+      return data
+    },
   })
 }

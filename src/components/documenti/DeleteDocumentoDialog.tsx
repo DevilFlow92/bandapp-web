@@ -1,3 +1,4 @@
+import { isAxiosError } from "axios"
 import { Loader2 } from "lucide-react"
 import { useDeleteDocumento } from "@/hooks/useDocumenti"
 import { getErrorMessage } from "@/lib/api"
@@ -35,10 +36,13 @@ export default function DeleteDocumentoDialog({
         onOpenChange(false)
       },
       onError: (err) => {
+        const isConflict = isAxiosError(err) && err.response?.status === 409
         toast({
           variant: "destructive",
           title: "Errore",
-          description: getErrorMessage(err),
+          description: isConflict
+            ? "Impossibile eliminare: il documento è utilizzato da altri elementi (spartiti, ricevute, iscrizioni)."
+            : getErrorMessage(err),
         })
       },
     })

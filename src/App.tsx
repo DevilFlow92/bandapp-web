@@ -11,7 +11,12 @@ import SociPage from "@/pages/SociPage"
 import EsterniPage from "@/pages/EsterniPage"
 import ServiziPage from "@/pages/ServiziPage"
 import SpartitiPage from "@/pages/SpartitiPage"
-import ContabilitaPage from "@/pages/ContabilitaPage"
+import IscrizioniPage from "@/pages/IscrizioniPage"
+import DocumentiPage from "@/pages/DocumentiPage"
+import ContabilitaVociPage from "@/pages/ContabilitaVociPage"
+import ContabilitaMovimentiPage from "@/pages/ContabilitaMovimentiPage"
+import AdminUtentiPage from "@/pages/AdminUtentiPage"
+import AdminRuoliPage from "@/pages/AdminRuoliPage"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,8 +44,16 @@ export default function App() {
                 <Route path="soci" element={<SociPage />} />
                 <Route path="esterni" element={<EsterniPage />} />
                 <Route path="servizi" element={<ServiziPage />} />
+                <Route path="iscrizioni" element={<IscrizioniPage />} />
                 <Route path="spartiti" element={<SpartitiPage />} />
-                <Route path="contabilita" element={<ContabilitaPage />} />
+                <Route path="documenti" element={<DocumentiPage />} />
+                <Route path="contabilita/voci" element={<ContabilitaVociPage />} />
+                <Route
+                  path="contabilita/movimenti"
+                  element={<ContabilitaMovimentiPage />}
+                />
+                <Route path="admin/utenti" element={<AdminUtentiPage />} />
+                <Route path="admin/ruoli" element={<AdminRuoliPage />} />
               </Route>
             </Route>
 

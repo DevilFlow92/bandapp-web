@@ -1,27 +1,51 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
-import {
-  LayoutDashboard,
-  Users,
-  UserPlus,
-  Music,
-  FileText,
-  Wallet,
-  LogOut,
-  Repeat,
-} from "lucide-react"
+import { LayoutDashboard, Music, LogOut, Repeat } from "lucide-react"
 import { useCurrentUser, useLogout } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/soci", label: "Soci", icon: Users, end: false },
-  { to: "/esterni", label: "Esterni", icon: UserPlus, end: false },
-  { to: "/servizi", label: "Servizi", icon: Music, end: false },
-  { to: "/spartiti", label: "Spartiti", icon: FileText, end: false },
-  { to: "/contabilita", label: "Contabilità", icon: Wallet, end: false },
-] as const
+type NavItem = { to: string; label: string }
+type NavGroup = { label: string; items: NavItem[] }
+
+const navGroups: NavGroup[] = [
+  {
+    label: "Anagrafica",
+    items: [
+      { to: "/soci", label: "Soci" },
+      { to: "/esterni", label: "Esterni" },
+    ],
+  },
+  {
+    label: "Attività",
+    items: [
+      { to: "/servizi", label: "Servizi" },
+      { to: "/iscrizioni", label: "Iscrizioni" },
+    ],
+  },
+  {
+    label: "Archivio",
+    items: [
+      { to: "/spartiti", label: "Spartiti" },
+      { to: "/documenti", label: "Documenti" },
+    ],
+  },
+  {
+    label: "Contabilità",
+    items: [
+      { to: "/contabilita/voci", label: "Piano dei conti" },
+      { to: "/contabilita/movimenti", label: "Movimenti" },
+    ],
+  },
+]
+
+const adminGroup: NavGroup = {
+  label: "Amministrazione",
+  items: [
+    { to: "/admin/utenti", label: "Utenti" },
+    { to: "/admin/ruoli", label: "Ruoli" },
+  ],
+}
 
 export default function AppLayout() {
   const { data: user } = useCurrentUser()
@@ -34,6 +58,9 @@ export default function AppLayout() {
     navigate("/banda")
   }
 
+  const groups =
+    user?.superuser === true ? [...navGroups, adminGroup] : navGroups
+
   return (
     <div className="min-h-screen bg-muted/30">
       <aside
@@ -45,24 +72,48 @@ export default function AppLayout() {
           <span className="text-xl font-semibold tracking-tight">BandApp</span>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-white/10 text-white"
-                    : "text-white/60 hover:bg-white/5 hover:text-white"
-                )
-              }
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {label}
-            </NavLink>
+        <nav className="flex-1 overflow-y-auto px-3 py-2">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-white/10 text-white"
+                  : "text-white/60 hover:bg-white/5 hover:text-white"
+              )
+            }
+          >
+            <LayoutDashboard className="h-4 w-4 shrink-0" />
+            Dashboard
+          </NavLink>
+
+          {groups.map((group, i) => (
+            <div key={group.label}>
+              {i > 0 && <hr className="border-slate-700 mx-3 my-1" />}
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 px-3 pt-4 pb-1">
+                {group.label}
+              </p>
+              <div className="space-y-1">
+                {group.items.map(({ to, label }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-white/10 text-white"
+                          : "text-white/60 hover:bg-white/5 hover:text-white"
+                      )
+                    }
+                  >
+                    {label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 

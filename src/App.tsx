@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { BandaProvider } from "@/context/BandaContext"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import AuthGuard from "@/components/layout/AuthGuard"
+import SuperuserGuard from "@/components/layout/SuperuserGuard"
 import AppLayout from "@/components/layout/AppLayout"
 import LoginPage from "@/pages/LoginPage"
 import BandaSelectPage from "@/pages/BandaSelectPage"
@@ -59,8 +60,10 @@ export default function App() {
                     path="contabilita/movimenti"
                     element={<ContabilitaMovimentiPage />}
                   />
-                  <Route path="admin/utenti" element={<AdminUtentiPage />} />
-                  <Route path="admin/ruoli" element={<AdminRuoliPage />} />
+                  <Route element={<SuperuserGuard />}>
+                    <Route path="admin/utenti" element={<AdminUtentiPage />} />
+                    <Route path="admin/ruoli" element={<AdminRuoliPage />} />
+                  </Route>
                 </Route>
               </Route>
 

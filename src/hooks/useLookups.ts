@@ -56,15 +56,31 @@ export function useProvince(regioneCodice?: number) {
   })
 }
 
-/** Loads the comuni for a given provincia. Disabled until a provincia is selected. */
+/**
+ * Loads the comuni for a given provincia. Disabled until a provincia is
+ * selected. The backend caps page_size at 100 but some province have 300+
+ * comuni, so we fetch page 1, then fan out the remaining pages in parallel and
+ * merge them all. The result is cached per provincia.
+ */
 export function useComuni(provinciaCodice?: number) {
   return useQuery({
     queryKey: ["lookup", "comuni", provinciaCodice],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<Lookup>>("/comuni/", {
-        params: { page_size: 200, provincia_codice: provinciaCodice },
-      })
-      return data.items
+      const fetchPage = async (page: number) => {
+        const { data } = await api.get<PagedResponse<Lookup>>("/comuni/", {
+          params: { page, page_size: 100, provincia_codice: provinciaCodice },
+        })
+        return data
+      }
+
+      const first = await fetchPage(1)
+      const totalPages = first.meta.total_pages
+      if (totalPages <= 1) return first.items
+
+      const rest = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, i) => fetchPage(i + 2))
+      )
+      return rest.reduce((acc, page) => acc.concat(page.items), first.items)
     },
     enabled: provinciaCodice != null,
     staleTime: LOOKUP_STALE_TIME,

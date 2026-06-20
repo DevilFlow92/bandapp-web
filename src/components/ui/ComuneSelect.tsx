@@ -30,21 +30,25 @@ export default function ComuneSelect({
   onChange,
   label,
 }: ComuneSelectProps) {
-  const [statoCodice, setStatoCodice] = useState<number>()
+  const [statoCodice, setStatoCodice] = useState<number | null>(null)
   const [regioneCodice, setRegioneCodice] = useState<number>()
   const [provinciaCodice, setProvinciaCodice] = useState<number>()
 
   const stati = useStati()
-  const regioni = useRegioni(statoCodice)
+  const regioni = useRegioni(statoCodice ?? undefined)
   const province = useProvince(regioneCodice)
   const comuni = useComuni(provinciaCodice)
 
-  // Auto-select Italia on mount as the common default. Italia has the stable
-  // codice 113 (it lives on page 2 of the stati lookup, which useStati loads
-  // in full), so we set it directly rather than searching the list by name.
+  // Auto-select Italia as the common default once the stati lookup has loaded.
+  // Italia has the stable codice 113 (it lives on page 2 of the stati lookup,
+  // which useStati loads in full), so we set it directly rather than searching
+  // the list by name. Waiting for isSuccess ensures the option exists before we
+  // select it; the statoCodice === null guard avoids clobbering a later change.
   useEffect(() => {
-    setStatoCodice(113)
-  }, [])
+    if (stati.isSuccess && statoCodice === null) {
+      setStatoCodice(113)
+    }
+  }, [stati.isSuccess])
 
   // TODO: reverse-lookup for edit mode. We have no GET /comuni/{codice}
   // endpoint, so given only `value` we cannot walk back up to its provincia,

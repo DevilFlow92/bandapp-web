@@ -1,35 +1,84 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type { Lookup, PagedResponse, Spartito } from "@/types/spartito"
+import type {
+  DocumentoResponse,
+  Lookup,
+  PagedResponse,
+  Spartito,
+} from "@/types/spartito"
 
 export const SPARTITI_KEY = ["spartiti"] as const
 
+/** Tipo documento "Spartito" — used when uploading a spartito's file. */
+const TIPO_DOCUMENTO_SPARTITO = 3
+
+/**
+ * Uploads a file to POST /documenti/ as multipart form-data. The tipo and note
+ * travel as query params, the file as the single `file` form field.
+ */
+async function uploadDocumento(
+  file: File,
+  tipoCodice: number,
+  note?: string | null
+): Promise<DocumentoResponse> {
+  const formData = new FormData()
+  formData.append("file", file)
+  const params: Record<string, string | number> = {
+    tipo_documento_codice: tipoCodice,
+  }
+  if (note && note.trim()) params.note = note.trim()
+  const { data } = await api.post<DocumentoResponse>("/documenti/", formData, {
+    params,
+  })
+  return data
+}
+
+/** Downloads a documento via an authenticated (cookie) request and saves it. */
+export async function downloadDocumento(
+  documentoId: number,
+  nome?: string | null
+): Promise<void> {
+  const { data } = await api.get<Blob>(`/documenti/${documentoId}/download`, {
+    responseType: "blob",
+  })
+  const url = URL.createObjectURL(data)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = nome ?? `documento-${documentoId}`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
 export interface CreateSpartitoInput {
-  titolo: string
-  autore?: string | null
-  anno?: number | null
+  file: File
   note?: string | null
   tipo_spartito_codice: number
   strumento_codice?: number | null
   scaffale?: string | null
   ripiano?: string | null
   cartella?: string | null
-  documento_id?: number | null
 }
 
-export type UpdateSpartitoInput = Partial<CreateSpartitoInput>
+export interface UpdateSpartitoInput {
+  tipo_spartito_codice?: number
+  strumento_codice?: number | null
+  scaffale?: string | null
+  ripiano?: string | null
+  cartella?: string | null
+}
 
 /**
  * Lists spartiti with pagination, scoped to the selected banda and optionally
- * filtered by tipo and strumento.
+ * filtered by tipo and strumento. Disabled until a banda is selected.
  */
 export function useSpartiti(
   page: number,
   pageSize: number,
   bandaCodice: number,
   tipoSpartitoCode?: number,
-  strumentoCode?: number,
-  enabled = true
+  strumentoCode?: number
 ) {
   return useQuery({
     queryKey: [
@@ -55,16 +104,27 @@ export function useSpartiti(
       return data
     },
     placeholderData: (previous) => previous,
-    enabled,
+    enabled: !!bandaCodice,
   })
 }
 
-/** Creates a new spartito. */
+/**
+ * Creates a spartito. It first uploads the document (POST /documenti/) and then
+ * creates the spartito referencing the returned documento_id.
+ */
 export function useCreateSpartito() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (input: CreateSpartitoInput) => {
-      const { data } = await api.post<Spartito>("/spartiti/", input)
+    mutationFn: async ({ file, note, ...spartito }: CreateSpartitoInput) => {
+      const documento = await uploadDocumento(
+        file,
+        TIPO_DOCUMENTO_SPARTITO,
+        note
+      )
+      const { data } = await api.post<Spartito>("/spartiti/", {
+        ...spartito,
+        documento_id: documento.id,
+      })
       return data
     },
     onSuccess: () => {
@@ -73,7 +133,7 @@ export function useCreateSpartito() {
   })
 }
 
-/** Updates an existing spartito. */
+/** Updates an existing spartito (the linked documento is not changed). */
 export function useUpdateSpartito() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -106,16 +166,24 @@ export function useDeleteSpartito() {
   })
 }
 
-/** Loads the tipi-spartito lookup (up to 100 entries). */
+/** Loads the tipi-spartito lookup. */
 export function useLookupTipiSpartito() {
   return useQuery({
     queryKey: ["lookup", "tipi-spartito"],
     queryFn: async () => {
       const { data } = await api.get<PagedResponse<Lookup>>("/tipi-spartito/", {
-        params: { page_size: 100 },
+        params: { page_size: 20 },
       })
       return data.items
     },
     staleTime: 10 * 60 * 1000,
+  })
+}
+
+/** Uploads a documento of the given tipo. Reusable across document features. */
+export function useUploadDocumento(tipoCodice: number) {
+  return useMutation({
+    mutationFn: ({ file, note }: { file: File; note?: string | null }) =>
+      uploadDocumento(file, tipoCodice, note),
   })
 }

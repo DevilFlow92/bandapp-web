@@ -1,8 +1,21 @@
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
-import { useLookupTipiSpartito, useSpartiti } from "@/hooks/useSpartiti"
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react"
+import {
+  downloadDocumento,
+  useLookupTipiSpartito,
+  useSpartiti,
+} from "@/hooks/useSpartiti"
 import { useLookupStrumenti } from "@/hooks/useSoci"
 import { useBanda } from "@/context/BandaContext"
+import { useToast } from "@/hooks/use-toast"
+import { getErrorMessage } from "@/lib/api"
 import type { Spartito } from "@/types/spartito"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -37,6 +50,7 @@ function formatPosizione(spartito: Spartito): string {
 
 export default function SpartitiPage() {
   const { banda } = useBanda()
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
   const [tipoFilter, setTipoFilter] = useState<string>(ALL)
   const [strumentoFilter, setStrumentoFilter] = useState<string>(ALL)
@@ -50,8 +64,7 @@ export default function SpartitiPage() {
     PAGE_SIZE,
     banda!.codice,
     tipoSpartitoCode,
-    strumentoCode,
-    !!banda
+    strumentoCode
   )
   const tipiSpartito = useLookupTipiSpartito()
   const strumenti = useLookupStrumenti()
@@ -81,6 +94,18 @@ export default function SpartitiPage() {
   const handleStrumentoChange = (value: string) => {
     setStrumentoFilter(value)
     setPage(1)
+  }
+
+  const handleDownload = async (spartito: Spartito) => {
+    try {
+      await downloadDocumento(spartito.documento_id, spartito.documento?.nome)
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: getErrorMessage(err),
+      })
+    }
   }
 
   return (
@@ -139,9 +164,7 @@ export default function SpartitiPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Titolo</TableHead>
-              <TableHead>Autore</TableHead>
-              <TableHead>Anno</TableHead>
+              <TableHead>Documento</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Strumento</TableHead>
               <TableHead>Posizione</TableHead>
@@ -152,7 +175,7 @@ export default function SpartitiPage() {
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 7 }).map((__, j) => (
+                  {Array.from({ length: 5 }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
@@ -162,7 +185,7 @@ export default function SpartitiPage() {
             ) : isError ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={5}
                   className="py-12 text-center text-muted-foreground"
                 >
                   Errore nel caricamento degli spartiti.
@@ -171,7 +194,7 @@ export default function SpartitiPage() {
             ) : spartiti.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={5}
                   className="py-12 text-center text-muted-foreground"
                 >
                   Nessuno spartito trovato
@@ -181,11 +204,11 @@ export default function SpartitiPage() {
               spartiti.map((spartito) => (
                 <TableRow key={spartito.id}>
                   <TableCell className="font-medium">
-                    {spartito.titolo}
+                    {spartito.documento?.nome ?? "—"}
                   </TableCell>
-                  <TableCell>{spartito.autore ?? "—"}</TableCell>
-                  <TableCell>{spartito.anno ?? "—"}</TableCell>
-                  <TableCell>{spartito.tipo_spartito.descrizione}</TableCell>
+                  <TableCell>
+                    {spartito.tipo_spartito?.descrizione ?? "—"}
+                  </TableCell>
                   <TableCell>
                     {spartito.strumento
                       ? spartito.strumento.descrizione
@@ -194,6 +217,14 @@ export default function SpartitiPage() {
                   <TableCell>{formatPosizione(spartito)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDownload(spartito)}
+                        aria-label="Scarica"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"

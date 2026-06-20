@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { Loader2 } from "lucide-react"
+import { Download, Loader2 } from "lucide-react"
 import {
+  downloadDocumento,
   useCreateSpartito,
   useLookupTipiSpartito,
   useUpdateSpartito,
@@ -38,27 +39,19 @@ interface SpartitoFormDialogProps {
 }
 
 interface SpartitoFormState {
-  titolo: string
-  autore: string
-  anno: string
   tipo_spartito_codice: string
   strumento_codice: string
   scaffale: string
   ripiano: string
   cartella: string
-  note: string
 }
 
 const emptyForm: SpartitoFormState = {
-  titolo: "",
-  autore: "",
-  anno: "",
   tipo_spartito_codice: "",
   strumento_codice: NONE_VALUE,
   scaffale: "",
   ripiano: "",
   cartella: "",
-  note: "",
 }
 
 export default function SpartitoFormDialog({
@@ -75,16 +68,17 @@ export default function SpartitoFormDialog({
   const strumenti = useLookupStrumenti()
 
   const [form, setForm] = useState<SpartitoFormState>(emptyForm)
+  const [file, setFile] = useState<File | null>(null)
+  const [note, setNote] = useState("")
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
     setError(null)
+    setFile(null)
+    setNote("")
     if (spartito) {
       setForm({
-        titolo: spartito.titolo,
-        autore: spartito.autore ?? "",
-        anno: spartito.anno != null ? String(spartito.anno) : "",
         tipo_spartito_codice: String(spartito.tipo_spartito_codice),
         strumento_codice:
           spartito.strumento_codice != null
@@ -93,7 +87,6 @@ export default function SpartitoFormDialog({
         scaffale: spartito.scaffale ?? "",
         ripiano: spartito.ripiano ?? "",
         cartella: spartito.cartella ?? "",
-        note: spartito.note ?? "",
       })
     } else {
       setForm(emptyForm)
@@ -101,6 +94,19 @@ export default function SpartitoFormDialog({
   }, [open, spartito])
 
   const isSubmitting = createSpartito.isPending || updateSpartito.isPending
+
+  const handleDownload = async () => {
+    if (!spartito) return
+    try {
+      await downloadDocumento(spartito.documento_id, spartito.documento?.nome)
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Errore",
+        description: getErrorMessage(err),
+      })
+    }
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -111,17 +117,7 @@ export default function SpartitoFormDialog({
       return
     }
 
-    const anno = form.anno.trim() === "" ? null : Number(form.anno)
-    if (anno != null && Number.isNaN(anno)) {
-      setError("L'anno deve essere un numero valido.")
-      return
-    }
-
-    const payload = {
-      titolo: form.titolo.trim(),
-      autore: form.autore.trim() || null,
-      anno,
-      note: form.note.trim() || null,
+    const common = {
       tipo_spartito_codice: Number(form.tipo_spartito_codice),
       strumento_codice:
         form.strumento_codice === NONE_VALUE
@@ -134,10 +130,18 @@ export default function SpartitoFormDialog({
 
     try {
       if (isEdit && spartito) {
-        await updateSpartito.mutateAsync({ id: spartito.id, input: payload })
+        await updateSpartito.mutateAsync({ id: spartito.id, input: common })
         toast({ title: "Spartito aggiornato" })
       } else {
-        await createSpartito.mutateAsync(payload)
+        if (!file) {
+          setError("Seleziona un file da caricare.")
+          return
+        }
+        await createSpartito.mutateAsync({
+          file,
+          note: note.trim() || null,
+          ...common,
+        })
         toast({ title: "Spartito creato" })
       }
       onOpenChange(false)
@@ -170,40 +174,52 @@ export default function SpartitoFormDialog({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="titolo">Titolo *</Label>
-            <Input
-              id="titolo"
-              required
-              value={form.titolo}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, titolo: e.target.value }))
-              }
-            />
-          </div>
+          {isEdit ? (
+            <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+              <span className="min-w-0 truncate">
+                Documento:{" "}
+                <span className="font-medium">
+                  {spartito?.documento?.nome ?? "—"}
+                </span>
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleDownload}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Scarica
+              </Button>
+            </div>
+          ) : (
+            <fieldset className="space-y-4">
+              <legend className="text-sm font-semibold">Documento</legend>
+              <div className="space-y-2">
+                <Label htmlFor="file">File *</Label>
+                <Input
+                  id="file"
+                  type="file"
+                  required
+                  accept=".pdf,.xml,.mxl,.musicxml"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Formati supportati: PDF, MusicXML (.xml, .mxl, .musicxml).
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="note">Note documento</Label>
+                <Input
+                  id="note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+              </div>
+            </fieldset>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="autore">Autore</Label>
-              <Input
-                id="autore"
-                value={form.autore}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, autore: e.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="anno">Anno</Label>
-              <Input
-                id="anno"
-                type="number"
-                value={form.anno}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, anno: e.target.value }))
-                }
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="tipo_spartito">Tipo spartito *</Label>
               <Select
@@ -278,17 +294,6 @@ export default function SpartitoFormDialog({
                 }
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="note">Note</Label>
-            <textarea
-              id="note"
-              rows={3}
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              value={form.note}
-              onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-            />
           </div>
 
           <DialogFooter>

@@ -50,9 +50,7 @@ export default function DeleteSpartitoDialog({
         <DialogHeader>
           <DialogTitle>Elimina spartito</DialogTitle>
           <DialogDescription>
-            {spartito
-              ? `Sei sicuro di voler eliminare lo spartito «${spartito.titolo}»?`
-              : ""}
+            Sei sicuro di voler eliminare questo spartito?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

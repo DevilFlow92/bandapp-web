@@ -7,16 +7,24 @@ export interface TipoSpartito {
 
 export interface Spartito {
   id: number
-  titolo: string
-  autore: string | null
-  anno: number | null
-  note: string | null
   tipo_spartito_codice: number
-  tipo_spartito: { codice: number; descrizione: string }
   strumento_codice: number | null
-  strumento: { codice: number; descrizione: string } | null
+  documento_id: number
   scaffale: string | null
   ripiano: string | null
   cartella: string | null
-  documento_id: number | null
+  tipo_spartito?: { codice: number; descrizione: string } | null
+  strumento?: { codice: number; descrizione: string } | null
+  documento?: { id: number; nome: string } | null
+}
+
+/** Shape returned by POST /documenti/ after a successful upload. */
+export interface DocumentoResponse {
+  id: number
+  nome: string
+  mime_type: string
+  dimensione_bytes: number
+  caricato_il: string
+  note: string | null
+  file_path: string
 }

@@ -1,4 +1,4 @@
-import { Users, Music, FileText } from "lucide-react"
+import { Users, UserCheck, Music, FileText } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import {
   Card,
@@ -6,20 +6,45 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useBanda } from "@/context/BandaContext"
+import { useDashboardKPI } from "@/hooks/useDashboard"
 
 interface Kpi {
   label: string
-  value: string
+  value: number
   icon: LucideIcon
+  subtitle?: string
 }
 
-const kpis: Kpi[] = [
-  { label: "Soci Attivi", value: "—", icon: Users },
-  { label: "Servizi Anno", value: "—", icon: Music },
-  { label: "Documenti", value: "—", icon: FileText },
-]
-
 export default function DashboardPage() {
+  const { banda } = useBanda()
+  const currentYear = new Date().getFullYear()
+  const { sociTotali, sociAttivi, serviziAnno, iscrizioniAnno, isLoading, isError } =
+    useDashboardKPI(banda!.codice)
+
+  const kpis: Kpi[] = [
+    { label: "Soci Totali", value: sociTotali, icon: Users },
+    {
+      label: "Soci Attivi",
+      value: sociAttivi,
+      icon: UserCheck,
+      subtitle: `Anno ${currentYear}`,
+    },
+    {
+      label: "Servizi",
+      value: serviziAnno,
+      icon: Music,
+      subtitle: `Anno ${currentYear}`,
+    },
+    {
+      label: "Iscrizioni",
+      value: iscrizioniAnno,
+      icon: FileText,
+      subtitle: `Anno ${currentYear}`,
+    },
+  ]
+
   return (
     <div className="space-y-6">
       <div>
@@ -29,8 +54,8 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {kpis.map(({ label, value, icon: Icon }) => (
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {kpis.map(({ label, value, icon: Icon, subtitle }) => (
           <Card key={label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -39,13 +64,28 @@ export default function DashboardPage() {
               <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{value}</div>
+              {isLoading ? (
+                <Skeleton className="h-9 w-16" />
+              ) : (
+                <div className="text-3xl font-bold">
+                  {isError ? "—" : value}
+                </div>
+              )}
+              {isError ? (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Errore nel caricamento
+                </p>
+              ) : (
+                subtitle && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {subtitle}
+                  </p>
+                )
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
-
-      <p className="text-sm text-muted-foreground">Caricamento dati in corso...</p>
     </div>
   )
 }

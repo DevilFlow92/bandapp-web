@@ -54,6 +54,18 @@ export function useSoci(
   })
 }
 
+/** Loads a single socio by id, with nested persona, ruolo_banda and strumento. */
+export function useSocio(id: number) {
+  return useQuery({
+    queryKey: [...SOCI_KEY, id],
+    queryFn: async () => {
+      const { data } = await api.get<Socio>(`/soci/${id}`)
+      return data
+    },
+    enabled: id > 0,
+  })
+}
+
 /** Creates a new socio. */
 export function useCreateSocio() {
   const queryClient = useQueryClient()

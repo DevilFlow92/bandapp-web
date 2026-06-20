@@ -8,6 +8,7 @@ import LoginPage from "@/pages/LoginPage"
 import BandaSelectPage from "@/pages/BandaSelectPage"
 import DashboardPage from "@/pages/DashboardPage"
 import SociPage from "@/pages/SociPage"
+import SocioDetailPage from "@/pages/SocioDetailPage"
 import EsterniPage from "@/pages/EsterniPage"
 import ServiziPage from "@/pages/ServiziPage"
 import SpartitiPage from "@/pages/SpartitiPage"
@@ -42,6 +43,7 @@ export default function App() {
               <Route path="/" element={<AppLayout />}>
                 <Route index element={<DashboardPage />} />
                 <Route path="soci" element={<SociPage />} />
+                <Route path="soci/:id" element={<SocioDetailPage />} />
                 <Route path="esterni" element={<EsterniPage />} />
                 <Route path="servizi" element={<ServiziPage />} />
                 <Route path="iscrizioni" element={<IscrizioniPage />} />

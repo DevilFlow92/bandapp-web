@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useSoci } from "@/hooks/useSoci"
 import { useIscrizioni } from "@/hooks/useIscrizioni"
@@ -24,6 +25,7 @@ const CURRENT_YEAR = new Date().getFullYear()
 const STATO_ANNULLATA = 3
 
 export default function SociPage() {
+  const navigate = useNavigate()
   const { banda } = useBanda()
   const [page, setPage] = useState(1)
   const { data, isLoading, isError } = useSoci(
@@ -116,7 +118,11 @@ export default function SociPage() {
               </TableRow>
             ) : (
               soci.map((socio) => (
-                <TableRow key={socio.id}>
+                <TableRow
+                  key={socio.id}
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() => navigate(`/soci/${socio.id}`)}
+                >
                   <TableCell>{socio.persona?.nome ?? "—"}</TableCell>
                   <TableCell>{socio.persona?.cognome ?? "—"}</TableCell>
                   <TableCell>{socio.codice_socio}</TableCell>
@@ -139,7 +145,10 @@ export default function SociPage() {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell
+                    className="text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"

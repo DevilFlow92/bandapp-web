@@ -39,6 +39,11 @@ interface IscrizioneFormDialogProps {
   iscrizione?: Iscrizione | null
   /** Resolved "Nome Cognome" of the iscrizione's socio, for edit-mode display. */
   socioName?: string
+  /**
+   * In create mode, pre-fills (and locks) the socio so the iscrizione is bound
+   * to it. Used by the socio detail page.
+   */
+  presetSocio?: Socio | null
 }
 
 interface FormState {
@@ -72,6 +77,7 @@ export default function IscrizioneFormDialog({
   onOpenChange,
   iscrizione,
   socioName,
+  presetSocio,
 }: IscrizioneFormDialogProps) {
   const isEdit = Boolean(iscrizione)
   const { toast } = useToast()
@@ -82,8 +88,14 @@ export default function IscrizioneFormDialog({
   const stati = useLookupStatiIscrizione()
 
   // Socio selection (create mode only). The soci endpoint does not support text
-  // search, so we fetch the banda's soci once and filter them client-side.
-  const sociQuery = useSoci(1, 50, banda?.codice ?? 0, open && !isEdit && !!banda)
+  // search, so we fetch the banda's soci once and filter them client-side. When
+  // a preset socio is supplied the picker is skipped, so the fetch is disabled.
+  const sociQuery = useSoci(
+    1,
+    50,
+    banda?.codice ?? 0,
+    open && !isEdit && !presetSocio && !!banda
+  )
   const [search, setSearch] = useState("")
   const [selectedSocio, setSelectedSocio] = useState<Socio | null>(null)
 
@@ -107,7 +119,7 @@ export default function IscrizioneFormDialog({
     if (!open) return
     setError(null)
     setSearch("")
-    setSelectedSocio(null)
+    setSelectedSocio(presetSocio ?? null)
     if (iscrizione) {
       setForm({
         anno: String(iscrizione.anno),
@@ -119,7 +131,7 @@ export default function IscrizioneFormDialog({
     } else {
       setForm({ ...emptyForm, data_iscrizione: todayISO() })
     }
-  }, [open, iscrizione])
+  }, [open, iscrizione, presetSocio])
 
   const isSubmitting = createIscrizione.isPending || updateIscrizione.isPending
 
@@ -190,6 +202,10 @@ export default function IscrizioneFormDialog({
             {isEdit ? (
               <div className="rounded-md border px-3 py-2 text-sm text-muted-foreground">
                 {socioName ?? "—"}
+              </div>
+            ) : presetSocio ? (
+              <div className="rounded-md border px-3 py-2 text-sm text-muted-foreground">
+                {socioLabel(presetSocio)}
               </div>
             ) : selectedSocio ? (
               <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">

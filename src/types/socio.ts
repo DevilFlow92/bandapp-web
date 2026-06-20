@@ -5,7 +5,7 @@ export interface Persona {
   codice_fiscale: string | null
   data_nascita: string | null
   comune_nascita_codice: number | null
-  comune_nascita?: { codice: number; nome: string } | null
+  comune_nascita?: { codice: number; descrizione: string } | null
 }
 
 export interface Socio {

@@ -6,7 +6,6 @@ import {
 } from "@/hooks/useEsterni"
 import {
   useCreatePersona,
-  useLookupComuni,
   useLookupStrumenti,
   useSearchPersone,
 } from "@/hooks/useSoci"
@@ -32,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import ComuneSelect from "@/components/ui/ComuneSelect"
 
 const NONE_VALUE = "__none__"
 
@@ -65,7 +65,7 @@ const emptyNuovaPersona = {
   cognome: "",
   codice_fiscale: "",
   data_nascita: "",
-  comune_nascita_codice: NONE_VALUE,
+  comune_nascita_codice: null as number | null,
 }
 
 export default function EsternoFormDialog({
@@ -80,7 +80,6 @@ export default function EsternoFormDialog({
   const createPersona = useCreatePersona()
   const createEsterno = useCreateEsterno()
   const updateEsterno = useUpdateEsterno()
-  const comuni = useLookupComuni()
   const strumenti = useLookupStrumenti()
 
   // Step 1 — persona (create mode only)
@@ -170,10 +169,7 @@ export default function EsternoFormDialog({
             cognome: nuovaPersona.cognome.trim(),
             codice_fiscale: nuovaPersona.codice_fiscale.trim() || null,
             data_nascita: nuovaPersona.data_nascita || null,
-            comune_nascita_codice:
-              nuovaPersona.comune_nascita_codice === NONE_VALUE
-                ? null
-                : Number(nuovaPersona.comune_nascita_codice),
+            comune_nascita_codice: nuovaPersona.comune_nascita_codice,
             banda_codice: banda!.codice,
           })
           persona_id = persona.id
@@ -306,31 +302,16 @@ export default function EsternoFormDialog({
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="comune_nascita">Comune di nascita</Label>
-                    <Select
+                    <ComuneSelect
                       value={nuovaPersona.comune_nascita_codice}
-                      onValueChange={(value) =>
+                      onChange={(codice) =>
                         setNuovaPersona((p) => ({
                           ...p,
-                          comune_nascita_codice: value,
+                          comune_nascita_codice: codice,
                         }))
                       }
-                    >
-                      <SelectTrigger id="comune_nascita">
-                        <SelectValue placeholder="Seleziona…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={NONE_VALUE}>Nessuno</SelectItem>
-                        {comuni.data?.map((comune) => (
-                          <SelectItem
-                            key={comune.codice}
-                            value={String(comune.codice)}
-                          >
-                            {comune.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      label="Comune di nascita"
+                    />
                   </div>
                 </div>
               ) : (

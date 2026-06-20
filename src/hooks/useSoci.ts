@@ -12,7 +12,6 @@ export const SOCI_KEY = ["soci"] as const
 export interface CreateSocioInput {
   codice_socio: string
   data_ingresso: string
-  attivo: boolean
   strumento_codice?: number | null
   ruolo_banda_codice?: number | null
   persona_id: number

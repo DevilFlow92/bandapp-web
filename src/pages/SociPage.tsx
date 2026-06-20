@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useSoci } from "@/hooks/useSoci"
+import { useIscrizioni } from "@/hooks/useIscrizioni"
 import { useBanda } from "@/context/BandaContext"
 import type { Socio } from "@/types/socio"
 import { Button } from "@/components/ui/button"
@@ -18,6 +19,9 @@ import SocioFormDialog from "@/components/soci/SocioFormDialog"
 import DeleteSocioDialog from "@/components/soci/DeleteSocioDialog"
 
 const PAGE_SIZE = 20
+const CURRENT_YEAR = new Date().getFullYear()
+/** Stato "Annullata" — these iscrizioni do not count towards an active socio. */
+const STATO_ANNULLATA = 3
 
 export default function SociPage() {
   const { banda } = useBanda()
@@ -28,6 +32,19 @@ export default function SociPage() {
     banda!.codice,
     !!banda
   )
+  // A socio is "active" when they have a non-cancelled iscrizione for the
+  // current year. Iscrizioni are scoped to the banda via their soci.
+  const { data: iscrizioniData } = useIscrizioni(1, 100, undefined, CURRENT_YEAR)
+  const activeSocioIds = useMemo(() => {
+    const set = new Set<number>()
+    for (const iscrizione of iscrizioniData?.items ?? []) {
+      if (iscrizione.stato_iscrizione_codice !== STATO_ANNULLATA) {
+        set.add(iscrizione.socio_id)
+      }
+    }
+    return set
+  }, [iscrizioniData])
+
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Socio | null>(null)
   const [deleting, setDeleting] = useState<Socio | null>(null)
@@ -106,9 +123,21 @@ export default function SociPage() {
                   <TableCell>{socio.strumento?.descrizione ?? "—"}</TableCell>
                   <TableCell>{socio.ruolo_banda?.descrizione ?? "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={socio.attivo ? "default" : "secondary"}>
-                      {socio.attivo ? "Attivo" : "Inattivo"}
-                    </Badge>
+                    {activeSocioIds.has(socio.id) ? (
+                      <Badge
+                        variant="outline"
+                        className="border-transparent bg-green-100 text-green-800"
+                      >
+                        Attivo
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="border-transparent bg-gray-100 text-gray-700"
+                      >
+                        Inattivo
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

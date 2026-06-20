@@ -46,7 +46,6 @@ interface SocioFormDialogProps {
 interface DatiSocioState {
   codice_socio: string
   data_ingresso: string
-  attivo: boolean
   strumento_codice: string
   ruolo_banda_codice: string
 }
@@ -54,7 +53,6 @@ interface DatiSocioState {
 const emptyDatiSocio: DatiSocioState = {
   codice_socio: "",
   data_ingresso: "",
-  attivo: true,
   strumento_codice: NONE_VALUE,
   ruolo_banda_codice: NONE_VALUE,
 }
@@ -106,7 +104,6 @@ export default function SocioFormDialog({
       setDati({
         codice_socio: socio.codice_socio,
         data_ingresso: socio.data_ingresso?.slice(0, 10) ?? "",
-        attivo: socio.attivo,
         strumento_codice:
           socio.strumento_codice != null
             ? String(socio.strumento_codice)
@@ -144,7 +141,6 @@ export default function SocioFormDialog({
           input: {
             codice_socio: dati.codice_socio,
             data_ingresso: dati.data_ingresso,
-            attivo: dati.attivo,
             strumento_codice,
             ruolo_banda_codice,
           },
@@ -178,7 +174,6 @@ export default function SocioFormDialog({
         await createSocio.mutateAsync({
           codice_socio: dati.codice_socio,
           data_ingresso: dati.data_ingresso,
-          attivo: dati.attivo,
           strumento_codice,
           ruolo_banda_codice,
           persona_id,
@@ -445,18 +440,6 @@ export default function SocioFormDialog({
                 </Select>
               </div>
             </div>
-
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-input"
-                checked={dati.attivo}
-                onChange={(e) =>
-                  setDati((d) => ({ ...d, attivo: e.target.checked }))
-                }
-              />
-              Attivo
-            </label>
           </fieldset>
 
           <DialogFooter>

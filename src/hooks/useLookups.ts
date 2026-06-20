@@ -4,15 +4,23 @@ import type { Lookup, PagedResponse } from "@/types/socio"
 
 const LOOKUP_STALE_TIME = 10 * 60 * 1000
 
-/** Loads the stati lookup (up to 100 entries). */
+/**
+ * Loads the full stati lookup. There are ~243 stati spread over 3 pages, so we
+ * fetch all three pages in parallel and merge them. Stati never change, so this
+ * one-time cost is cached for the session.
+ */
 export function useStati() {
   return useQuery({
     queryKey: ["lookup", "stati"],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<Lookup>>("/stati/", {
-        params: { page_size: 100 },
-      })
-      return data.items
+      const pages = await Promise.all(
+        [1, 2, 3].map((page) =>
+          api.get<PagedResponse<Lookup>>("/stati/", {
+            params: { page, page_size: 100 },
+          })
+        )
+      )
+      return pages.flatMap((res) => res.data.items)
     },
     staleTime: LOOKUP_STALE_TIME,
   })

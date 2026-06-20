@@ -39,14 +39,12 @@ export default function ComuneSelect({
   const province = useProvince(regioneCodice)
   const comuni = useComuni(provinciaCodice)
 
-  // Auto-select ITALIA once the stati lookup resolves (the common default).
+  // Auto-select Italia on mount as the common default. Italia has the stable
+  // codice 113 (it lives on page 2 of the stati lookup, which useStati loads
+  // in full), so we set it directly rather than searching the list by name.
   useEffect(() => {
-    if (statoCodice != null || !stati.data) return
-    const italia = stati.data.find(
-      (s) => s.descrizione.toLowerCase() === "italia"
-    )
-    if (italia) setStatoCodice(italia.codice)
-  }, [stati.data, statoCodice])
+    setStatoCodice(113)
+  }, [])
 
   // TODO: reverse-lookup for edit mode. We have no GET /comuni/{codice}
   // endpoint, so given only `value` we cannot walk back up to its provincia,

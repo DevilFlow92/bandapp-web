@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import { Loader2 } from "lucide-react"
 import {
+  type CreateRuoloInput,
   useCreateRuolo,
   usePermessi,
   useUpdateRuolo,
@@ -116,11 +117,16 @@ export default function RuoloFormDialog({
         })
         toast({ title: "Ruolo aggiornato" })
       } else {
-        await createRuolo.mutateAsync({
+        const payload: CreateRuoloInput = {
           nome: form.nome.trim(),
           descrizione: form.descrizione.trim() || null,
+          // Roles created here are global: send an explicit null, never 0 or "",
+          // which the backend would treat as a (non-existent) banda FK → 409.
+          banda_codice: null,
+          // permessi must be a string[] of codici, e.g. ["anagrafica:read"].
           permessi: form.permessi,
-        })
+        }
+        await createRuolo.mutateAsync(payload)
         toast({ title: "Ruolo creato" })
       }
       onOpenChange(false)

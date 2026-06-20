@@ -16,7 +16,6 @@ export interface CreateSocioInput {
   strumento_codice?: number | null
   ruolo_banda_codice?: number | null
   persona_id: number
-  banda_codice: number
 }
 
 export type UpdateSocioInput = Partial<Omit<CreateSocioInput, "persona_id">>

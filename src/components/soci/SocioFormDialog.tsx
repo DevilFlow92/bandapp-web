@@ -186,7 +186,6 @@ export default function SocioFormDialog({
           strumento_codice,
           ruolo_banda_codice,
           persona_id,
-          banda_codice: banda!.codice,
         })
         toast({ title: "Socio creato" })
       }

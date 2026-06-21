@@ -19,11 +19,7 @@ interface DeleteRuoloDialogProps {
   ruolo: Ruolo | null
 }
 
-export default function DeleteRuoloDialog({
-  open,
-  onOpenChange,
-  ruolo,
-}: DeleteRuoloDialogProps) {
+export default function DeleteRuoloDialog({ open, onOpenChange, ruolo }: DeleteRuoloDialogProps) {
   const { toast } = useToast()
   const deleteRuolo = useDeleteRuolo()
 
@@ -68,9 +64,7 @@ export default function DeleteRuoloDialog({
             onClick={handleDelete}
             disabled={deleteRuolo.isPending}
           >
-            {deleteRuolo.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {deleteRuolo.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Elimina
           </Button>
         </DialogFooter>

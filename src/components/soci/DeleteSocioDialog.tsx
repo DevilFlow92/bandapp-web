@@ -19,11 +19,7 @@ interface DeleteSocioDialogProps {
   socio: Socio | null
 }
 
-export default function DeleteSocioDialog({
-  open,
-  onOpenChange,
-  socio,
-}: DeleteSocioDialogProps) {
+export default function DeleteSocioDialog({ open, onOpenChange, socio }: DeleteSocioDialogProps) {
   const { toast } = useToast()
   const deleteSocio = useDeleteSocio()
 
@@ -70,9 +66,7 @@ export default function DeleteSocioDialog({
             onClick={handleDelete}
             disabled={deleteSocio.isPending}
           >
-            {deleteSocio.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {deleteSocio.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Rimuovi
           </Button>
         </DialogFooter>

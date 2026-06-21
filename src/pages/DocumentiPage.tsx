@@ -1,16 +1,6 @@
 import { useState } from "react"
-import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Plus,
-  Trash2,
-} from "lucide-react"
-import {
-  downloadDocumento,
-  useDocumenti,
-  useLookupTipiDocumento,
-} from "@/hooks/useDocumenti"
+import { ChevronLeft, ChevronRight, Download, Plus, Trash2 } from "lucide-react"
+import { downloadDocumento, useDocumenti, useLookupTipiDocumento } from "@/hooks/useDocumenti"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import type { Documento } from "@/types/documento"
@@ -66,11 +56,7 @@ export default function DocumentiPage() {
 
   const tipoDocumentoCodice = tipoFilter === ALL ? undefined : Number(tipoFilter)
 
-  const { data, isLoading, isError } = useDocumenti(
-    page,
-    PAGE_SIZE,
-    tipoDocumentoCodice
-  )
+  const { data, isLoading, isError } = useDocumenti(page, PAGE_SIZE, tipoDocumentoCodice)
   const tipiDocumento = useLookupTipiDocumento()
 
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -152,19 +138,13 @@ export default function DocumentiPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento dei documenti.
                 </TableCell>
               </TableRow>
             ) : documenti.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                   Nessun documento caricato
                 </TableCell>
               </TableRow>
@@ -180,9 +160,7 @@ export default function DocumentiPage() {
                       {documento.nome}
                     </button>
                   </TableCell>
-                  <TableCell>
-                    {documento.tipo_documento?.descrizione ?? "—"}
-                  </TableCell>
+                  <TableCell>{documento.tipo_documento?.descrizione ?? "—"}</TableCell>
                   <TableCell>{formatBytes(documento.dimensione_bytes)}</TableCell>
                   <TableCell>{formatDateTime(documento.caricato_il)}</TableCell>
                   <TableCell className="text-muted-foreground">

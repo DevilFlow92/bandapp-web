@@ -2,10 +2,7 @@ import { useMemo, useState, type ReactNode } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Plus } from "lucide-react"
 import { useSocio } from "@/hooks/useSoci"
-import {
-  useIscrizioni,
-  useLookupStatiIscrizione,
-} from "@/hooks/useIscrizioni"
+import { useIscrizioni, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -62,10 +59,7 @@ export default function SocioDetailPage() {
 
   const { data: socio, isLoading, isError } = useSocio(socioId)
 
-  const {
-    data: iscrizioniData,
-    isLoading: iscrizioniLoading,
-  } = useIscrizioni(1, 50, socioId)
+  const { data: iscrizioniData, isLoading: iscrizioniLoading } = useIscrizioni(1, 50, socioId)
 
   const statiQuery = useLookupStatiIscrizione()
   const statoById = useMemo(() => {
@@ -77,20 +71,14 @@ export default function SocioDetailPage() {
   // Show the storico most-recent first.
   const iscrizioni = useMemo(() => {
     const items = [...(iscrizioniData?.items ?? [])]
-    items.sort(
-      (a, b) =>
-        b.anno - a.anno ||
-        b.data_iscrizione.localeCompare(a.data_iscrizione)
-    )
+    items.sort((a, b) => b.anno - a.anno || b.data_iscrizione.localeCompare(a.data_iscrizione))
     return items
   }, [iscrizioniData])
 
   const [formOpen, setFormOpen] = useState(false)
 
   const persona = socio?.persona
-  const fullName = persona
-    ? `${persona.nome} ${persona.cognome}`.trim()
-    : ""
+  const fullName = persona ? `${persona.nome} ${persona.cognome}`.trim() : ""
 
   const backButton = (
     <Button
@@ -142,22 +130,10 @@ export default function SocioDetailPage() {
           ) : (
             <dl className="grid grid-cols-2 gap-4">
               <Field label="Codice Socio" value={socio?.codice_socio ?? "—"} />
-              <Field
-                label="Strumento"
-                value={socio?.strumento?.descrizione ?? "—"}
-              />
-              <Field
-                label="Ruolo in Banda"
-                value={socio?.ruolo_banda?.descrizione ?? "—"}
-              />
-              <Field
-                label="Codice Fiscale"
-                value={persona?.codice_fiscale ?? "—"}
-              />
-              <Field
-                label="Data di Nascita"
-                value={formatDate(persona?.data_nascita)}
-              />
+              <Field label="Strumento" value={socio?.strumento?.descrizione ?? "—"} />
+              <Field label="Ruolo in Banda" value={socio?.ruolo_banda?.descrizione ?? "—"} />
+              <Field label="Codice Fiscale" value={persona?.codice_fiscale ?? "—"} />
+              <Field label="Data di Nascita" value={formatDate(persona?.data_nascita)} />
               <Field
                 label="Comune di Nascita"
                 value={persona?.comune_nascita?.descrizione ?? "—"}
@@ -171,11 +147,7 @@ export default function SocioDetailPage() {
       <Card className="lg:col-span-2">
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Iscrizioni</CardTitle>
-          <Button
-            size="sm"
-            onClick={() => setFormOpen(true)}
-            disabled={isLoading || !socio}
-          >
+          <Button size="sm" onClick={() => setFormOpen(true)} disabled={isLoading || !socio}>
             <Plus className="mr-2 h-4 w-4" />
             Nuova iscrizione
           </Button>
@@ -205,35 +177,21 @@ export default function SocioDetailPage() {
                   ))
                 ) : iscrizioni.length === 0 ? (
                   <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="py-12 text-center text-muted-foreground"
-                    >
+                    <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
                       Nessuna iscrizione registrata
                     </TableCell>
                   </TableRow>
                 ) : (
                   iscrizioni.map((iscrizione) => {
-                    const descrizione = statoById.get(
-                      iscrizione.stato_iscrizione_codice
-                    )
+                    const descrizione = statoById.get(iscrizione.stato_iscrizione_codice)
                     return (
                       <TableRow key={iscrizione.id}>
-                        <TableCell className="font-medium">
-                          {iscrizione.anno}
-                        </TableCell>
-                        <TableCell>
-                          {formatDate(iscrizione.data_iscrizione)}
-                        </TableCell>
-                        <TableCell>
-                          {formatQuota(iscrizione.quota_partecipazione)}
-                        </TableCell>
+                        <TableCell className="font-medium">{iscrizione.anno}</TableCell>
+                        <TableCell>{formatDate(iscrizione.data_iscrizione)}</TableCell>
+                        <TableCell>{formatQuota(iscrizione.quota_partecipazione)}</TableCell>
                         <TableCell>
                           {descrizione ? (
-                            <Badge
-                              variant="outline"
-                              className={statoBadgeClass(descrizione)}
-                            >
+                            <Badge variant="outline" className={statoBadgeClass(descrizione)}>
                               {descrizione}
                             </Badge>
                           ) : (

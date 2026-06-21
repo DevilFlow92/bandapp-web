@@ -73,9 +73,7 @@ export default function DeleteIscrizioneDialog({
             onClick={handleDelete}
             disabled={deleteIscrizione.isPending}
           >
-            {deleteIscrizione.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {deleteIscrizione.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Elimina
           </Button>
         </DialogFooter>

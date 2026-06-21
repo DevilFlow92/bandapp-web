@@ -1,9 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Loader2 } from "lucide-react"
-import {
-  useLookupTipiDocumento,
-  useUploadDocumento,
-} from "@/hooks/useDocumenti"
+import { useLookupTipiDocumento, useUploadDocumento } from "@/hooks/useDocumenti"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
@@ -32,10 +29,7 @@ interface UploadDocumentoDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-export default function UploadDocumentoDialog({
-  open,
-  onOpenChange,
-}: UploadDocumentoDialogProps) {
+export default function UploadDocumentoDialog({ open, onOpenChange }: UploadDocumentoDialogProps) {
   const { toast } = useToast()
   const upload = useUploadDocumento()
   const tipiDocumento = useLookupTipiDocumento()

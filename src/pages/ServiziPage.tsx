@@ -1,12 +1,5 @@
 import { Fragment, useState } from "react"
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useServizi } from "@/hooks/useServizi"
 import { useRicevute } from "@/hooks/useRicevute"
 import { useBanda } from "@/context/BandaContext"
@@ -75,13 +68,7 @@ function formatImporto(importo: number): string {
 }
 
 /** Inline sub-row listing the ricevute of a single servizio. */
-function ServizioRicevutePanel({
-  servizioId,
-  colSpan,
-}: {
-  servizioId: number
-  colSpan: number
-}) {
+function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; colSpan: number }) {
   const { data, isLoading, isError } = useRicevute(servizioId)
   const [formOpen, setFormOpen] = useState(false)
   const [deleting, setDeleting] = useState<Ricevuta | null>(null)
@@ -124,19 +111,13 @@ function ServizioRicevutePanel({
                   ))
                 ) : isError ? (
                   <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="py-8 text-center text-muted-foreground"
-                    >
+                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                       Errore nel caricamento delle ricevute.
                     </TableCell>
                   </TableRow>
                 ) : ricevute.length === 0 ? (
                   <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="py-8 text-center text-muted-foreground"
-                    >
+                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                       Nessuna ricevuta per questo servizio
                     </TableCell>
                   </TableRow>
@@ -170,11 +151,7 @@ function ServizioRicevutePanel({
           </div>
         </div>
 
-        <RicevutaFormDialog
-          servizioId={servizioId}
-          open={formOpen}
-          onOpenChange={setFormOpen}
-        />
+        <RicevutaFormDialog servizioId={servizioId} open={formOpen} onOpenChange={setFormOpen} />
         <DeleteRicevutaDialog
           open={deleting !== null}
           onOpenChange={(open) => {
@@ -192,13 +169,7 @@ export default function ServiziPage() {
   const [page, setPage] = useState(1)
   const [yearFilter, setYearFilter] = useState<string>(ALL_YEARS)
   const anno = yearFilter === ALL_YEARS ? undefined : Number(yearFilter)
-  const { data, isLoading, isError } = useServizi(
-    page,
-    PAGE_SIZE,
-    banda!.codice,
-    anno,
-    !!banda
-  )
+  const { data, isLoading, isError } = useServizi(page, PAGE_SIZE, banda!.codice, anno, !!banda)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Servizio | null>(null)
@@ -206,8 +177,7 @@ export default function ServiziPage() {
   // Only one servizio's ricevute panel is expanded at a time.
   const [expandedId, setExpandedId] = useState<number | null>(null)
 
-  const toggleExpanded = (id: number) =>
-    setExpandedId((current) => (current === id ? null : id))
+  const toggleExpanded = (id: number) => setExpandedId((current) => (current === id ? null : id))
 
   const servizi = data?.items ?? []
   const totalPages = data?.meta.total_pages ?? 1
@@ -282,19 +252,13 @@ export default function ServiziPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento dei servizi.
                 </TableCell>
               </TableRow>
             ) : servizi.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                   Nessun servizio trovato
                 </TableCell>
               </TableRow>
@@ -319,16 +283,10 @@ export default function ServiziPage() {
                           )}
                         </Button>
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {servizio.descrizione_servizio}
-                      </TableCell>
+                      <TableCell className="font-medium">{servizio.descrizione_servizio}</TableCell>
                       <TableCell>{servizio.anno}</TableCell>
-                      <TableCell>
-                        {formatDataServizio(servizio.data_servizio)}
-                      </TableCell>
-                      <TableCell>
-                        {formatIndirizzoServizio(servizio.indirizzo)}
-                      </TableCell>
+                      <TableCell>{formatDataServizio(servizio.data_servizio)}</TableCell>
+                      <TableCell>{formatIndirizzoServizio(servizio.indirizzo)}</TableCell>
                       <TableCell>{formatNote(servizio.note)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -351,12 +309,7 @@ export default function ServiziPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                    {expanded && (
-                      <ServizioRicevutePanel
-                        servizioId={servizio.id}
-                        colSpan={7}
-                      />
-                    )}
+                    {expanded && <ServizioRicevutePanel servizioId={servizio.id} colSpan={7} />}
                   </Fragment>
                 )
               })
@@ -391,11 +344,7 @@ export default function ServiziPage() {
         </div>
       </div>
 
-      <ServizioFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        servizio={editing}
-      />
+      <ServizioFormDialog open={formOpen} onOpenChange={setFormOpen} servizio={editing} />
       <DeleteServizioDialog
         open={deleting !== null}
         onOpenChange={(open) => {

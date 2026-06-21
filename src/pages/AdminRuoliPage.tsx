@@ -73,19 +73,13 @@ export default function AdminRuoliPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento dei ruoli.
                 </TableCell>
               </TableRow>
             ) : ruoli.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
                   Nessun ruolo trovato
                 </TableCell>
               </TableRow>
@@ -94,13 +88,9 @@ export default function AdminRuoliPage() {
                 <TableRow key={ruolo.id}>
                   <TableCell className="font-medium">{ruolo.nome}</TableCell>
                   <TableCell>{ruolo.descrizione ?? "—"}</TableCell>
+                  <TableCell>{ruolo.banda_codice ?? "Globale"}</TableCell>
                   <TableCell>
-                    {ruolo.banda_codice ?? "Globale"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {ruolo.permessi.length} permessi
-                    </Badge>
+                    <Badge variant="secondary">{ruolo.permessi.length} permessi</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
@@ -155,11 +145,7 @@ export default function AdminRuoliPage() {
         </div>
       </div>
 
-      <RuoloFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        ruolo={editing}
-      />
+      <RuoloFormDialog open={formOpen} onOpenChange={setFormOpen} ruolo={editing} />
       <DeleteRuoloDialog
         open={deleting !== null}
         onOpenChange={(open) => {

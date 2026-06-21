@@ -36,7 +36,7 @@ function nowLocal(): string {
   const d = new Date()
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours()
+    d.getHours(),
   )}:${pad(d.getMinutes())}`
 }
 
@@ -77,9 +77,7 @@ export default function RicevutaFormDialog({
     const q = search.trim().toLowerCase()
     if (!q) return items
     return items.filter((e) => {
-      const full = `${e.persona?.nome ?? ""} ${e.persona?.cognome ?? ""} ${
-        e.codice_esterno
-      }`
+      const full = `${e.persona?.nome ?? ""} ${e.persona?.cognome ?? ""} ${e.codice_esterno}`
         .trim()
         .toLowerCase()
       return full.includes(q)
@@ -201,9 +199,7 @@ export default function RicevutaFormDialog({
                 step="0.01"
                 required
                 value={form.importo}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, importo: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, importo: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -213,9 +209,7 @@ export default function RicevutaFormDialog({
                 type="datetime-local"
                 required
                 value={form.data_ricevuta}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, data_ricevuta: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, data_ricevuta: e.target.value }))}
               />
             </div>
           </div>
@@ -227,9 +221,7 @@ export default function RicevutaFormDialog({
               rows={3}
               className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               value={form.note_in_stampa}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, note_in_stampa: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, note_in_stampa: e.target.value }))}
             />
           </div>
 
@@ -240,9 +232,7 @@ export default function RicevutaFormDialog({
               rows={3}
               className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               value={form.note_fuori_stampa}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, note_fuori_stampa: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, note_fuori_stampa: e.target.value }))}
             />
           </div>
 

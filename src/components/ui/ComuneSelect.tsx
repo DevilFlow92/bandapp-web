@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react"
-import {
-  useComuni,
-  useProvince,
-  useRegioni,
-  useStati,
-} from "@/hooks/useLookups"
+import { useComuni, useProvince, useRegioni, useStati } from "@/hooks/useLookups"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -25,11 +20,7 @@ interface ComuneSelectProps {
  * populated from its own lookup and stays disabled until the level above it
  * has been chosen. Selecting a comune calls `onChange` with its codice.
  */
-export default function ComuneSelect({
-  value,
-  onChange,
-  label,
-}: ComuneSelectProps) {
+export default function ComuneSelect({ value, onChange, label }: ComuneSelectProps) {
   const [statoCodice, setStatoCodice] = useState<number | null>(null)
   const [regioneCodice, setRegioneCodice] = useState<number>()
   const [provinciaCodice, setProvinciaCodice] = useState<number>()
@@ -81,8 +72,7 @@ export default function ComuneSelect({
   // In edit mode `value` may not be present in the loaded comuni list (we only
   // load the comuni of the selected provincia). Render a synthetic item so the
   // trigger can still display the incoming codice.
-  const valueMissingFromList =
-    value != null && !comuni.data?.some((c) => c.codice === value)
+  const valueMissingFromList = value != null && !comuni.data?.some((c) => c.codice === value)
 
   return (
     <div className="space-y-3">
@@ -110,10 +100,7 @@ export default function ComuneSelect({
       </div>
 
       <div className="space-y-2">
-        <Label
-          htmlFor="comune-regione"
-          className="text-xs text-muted-foreground"
-        >
+        <Label htmlFor="comune-regione" className="text-xs text-muted-foreground">
           Regione
         </Label>
         <Select
@@ -135,10 +122,7 @@ export default function ComuneSelect({
       </div>
 
       <div className="space-y-2">
-        <Label
-          htmlFor="comune-provincia"
-          className="text-xs text-muted-foreground"
-        >
+        <Label htmlFor="comune-provincia" className="text-xs text-muted-foreground">
           Provincia
         </Label>
         <Select
@@ -160,10 +144,7 @@ export default function ComuneSelect({
       </div>
 
       <div className="space-y-2">
-        <Label
-          htmlFor="comune-comune"
-          className="text-xs text-muted-foreground"
-        >
+        <Label htmlFor="comune-comune" className="text-xs text-muted-foreground">
           Comune
         </Label>
         <Select
@@ -175,9 +156,7 @@ export default function ComuneSelect({
             <SelectValue placeholder="Seleziona comune…" />
           </SelectTrigger>
           <SelectContent>
-            {valueMissingFromList && (
-              <SelectItem value={String(value)}>{value}</SelectItem>
-            )}
+            {valueMissingFromList && <SelectItem value={String(value)}>{value}</SelectItem>}
             {comuni.data?.map((c) => (
               <SelectItem key={c.codice} value={String(c.codice)}>
                 {c.descrizione}

@@ -1,5 +1,7 @@
 # bandapp-web
 
+[![CI](https://github.com/DevilFlow92/bandapp-web/actions/workflows/ci.yml/badge.svg)](https://github.com/DevilFlow92/bandapp-web/actions/workflows/ci.yml)
+
 > Management dashboard for music associations — members, services, enrollments, sheet music, documents and accounting in one place.
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)

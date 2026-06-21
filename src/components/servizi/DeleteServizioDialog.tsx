@@ -77,9 +77,7 @@ export default function DeleteServizioDialog({
             onClick={handleDelete}
             disabled={deleteServizio.isPending}
           >
-            {deleteServizio.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {deleteServizio.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Elimina
           </Button>
         </DialogFooter>

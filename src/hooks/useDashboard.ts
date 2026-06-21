@@ -13,10 +13,7 @@ export interface DashboardKPI {
 const ISCRITTO_NON_ATTIVO = 3
 
 /** Fetches a single page and returns the server-reported total item count. */
-async function fetchTotal(
-  path: string,
-  params: Record<string, number>
-): Promise<number> {
+async function fetchTotal(path: string, params: Record<string, number>): Promise<number> {
   const { data } = await api.get<PagedResponse<unknown>>(path, {
     params: { ...params, page_size: 1 },
   })
@@ -33,30 +30,27 @@ export function useDashboardKPI(bandaCodice: number) {
   const query = useQuery({
     queryKey: ["dashboard", "kpi", bandaCodice, currentYear],
     queryFn: async (): Promise<DashboardKPI> => {
-      const [sociTotali, sociAttivi, serviziAnno, iscrizioniAnno] =
-        await Promise.all([
-          fetchTotal("/soci/", { banda_codice: bandaCodice }),
-          // Soci attivi: distinct soci with a non-cancelled iscrizione this year.
-          api
-            .get<PagedResponse<Iscrizione>>("/iscrizioni/", {
-              params: { anno: currentYear, page_size: 100 },
-            })
-            .then(({ data }) => {
-              const attivi = new Set(
-                data.items
-                  .filter(
-                    (i) => i.stato_iscrizione_codice !== ISCRITTO_NON_ATTIVO
-                  )
-                  .map((i) => i.socio_id)
-              )
-              return attivi.size
-            }),
-          fetchTotal("/servizi/", {
-            banda_codice: bandaCodice,
-            anno: currentYear,
+      const [sociTotali, sociAttivi, serviziAnno, iscrizioniAnno] = await Promise.all([
+        fetchTotal("/soci/", { banda_codice: bandaCodice }),
+        // Soci attivi: distinct soci with a non-cancelled iscrizione this year.
+        api
+          .get<PagedResponse<Iscrizione>>("/iscrizioni/", {
+            params: { anno: currentYear, page_size: 100 },
+          })
+          .then(({ data }) => {
+            const attivi = new Set(
+              data.items
+                .filter((i) => i.stato_iscrizione_codice !== ISCRITTO_NON_ATTIVO)
+                .map((i) => i.socio_id),
+            )
+            return attivi.size
           }),
-          fetchTotal("/iscrizioni/", { anno: currentYear }),
-        ])
+        fetchTotal("/servizi/", {
+          banda_codice: bandaCodice,
+          anno: currentYear,
+        }),
+        fetchTotal("/iscrizioni/", { anno: currentYear }),
+      ])
 
       return { sociTotali, sociAttivi, serviziAnno, iscrizioniAnno }
     },

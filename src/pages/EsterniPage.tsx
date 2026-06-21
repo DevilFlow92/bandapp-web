@@ -27,12 +27,7 @@ function formatTariffa(value: number | null): string {
 export default function EsterniPage() {
   const { banda } = useBanda()
   const [page, setPage] = useState(1)
-  const { data, isLoading, isError } = useEsterni(
-    page,
-    PAGE_SIZE,
-    banda!.codice,
-    !!banda
-  )
+  const { data, isLoading, isError } = useEsterni(page, PAGE_SIZE, banda!.codice, !!banda)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Esterno | null>(null)
@@ -88,19 +83,13 @@ export default function EsterniPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell
-                  colSpan={8}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento degli esterni.
                 </TableCell>
               </TableRow>
             ) : esterni.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={8}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
                   Nessun esterno trovato
                 </TableCell>
               </TableRow>
@@ -171,11 +160,7 @@ export default function EsterniPage() {
         </div>
       </div>
 
-      <EsternoFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        esterno={editing}
-      />
+      <EsternoFormDialog open={formOpen} onOpenChange={setFormOpen} esterno={editing} />
       <DeleteEsternoDialog
         open={deleting !== null}
         onOpenChange={(open) => {

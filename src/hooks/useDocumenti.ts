@@ -8,17 +8,12 @@ export const DOCUMENTI_KEY = ["documenti"] as const
 /**
  * Lists documenti with pagination, optionally filtered by tipo documento.
  */
-export function useDocumenti(
-  page: number,
-  pageSize: number,
-  tipoDocumentoCodice?: number
-) {
+export function useDocumenti(page: number, pageSize: number, tipoDocumentoCodice?: number) {
   return useQuery({
     queryKey: [...DOCUMENTI_KEY, page, pageSize, tipoDocumentoCodice ?? null],
     queryFn: async () => {
       const params: Record<string, number> = { page, page_size: pageSize }
-      if (tipoDocumentoCodice !== undefined)
-        params.tipo_documento_codice = tipoDocumentoCodice
+      if (tipoDocumentoCodice !== undefined) params.tipo_documento_codice = tipoDocumentoCodice
       const { data } = await api.get<PagedResponse<Documento>>("/documenti/", {
         params,
       })
@@ -41,16 +36,11 @@ export interface UploadDocumentoInput {
 export function useUploadDocumento() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      file,
-      tipo_documento_codice,
-      note,
-    }: UploadDocumentoInput) => {
+    mutationFn: async ({ file, tipo_documento_codice, note }: UploadDocumentoInput) => {
       const formData = new FormData()
       formData.append("file", file)
       const params: Record<string, string | number> = {}
-      if (tipo_documento_codice !== undefined)
-        params.tipo_documento_codice = tipo_documento_codice
+      if (tipo_documento_codice !== undefined) params.tipo_documento_codice = tipo_documento_codice
       if (note && note.trim()) params.note = note.trim()
       const { data } = await api.post<Documento>("/documenti/", formData, {
         params,
@@ -77,10 +67,7 @@ export function useDeleteDocumento() {
 }
 
 /** Downloads a documento via an authenticated (cookie) request and saves it. */
-export async function downloadDocumento(
-  id: number,
-  nome: string
-): Promise<void> {
+export async function downloadDocumento(id: number, nome: string): Promise<void> {
   const { data } = await api.get<Blob>(`/documenti/${id}/download`, {
     responseType: "blob",
   })
@@ -99,10 +86,9 @@ export function useLookupTipiDocumento() {
   return useQuery({
     queryKey: ["lookup", "tipi-documento"],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<TipoDocumento>>(
-        "/tipi-documento/",
-        { params: { page_size: 20 } }
-      )
+      const { data } = await api.get<PagedResponse<TipoDocumento>>("/tipi-documento/", {
+        params: { page_size: 20 },
+      })
       return data.items
     },
     staleTime: 10 * 60 * 1000,

@@ -1,17 +1,6 @@
 import { useState } from "react"
-import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react"
-import {
-  downloadDocumento,
-  useLookupTipiSpartito,
-  useSpartiti,
-} from "@/hooks/useSpartiti"
+import { ChevronLeft, ChevronRight, Download, Pencil, Plus, Trash2 } from "lucide-react"
+import { downloadDocumento, useLookupTipiSpartito, useSpartiti } from "@/hooks/useSpartiti"
 import { useLookupStrumenti } from "@/hooks/useSoci"
 import { useBanda } from "@/context/BandaContext"
 import { useToast } from "@/hooks/use-toast"
@@ -42,9 +31,7 @@ const PAGE_SIZE = 20
 const ALL = "all"
 
 function formatPosizione(spartito: Spartito): string {
-  const parts = [spartito.scaffale, spartito.ripiano, spartito.cartella].filter(
-    Boolean
-  )
+  const parts = [spartito.scaffale, spartito.ripiano, spartito.cartella].filter(Boolean)
   return parts.length > 0 ? parts.join(" › ") : "—"
 }
 
@@ -56,15 +43,14 @@ export default function SpartitiPage() {
   const [strumentoFilter, setStrumentoFilter] = useState<string>(ALL)
 
   const tipoSpartitoCode = tipoFilter === ALL ? undefined : Number(tipoFilter)
-  const strumentoCode =
-    strumentoFilter === ALL ? undefined : Number(strumentoFilter)
+  const strumentoCode = strumentoFilter === ALL ? undefined : Number(strumentoFilter)
 
   const { data, isLoading, isError } = useSpartiti(
     page,
     PAGE_SIZE,
     banda!.codice,
     tipoSpartitoCode,
-    strumentoCode
+    strumentoCode,
   )
   const tipiSpartito = useLookupTipiSpartito()
   const strumenti = useLookupStrumenti()
@@ -138,10 +124,7 @@ export default function SpartitiPage() {
           </Select>
         </div>
         <div className="space-y-1">
-          <Label
-            htmlFor="strumento-filter"
-            className="text-sm text-muted-foreground"
-          >
+          <Label htmlFor="strumento-filter" className="text-sm text-muted-foreground">
             Strumento
           </Label>
           <Select value={strumentoFilter} onValueChange={handleStrumentoChange}>
@@ -184,35 +167,23 @@ export default function SpartitiPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento degli spartiti.
                 </TableCell>
               </TableRow>
             ) : spartiti.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
                   Nessuno spartito trovato
                 </TableCell>
               </TableRow>
             ) : (
               spartiti.map((spartito) => (
                 <TableRow key={spartito.id}>
-                  <TableCell className="font-medium">
-                    {spartito.documento?.nome ?? "—"}
-                  </TableCell>
+                  <TableCell className="font-medium">{spartito.documento?.nome ?? "—"}</TableCell>
+                  <TableCell>{spartito.tipo_spartito?.descrizione ?? "—"}</TableCell>
                   <TableCell>
-                    {spartito.tipo_spartito?.descrizione ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    {spartito.strumento
-                      ? spartito.strumento.descrizione
-                      : "Partitura completa"}
+                    {spartito.strumento ? spartito.strumento.descrizione : "Partitura completa"}
                   </TableCell>
                   <TableCell>{formatPosizione(spartito)}</TableCell>
                   <TableCell className="text-right">
@@ -276,11 +247,7 @@ export default function SpartitiPage() {
         </div>
       </div>
 
-      <SpartitoFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        spartito={editing}
-      />
+      <SpartitoFormDialog open={formOpen} onOpenChange={setFormOpen} spartito={editing} />
       <DeleteSpartitoDialog
         open={deleting !== null}
         onOpenChange={(open) => {

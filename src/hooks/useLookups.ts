@@ -17,8 +17,8 @@ export function useStati() {
         [1, 2, 3].map((page) =>
           api.get<PagedResponse<Lookup>>("/stati/", {
             params: { page, page_size: 100 },
-          })
-        )
+          }),
+        ),
       )
       return pages.flatMap((res) => res.data.items)
     },
@@ -78,7 +78,7 @@ export function useComuni(provinciaCodice?: number) {
       if (totalPages <= 1) return first.items
 
       const rest = await Promise.all(
-        Array.from({ length: totalPages - 1 }, (_, i) => fetchPage(i + 2))
+        Array.from({ length: totalPages - 1 }, (_, i) => fetchPage(i + 2)),
       )
       return rest.reduce((acc, page) => acc.concat(page.items), first.items)
     },

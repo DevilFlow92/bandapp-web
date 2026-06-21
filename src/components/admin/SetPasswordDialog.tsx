@@ -22,11 +22,7 @@ interface SetPasswordDialogProps {
   utente: Utente | null
 }
 
-export default function SetPasswordDialog({
-  open,
-  onOpenChange,
-  utente,
-}: SetPasswordDialogProps) {
+export default function SetPasswordDialog({ open, onOpenChange, utente }: SetPasswordDialogProps) {
   const { toast } = useToast()
   const setPassword = useSetPassword()
 
@@ -69,9 +65,7 @@ export default function SetPasswordDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Cambia password</DialogTitle>
-          <DialogDescription>
-            Imposta una nuova password per {utente?.email}.
-          </DialogDescription>
+          <DialogDescription>Imposta una nuova password per {utente?.email}.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -116,9 +110,7 @@ export default function SetPasswordDialog({
               Annulla
             </Button>
             <Button type="submit" disabled={setPassword.isPending}>
-              {setPassword.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {setPassword.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salva
             </Button>
           </DialogFooter>

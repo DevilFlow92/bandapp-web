@@ -23,12 +23,7 @@ export type UpdateIscrizioneInput = Partial<CreateIscrizioneInput>
  * are already scoped to the selected banda, so the endpoint is not filtered by
  * banda directly. Optionally narrowed by socio and/or year.
  */
-export function useIscrizioni(
-  page: number,
-  pageSize: number,
-  socioId?: number,
-  anno?: number
-) {
+export function useIscrizioni(page: number, pageSize: number, socioId?: number, anno?: number) {
   return useQuery({
     queryKey: [...ISCRIZIONI_KEY, page, pageSize, socioId ?? null, anno ?? null],
     queryFn: async () => {
@@ -62,13 +57,7 @@ export function useCreateIscrizione() {
 export function useUpdateIscrizione() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: number
-      input: UpdateIscrizioneInput
-    }) => {
+    mutationFn: async ({ id, input }: { id: number; input: UpdateIscrizioneInput }) => {
       const { data } = await api.patch<Iscrizione>(`/iscrizioni/${id}`, input)
       return data
     },
@@ -96,10 +85,9 @@ export function useLookupStatiIscrizione() {
   return useQuery({
     queryKey: ["lookup", "stati-iscrizione"],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<Lookup>>(
-        "/stati-iscrizione/",
-        { params: { page_size: 20 } }
-      )
+      const { data } = await api.get<PagedResponse<Lookup>>("/stati-iscrizione/", {
+        params: { page_size: 20 },
+      })
       return data.items
     },
     staleTime: 10 * 60 * 1000,

@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
-import {
-  useIscrizioni,
-  useLookupStatiIscrizione,
-} from "@/hooks/useIscrizioni"
+import { useIscrizioni, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
 import { useSoci } from "@/hooks/useSoci"
 import { useBanda } from "@/context/BandaContext"
 import type { Iscrizione } from "@/types/iscrizione"
@@ -83,12 +80,7 @@ export default function IscrizioniPage() {
   const [yearFilter, setYearFilter] = useState<string>(String(CURRENT_YEAR))
   const anno = yearFilter === ALL_YEARS ? undefined : Number(yearFilter)
 
-  const { data, isLoading, isError } = useIscrizioni(
-    page,
-    PAGE_SIZE,
-    undefined,
-    anno
-  )
+  const { data, isLoading, isError } = useIscrizioni(page, PAGE_SIZE, undefined, anno)
 
   // Soci are scoped to the banda and used to resolve socio names for display.
   const sociQuery = useSoci(1, 100, banda!.codice, !!banda)
@@ -182,45 +174,30 @@ export default function IscrizioniPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento delle iscrizioni.
                 </TableCell>
               </TableRow>
             ) : iscrizioni.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                   Nessuna iscrizione trovata
                 </TableCell>
               </TableRow>
             ) : (
               iscrizioni.map((iscrizione) => {
-                const descrizione = statoById.get(
-                  iscrizione.stato_iscrizione_codice
-                )
+                const descrizione = statoById.get(iscrizione.stato_iscrizione_codice)
                 return (
                   <TableRow key={iscrizione.id}>
                     <TableCell className="font-medium">
                       {socioFullName(sociById.get(iscrizione.socio_id))}
                     </TableCell>
                     <TableCell>{iscrizione.anno}</TableCell>
-                    <TableCell>
-                      {formatDate(iscrizione.data_iscrizione)}
-                    </TableCell>
-                    <TableCell>
-                      {formatQuota(iscrizione.quota_partecipazione)}
-                    </TableCell>
+                    <TableCell>{formatDate(iscrizione.data_iscrizione)}</TableCell>
+                    <TableCell>{formatQuota(iscrizione.quota_partecipazione)}</TableCell>
                     <TableCell>
                       {descrizione ? (
-                        <Badge
-                          variant="outline"
-                          className={statoBadgeClass(descrizione)}
-                        >
+                        <Badge variant="outline" className={statoBadgeClass(descrizione)}>
                           {descrizione}
                         </Badge>
                       ) : (
@@ -286,9 +263,7 @@ export default function IscrizioniPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         iscrizione={editing}
-        socioName={
-          editing ? socioFullName(sociById.get(editing.socio_id)) : undefined
-        }
+        socioName={editing ? socioFullName(sociById.get(editing.socio_id)) : undefined}
       />
       <DeleteIscrizioneDialog
         open={deleting !== null}
@@ -296,9 +271,7 @@ export default function IscrizioniPage() {
           if (!open) setDeleting(null)
         }}
         iscrizione={deleting}
-        socioName={
-          deleting ? socioFullName(sociById.get(deleting.socio_id)) : undefined
-        }
+        socioName={deleting ? socioFullName(sociById.get(deleting.socio_id)) : undefined}
       />
     </div>
   )

@@ -1,14 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Loader2 } from "lucide-react"
-import {
-  useCreateEsterno,
-  useUpdateEsterno,
-} from "@/hooks/useEsterni"
-import {
-  useCreatePersona,
-  useLookupStrumenti,
-  useSearchPersone,
-} from "@/hooks/useSoci"
+import { useCreateEsterno, useUpdateEsterno } from "@/hooks/useEsterni"
+import { useCreatePersona, useLookupStrumenti, useSearchPersone } from "@/hooks/useSoci"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useBanda } from "@/context/BandaContext"
@@ -68,11 +61,7 @@ const emptyNuovaPersona = {
   comune_nascita_codice: null as number | null,
 }
 
-export default function EsternoFormDialog({
-  open,
-  onOpenChange,
-  esterno,
-}: EsternoFormDialogProps) {
+export default function EsternoFormDialog({ open, onOpenChange, esterno }: EsternoFormDialogProps) {
   const isEdit = Boolean(esterno)
   const { toast } = useToast()
   const { banda } = useBanda()
@@ -106,14 +95,9 @@ export default function EsternoFormDialog({
       setDati({
         codice_esterno: esterno.codice_esterno,
         specializzazione: esterno.specializzazione ?? "",
-        tariffa_oraria:
-          esterno.tariffa_oraria != null
-            ? String(esterno.tariffa_oraria)
-            : "",
+        tariffa_oraria: esterno.tariffa_oraria != null ? String(esterno.tariffa_oraria) : "",
         strumento_codice:
-          esterno.strumento_codice != null
-            ? String(esterno.strumento_codice)
-            : NONE_VALUE,
+          esterno.strumento_codice != null ? String(esterno.strumento_codice) : NONE_VALUE,
         attivo: esterno.attivo,
       })
     } else {
@@ -121,17 +105,13 @@ export default function EsternoFormDialog({
     }
   }, [open, esterno])
 
-  const isSubmitting =
-    createPersona.isPending ||
-    createEsterno.isPending ||
-    updateEsterno.isPending
+  const isSubmitting = createPersona.isPending || createEsterno.isPending || updateEsterno.isPending
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
 
-    const tariffa_oraria =
-      dati.tariffa_oraria.trim() === "" ? null : Number(dati.tariffa_oraria)
+    const tariffa_oraria = dati.tariffa_oraria.trim() === "" ? null : Number(dati.tariffa_oraria)
     if (tariffa_oraria != null && Number.isNaN(tariffa_oraria)) {
       setError("La tariffa oraria deve essere un numero valido.")
       return
@@ -202,9 +182,7 @@ export default function EsternoFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Modifica esterno" : "Nuovo esterno"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Modifica esterno" : "Nuovo esterno"}</DialogTitle>
           <DialogDescription>
             {isEdit
               ? "Aggiorna i dati dell'esterno."
@@ -256,9 +234,7 @@ export default function EsternoFormDialog({
                     <Input
                       id="nome"
                       value={nuovaPersona.nome}
-                      onChange={(e) =>
-                        setNuovaPersona((p) => ({ ...p, nome: e.target.value }))
-                      }
+                      onChange={(e) => setNuovaPersona((p) => ({ ...p, nome: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -349,8 +325,7 @@ export default function EsternoFormDialog({
                               <Loader2 className="h-4 w-4 animate-spin" />
                               Ricerca in corso…
                             </div>
-                          ) : personeResults.data &&
-                            personeResults.data.length > 0 ? (
+                          ) : personeResults.data && personeResults.data.length > 0 ? (
                             <ul className="divide-y">
                               {personeResults.data.map((persona) => (
                                 <li key={persona.id}>
@@ -363,9 +338,7 @@ export default function EsternoFormDialog({
                                     }}
                                   >
                                     {persona.nome} {persona.cognome}
-                                    {persona.codice_fiscale
-                                      ? ` — ${persona.codice_fiscale}`
-                                      : ""}
+                                    {persona.codice_fiscale ? ` — ${persona.codice_fiscale}` : ""}
                                   </button>
                                 </li>
                               ))}
@@ -394,9 +367,7 @@ export default function EsternoFormDialog({
                   id="codice_esterno"
                   required
                   value={dati.codice_esterno}
-                  onChange={(e) =>
-                    setDati((d) => ({ ...d, codice_esterno: e.target.value }))
-                  }
+                  onChange={(e) => setDati((d) => ({ ...d, codice_esterno: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
@@ -420,28 +391,21 @@ export default function EsternoFormDialog({
                   step="0.01"
                   min="0"
                   value={dati.tariffa_oraria}
-                  onChange={(e) =>
-                    setDati((d) => ({ ...d, tariffa_oraria: e.target.value }))
-                  }
+                  onChange={(e) => setDati((d) => ({ ...d, tariffa_oraria: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="strumento">Strumento *</Label>
                 <Select
                   value={dati.strumento_codice}
-                  onValueChange={(value) =>
-                    setDati((d) => ({ ...d, strumento_codice: value }))
-                  }
+                  onValueChange={(value) => setDati((d) => ({ ...d, strumento_codice: value }))}
                 >
                   <SelectTrigger id="strumento">
                     <SelectValue placeholder="Seleziona…" />
                   </SelectTrigger>
                   <SelectContent>
                     {strumenti.data?.map((strumento) => (
-                      <SelectItem
-                        key={strumento.codice}
-                        value={String(strumento.codice)}
-                      >
+                      <SelectItem key={strumento.codice} value={String(strumento.codice)}>
                         {strumento.descrizione}
                       </SelectItem>
                     ))}
@@ -455,9 +419,7 @@ export default function EsternoFormDialog({
                 type="checkbox"
                 className="h-4 w-4 rounded border-input"
                 checked={dati.attivo}
-                onChange={(e) =>
-                  setDati((d) => ({ ...d, attivo: e.target.checked }))
-                }
+                onChange={(e) => setDati((d) => ({ ...d, attivo: e.target.checked }))}
               />
               Attivo
             </label>

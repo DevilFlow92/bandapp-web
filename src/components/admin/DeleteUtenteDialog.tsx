@@ -68,9 +68,7 @@ export default function DeleteUtenteDialog({
             onClick={handleDelete}
             disabled={deleteUtente.isPending}
           >
-            {deleteUtente.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {deleteUtente.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Elimina
           </Button>
         </DialogFooter>

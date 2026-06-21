@@ -1,11 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type {
-  Lookup,
-  PagedResponse,
-  Persona,
-  Socio,
-} from "@/types/socio"
+import type { Lookup, PagedResponse, Persona, Socio } from "@/types/socio"
 
 export const SOCI_KEY = ["soci"] as const
 
@@ -35,12 +30,7 @@ export interface PersonaSearchParams {
 }
 
 /** Lists soci with server-side pagination, scoped to the selected banda. */
-export function useSoci(
-  page: number,
-  pageSize: number,
-  bandaCodice: number,
-  enabled = true
-) {
+export function useSoci(page: number, pageSize: number, bandaCodice: number, enabled = true) {
   return useQuery({
     queryKey: [...SOCI_KEY, bandaCodice, page, pageSize],
     queryFn: async () => {
@@ -84,13 +74,7 @@ export function useCreateSocio() {
 export function useUpdateSocio() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: number
-      input: UpdateSocioInput
-    }) => {
+    mutationFn: async ({ id, input }: { id: number; input: UpdateSocioInput }) => {
       const { data } = await api.patch<Socio>(`/soci/${id}`, input)
       return data
     },

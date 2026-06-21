@@ -6,13 +6,7 @@ import { getErrorMessage } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -34,7 +28,7 @@ export default function LoginPage() {
       { email, password },
       {
         onSuccess: () => navigate("/", { replace: true }),
-      }
+      },
     )
   }
 
@@ -43,9 +37,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">BandApp</CardTitle>
-          <CardDescription>
-            Accedi al gestionale dell'associazione
-          </CardDescription>
+          <CardDescription>Accedi al gestionale dell'associazione</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -83,14 +75,8 @@ export default function LoginPage() {
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={login.isPending}
-            >
-              {login.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+            <Button type="submit" className="w-full" disabled={login.isPending}>
+              {login.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Accedi
             </Button>
           </CardContent>

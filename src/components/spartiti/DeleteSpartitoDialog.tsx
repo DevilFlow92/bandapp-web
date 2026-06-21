@@ -49,9 +49,7 @@ export default function DeleteSpartitoDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Elimina spartito</DialogTitle>
-          <DialogDescription>
-            Sei sicuro di voler eliminare questo spartito?
-          </DialogDescription>
+          <DialogDescription>Sei sicuro di voler eliminare questo spartito?</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button
@@ -68,9 +66,7 @@ export default function DeleteSpartitoDialog({
             onClick={handleDelete}
             disabled={deleteSpartito.isPending}
           >
-            {deleteSpartito.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {deleteSpartito.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Elimina
           </Button>
         </DialogFooter>

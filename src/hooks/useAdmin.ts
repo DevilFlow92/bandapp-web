@@ -1,11 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type {
-  PagedResponse,
-  Permesso,
-  Ruolo,
-  Utente,
-} from "@/types/admin"
+import type { PagedResponse, Permesso, Ruolo, Utente } from "@/types/admin"
 
 export const UTENTI_KEY = ["utenti"] as const
 export const RUOLI_KEY = ["ruoli"] as const
@@ -72,13 +67,7 @@ export function useCreateUtente() {
 export function useUpdateUtente() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: number
-      input: UpdateUtenteInput
-    }) => {
+    mutationFn: async ({ id, input }: { id: number; input: UpdateUtenteInput }) => {
       const { data } = await api.patch<Utente>(`/utenti/${id}`, input)
       return data
     },
@@ -142,13 +131,7 @@ export function useCreateRuolo() {
 export function useUpdateRuolo() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: number
-      input: UpdateRuoloInput
-    }) => {
+    mutationFn: async ({ id, input }: { id: number; input: UpdateRuoloInput }) => {
       const { data } = await api.patch<Ruolo>(`/ruoli/${id}`, input)
       return data
     },

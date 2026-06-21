@@ -65,11 +65,7 @@ const emptyNuovaPersona = {
   comune_nascita_codice: null as number | null,
 }
 
-export default function SocioFormDialog({
-  open,
-  onOpenChange,
-  socio,
-}: SocioFormDialogProps) {
+export default function SocioFormDialog({ open, onOpenChange, socio }: SocioFormDialogProps) {
   const isEdit = Boolean(socio)
   const { toast } = useToast()
   const { banda } = useBanda()
@@ -105,34 +101,25 @@ export default function SocioFormDialog({
         codice_socio: socio.codice_socio,
         data_ingresso: socio.data_ingresso?.slice(0, 10) ?? "",
         strumento_codice:
-          socio.strumento_codice != null
-            ? String(socio.strumento_codice)
-            : NONE_VALUE,
+          socio.strumento_codice != null ? String(socio.strumento_codice) : NONE_VALUE,
         ruolo_banda_codice:
-          socio.ruolo_banda_codice != null
-            ? String(socio.ruolo_banda_codice)
-            : NONE_VALUE,
+          socio.ruolo_banda_codice != null ? String(socio.ruolo_banda_codice) : NONE_VALUE,
       })
     } else {
       setDati(emptyDatiSocio)
     }
   }, [open, socio])
 
-  const isSubmitting =
-    createPersona.isPending || createSocio.isPending || updateSocio.isPending
+  const isSubmitting = createPersona.isPending || createSocio.isPending || updateSocio.isPending
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
 
     const strumento_codice =
-      dati.strumento_codice === NONE_VALUE
-        ? null
-        : Number(dati.strumento_codice)
+      dati.strumento_codice === NONE_VALUE ? null : Number(dati.strumento_codice)
     const ruolo_banda_codice =
-      dati.ruolo_banda_codice === NONE_VALUE
-        ? null
-        : Number(dati.ruolo_banda_codice)
+      dati.ruolo_banda_codice === NONE_VALUE ? null : Number(dati.ruolo_banda_codice)
 
     try {
       if (isEdit && socio) {
@@ -242,9 +229,7 @@ export default function SocioFormDialog({
                     <Input
                       id="nome"
                       value={nuovaPersona.nome}
-                      onChange={(e) =>
-                        setNuovaPersona((p) => ({ ...p, nome: e.target.value }))
-                      }
+                      onChange={(e) => setNuovaPersona((p) => ({ ...p, nome: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -335,8 +320,7 @@ export default function SocioFormDialog({
                               <Loader2 className="h-4 w-4 animate-spin" />
                               Ricerca in corso…
                             </div>
-                          ) : personeResults.data &&
-                            personeResults.data.length > 0 ? (
+                          ) : personeResults.data && personeResults.data.length > 0 ? (
                             <ul className="divide-y">
                               {personeResults.data.map((persona) => (
                                 <li key={persona.id}>
@@ -349,9 +333,7 @@ export default function SocioFormDialog({
                                     }}
                                   >
                                     {persona.nome} {persona.cognome}
-                                    {persona.codice_fiscale
-                                      ? ` — ${persona.codice_fiscale}`
-                                      : ""}
+                                    {persona.codice_fiscale ? ` — ${persona.codice_fiscale}` : ""}
                                   </button>
                                 </li>
                               ))}
@@ -380,9 +362,7 @@ export default function SocioFormDialog({
                   id="codice_socio"
                   required
                   value={dati.codice_socio}
-                  onChange={(e) =>
-                    setDati((d) => ({ ...d, codice_socio: e.target.value }))
-                  }
+                  onChange={(e) => setDati((d) => ({ ...d, codice_socio: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
@@ -392,18 +372,14 @@ export default function SocioFormDialog({
                   type="date"
                   required
                   value={dati.data_ingresso}
-                  onChange={(e) =>
-                    setDati((d) => ({ ...d, data_ingresso: e.target.value }))
-                  }
+                  onChange={(e) => setDati((d) => ({ ...d, data_ingresso: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="strumento">Strumento</Label>
                 <Select
                   value={dati.strumento_codice}
-                  onValueChange={(value) =>
-                    setDati((d) => ({ ...d, strumento_codice: value }))
-                  }
+                  onValueChange={(value) => setDati((d) => ({ ...d, strumento_codice: value }))}
                 >
                   <SelectTrigger id="strumento">
                     <SelectValue placeholder="Seleziona…" />
@@ -422,9 +398,7 @@ export default function SocioFormDialog({
                 <Label htmlFor="ruolo">Ruolo in banda</Label>
                 <Select
                   value={dati.ruolo_banda_codice}
-                  onValueChange={(value) =>
-                    setDati((d) => ({ ...d, ruolo_banda_codice: value }))
-                  }
+                  onValueChange={(value) => setDati((d) => ({ ...d, ruolo_banda_codice: value }))}
                 >
                   <SelectTrigger id="ruolo">
                     <SelectValue placeholder="Seleziona…" />

@@ -70,9 +70,7 @@ export default function DeleteEsternoDialog({
             onClick={handleDelete}
             disabled={deleteEsterno.isPending}
           >
-            {deleteEsterno.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {deleteEsterno.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Rimuovi
           </Button>
         </DialogFooter>

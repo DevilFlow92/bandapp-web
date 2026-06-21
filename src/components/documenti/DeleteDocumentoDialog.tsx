@@ -74,9 +74,7 @@ export default function DeleteDocumentoDialog({
             onClick={handleDelete}
             disabled={deleteDocumento.isPending}
           >
-            {deleteDocumento.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {deleteDocumento.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Elimina
           </Button>
         </DialogFooter>

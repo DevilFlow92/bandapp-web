@@ -1,12 +1,6 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface ErrorBoundaryProps {
   children: React.ReactNode
@@ -17,10 +11,7 @@ interface ErrorBoundaryState {
   error: Error | null
 }
 
-export default class ErrorBoundary extends React.Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
+export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false, error: null }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
@@ -48,10 +39,7 @@ export default class ErrorBoundary extends React.Component<
                   {this.state.error.message}
                 </pre>
               )}
-              <Button
-                className="mt-4"
-                onClick={() => window.location.reload()}
-              >
+              <Button className="mt-4" onClick={() => window.location.reload()}>
                 Ricarica la pagina
               </Button>
             </CardContent>

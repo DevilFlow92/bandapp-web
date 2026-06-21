@@ -14,17 +14,10 @@ export interface CreateEsternoInput {
   banda_codice: number
 }
 
-export type UpdateEsternoInput = Partial<
-  Omit<CreateEsternoInput, "persona_id">
->
+export type UpdateEsternoInput = Partial<Omit<CreateEsternoInput, "persona_id">>
 
 /** Lists esterni with server-side pagination, scoped to the selected banda. */
-export function useEsterni(
-  page: number,
-  pageSize: number,
-  bandaCodice: number,
-  enabled = true
-) {
+export function useEsterni(page: number, pageSize: number, bandaCodice: number, enabled = true) {
   return useQuery({
     queryKey: [...ESTERNI_KEY, bandaCodice, page, pageSize],
     queryFn: async () => {
@@ -56,13 +49,7 @@ export function useCreateEsterno() {
 export function useUpdateEsterno() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: number
-      input: UpdateEsternoInput
-    }) => {
+    mutationFn: async ({ id, input }: { id: number; input: UpdateEsternoInput }) => {
       const { data } = await api.patch<Esterno>(`/esterni/${id}`, input)
       return data
     },

@@ -83,9 +83,7 @@ export default function SpartitoFormDialog({
       setForm({
         tipo_spartito_codice: String(spartito.tipo_spartito_codice),
         strumento_codice:
-          spartito.strumento_codice != null
-            ? String(spartito.strumento_codice)
-            : NONE_VALUE,
+          spartito.strumento_codice != null ? String(spartito.strumento_codice) : NONE_VALUE,
         scaffale: spartito.scaffale ?? "",
         ripiano: spartito.ripiano ?? "",
         cartella: spartito.cartella ?? "",
@@ -121,10 +119,7 @@ export default function SpartitoFormDialog({
 
     const common = {
       tipo_spartito_codice: Number(form.tipo_spartito_codice),
-      strumento_codice:
-        form.strumento_codice === NONE_VALUE
-          ? null
-          : Number(form.strumento_codice),
+      strumento_codice: form.strumento_codice === NONE_VALUE ? null : Number(form.strumento_codice),
       scaffale: form.scaffale.trim() || null,
       ripiano: form.ripiano.trim() || null,
       cartella: form.cartella.trim() || null,
@@ -157,13 +152,9 @@ export default function SpartitoFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Modifica spartito" : "Nuovo spartito"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Modifica spartito" : "Nuovo spartito"}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? "Aggiorna i dati dello spartito."
-              : "Inserisci i dati del nuovo spartito."}
+            {isEdit ? "Aggiorna i dati dello spartito." : "Inserisci i dati del nuovo spartito."}
           </DialogDescription>
         </DialogHeader>
 
@@ -180,17 +171,9 @@ export default function SpartitoFormDialog({
           {isEdit ? (
             <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
               <span className="min-w-0 truncate">
-                Documento:{" "}
-                <span className="font-medium">
-                  {spartito?.documento?.nome ?? "—"}
-                </span>
+                Documento: <span className="font-medium">{spartito?.documento?.nome ?? "—"}</span>
               </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleDownload}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={handleDownload}>
                 <Download className="mr-2 h-4 w-4" />
                 Scarica
               </Button>
@@ -213,11 +196,7 @@ export default function SpartitoFormDialog({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="note">Note documento</Label>
-                <Input
-                  id="note"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
+                <Input id="note" value={note} onChange={(e) => setNote(e.target.value)} />
               </div>
             </fieldset>
           )}
@@ -227,9 +206,7 @@ export default function SpartitoFormDialog({
               <Label htmlFor="tipo_spartito">Tipo spartito *</Label>
               <Select
                 value={form.tipo_spartito_codice}
-                onValueChange={(value) =>
-                  setForm((f) => ({ ...f, tipo_spartito_codice: value }))
-                }
+                onValueChange={(value) => setForm((f) => ({ ...f, tipo_spartito_codice: value }))}
               >
                 <SelectTrigger id="tipo_spartito">
                   <SelectValue placeholder="Seleziona…" />
@@ -247,9 +224,7 @@ export default function SpartitoFormDialog({
               <Label htmlFor="strumento">Strumento</Label>
               <Select
                 value={form.strumento_codice}
-                onValueChange={(value) =>
-                  setForm((f) => ({ ...f, strumento_codice: value }))
-                }
+                onValueChange={(value) => setForm((f) => ({ ...f, strumento_codice: value }))}
               >
                 <SelectTrigger id="strumento">
                   <SelectValue placeholder="Seleziona…" />
@@ -272,9 +247,7 @@ export default function SpartitoFormDialog({
               <Input
                 id="scaffale"
                 value={form.scaffale}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, scaffale: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, scaffale: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -282,9 +255,7 @@ export default function SpartitoFormDialog({
               <Input
                 id="ripiano"
                 value={form.ripiano}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, ripiano: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, ripiano: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -292,9 +263,7 @@ export default function SpartitoFormDialog({
               <Input
                 id="cartella"
                 value={form.cartella}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, cartella: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, cartella: e.target.value }))}
               />
             </div>
           </div>

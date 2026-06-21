@@ -28,12 +28,7 @@ export default function SociPage() {
   const navigate = useNavigate()
   const { banda } = useBanda()
   const [page, setPage] = useState(1)
-  const { data, isLoading, isError } = useSoci(
-    page,
-    PAGE_SIZE,
-    banda!.codice,
-    !!banda
-  )
+  const { data, isLoading, isError } = useSoci(page, PAGE_SIZE, banda!.codice, !!banda)
   // A socio is "active" when they have a non-cancelled iscrizione for the
   // current year. Iscrizioni are scoped to the banda via their soci.
   const { data: iscrizioniData } = useIscrizioni(1, 100, undefined, CURRENT_YEAR)
@@ -100,19 +95,13 @@ export default function SociPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento dei soci.
                 </TableCell>
               </TableRow>
             ) : soci.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                   Nessun socio trovato
                 </TableCell>
               </TableRow>
@@ -145,10 +134,7 @@ export default function SociPage() {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell
-                    className="text-right"
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"
@@ -201,11 +187,7 @@ export default function SociPage() {
         </div>
       </div>
 
-      <SocioFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        socio={editing}
-      />
+      <SocioFormDialog open={formOpen} onOpenChange={setFormOpen} socio={editing} />
       <DeleteSocioDialog
         open={deleting !== null}
         onOpenChange={(open) => {

@@ -77,19 +77,13 @@ export default function AdminUtentiPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento degli utenti.
                 </TableCell>
               </TableRow>
             ) : utenti.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                   Nessun utente trovato
                 </TableCell>
               </TableRow>
@@ -116,9 +110,7 @@ export default function AdminUtentiPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {utente.ruoli.length > 0
-                      ? utente.ruoli.map((r) => r.nome).join(", ")
-                      : "—"}
+                    {utente.ruoli.length > 0 ? utente.ruoli.map((r) => r.nome).join(", ") : "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
@@ -181,11 +173,7 @@ export default function AdminUtentiPage() {
         </div>
       </div>
 
-      <UtenteFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        utente={editing}
-      />
+      <UtenteFormDialog open={formOpen} onOpenChange={setFormOpen} utente={editing} />
       <SetPasswordDialog
         open={passwordFor !== null}
         onOpenChange={(open) => {

@@ -34,9 +34,7 @@ const CURRENT_YEAR = new Date().getFullYear()
 /** Default tipo indirizzo "Servizio" (codice 4), pre-selected for new servizi. */
 const DEFAULT_TIPO_INDIRIZZO_CODICE = "4"
 
-export function formatIndirizzoServizio(
-  ind: IndirizzoInServizio | null | undefined
-): string {
+export function formatIndirizzoServizio(ind: IndirizzoInServizio | null | undefined): string {
   if (!ind) return "—"
   const parts = [
     ind.prima_riga,
@@ -121,9 +119,7 @@ export default function ServizioFormDialog({
   }, [open, servizio])
 
   const isSubmitting =
-    createServizio.isPending ||
-    updateServizio.isPending ||
-    createIndirizzo.isPending
+    createServizio.isPending || updateServizio.isPending || createIndirizzo.isPending
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -194,13 +190,9 @@ export default function ServizioFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Modifica servizio" : "Nuovo servizio"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Modifica servizio" : "Nuovo servizio"}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? "Aggiorna i dati del servizio."
-              : "Inserisci i dati del nuovo servizio."}
+            {isEdit ? "Aggiorna i dati del servizio." : "Inserisci i dati del nuovo servizio."}
           </DialogDescription>
         </DialogHeader>
 
@@ -237,9 +229,7 @@ export default function ServizioFormDialog({
                 type="number"
                 required
                 value={form.anno}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, anno: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, anno: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -249,9 +239,7 @@ export default function ServizioFormDialog({
                 type="datetime-local"
                 required
                 value={form.data_servizio}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, data_servizio: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, data_servizio: e.target.value }))}
               />
             </div>
           </div>
@@ -263,15 +251,14 @@ export default function ServizioFormDialog({
               <div className="space-y-1 rounded-md border px-3 py-2 text-sm">
                 <p>{formatIndirizzoServizio(servizio?.indirizzo)}</p>
                 <p className="text-xs text-muted-foreground">
-                  Indirizzo già associato (ID: {servizio?.indirizzo_id}). Per
-                  modificare l'indirizzo, gestirlo separatamente.
+                  Indirizzo già associato (ID: {servizio?.indirizzo_id}). Per modificare
+                  l'indirizzo, gestirlo separatamente.
                 </p>
               </div>
             ) : (
               <>
                 <p className="text-xs text-muted-foreground">
-                  Facoltativo. Compila la via per creare e associare un nuovo
-                  indirizzo.
+                  Facoltativo. Compila la via per creare e associare un nuovo indirizzo.
                 </p>
 
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -291,10 +278,7 @@ export default function ServizioFormDialog({
                       </SelectTrigger>
                       <SelectContent>
                         {tipiIndirizzo.data?.map((tipo) => (
-                          <SelectItem
-                            key={tipo.codice}
-                            value={String(tipo.codice)}
-                          >
+                          <SelectItem key={tipo.codice} value={String(tipo.codice)}>
                             {tipo.descrizione}
                           </SelectItem>
                         ))}
@@ -335,17 +319,13 @@ export default function ServizioFormDialog({
                   <Input
                     id="cap"
                     value={indirizzo.cap}
-                    onChange={(e) =>
-                      setIndirizzo((i) => ({ ...i, cap: e.target.value }))
-                    }
+                    onChange={(e) => setIndirizzo((i) => ({ ...i, cap: e.target.value }))}
                   />
                 </div>
 
                 <ComuneSelect
                   value={indirizzo.comune_codice}
-                  onChange={(codice) =>
-                    setIndirizzo((i) => ({ ...i, comune_codice: codice }))
-                  }
+                  onChange={(codice) => setIndirizzo((i) => ({ ...i, comune_codice: codice }))}
                   label="Comune"
                 />
               </>
@@ -359,9 +339,7 @@ export default function ServizioFormDialog({
               rows={3}
               className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               value={form.note}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, note: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
             />
           </div>
 

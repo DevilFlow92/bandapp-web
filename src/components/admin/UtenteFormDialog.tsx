@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import { Loader2 } from "lucide-react"
-import {
-  useCreateUtente,
-  useRuoli,
-  useUpdateUtente,
-} from "@/hooks/useAdmin"
+import { useCreateUtente, useRuoli, useUpdateUtente } from "@/hooks/useAdmin"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import type { Utente } from "@/types/admin"
@@ -56,11 +52,7 @@ const emptyForm: UtenteFormState = {
   ruoli: [],
 }
 
-export default function UtenteFormDialog({
-  open,
-  onOpenChange,
-  utente,
-}: UtenteFormDialogProps) {
+export default function UtenteFormDialog({ open, onOpenChange, utente }: UtenteFormDialogProps) {
   const isEdit = Boolean(utente)
   const { toast } = useToast()
 
@@ -95,9 +87,7 @@ export default function UtenteFormDialog({
   const toggleRuolo = (id: number) => {
     setForm((f) => ({
       ...f,
-      ruoli: f.ruoli.includes(id)
-        ? f.ruoli.filter((r) => r !== id)
-        : [...f.ruoli, id],
+      ruoli: f.ruoli.includes(id) ? f.ruoli.filter((r) => r !== id) : [...f.ruoli, id],
     }))
   }
 
@@ -148,9 +138,7 @@ export default function UtenteFormDialog({
         <DialogHeader>
           <DialogTitle>{isEdit ? "Modifica utente" : "Nuovo utente"}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? "Aggiorna i dati dell'utente."
-              : "Inserisci i dati del nuovo utente."}
+            {isEdit ? "Aggiorna i dati dell'utente." : "Inserisci i dati del nuovo utente."}
           </DialogDescription>
         </DialogHeader>
 
@@ -171,9 +159,7 @@ export default function UtenteFormDialog({
               type="email"
               value={form.email}
               disabled={isEdit}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, email: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             />
           </div>
 
@@ -182,9 +168,7 @@ export default function UtenteFormDialog({
             <Input
               id="nome_completo"
               value={form.nome_completo}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, nome_completo: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, nome_completo: e.target.value }))}
             />
           </div>
 
@@ -211,17 +195,13 @@ export default function UtenteFormDialog({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">
-                  Password {form.tipo === "umano" ? "*" : ""}
-                </Label>
+                <Label htmlFor="password">Password {form.tipo === "umano" ? "*" : ""}</Label>
                 <Input
                   id="password"
                   type="password"
                   value={form.password}
                   autoComplete="new-password"
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, password: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 />
               </div>
             </div>
@@ -233,9 +213,7 @@ export default function UtenteFormDialog({
                 type="checkbox"
                 className="h-4 w-4 accent-primary"
                 checked={form.attivo}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, attivo: e.target.checked }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, attivo: e.target.checked }))}
               />
               Attivo
             </label>
@@ -246,9 +224,7 @@ export default function UtenteFormDialog({
               type="checkbox"
               className="h-4 w-4 accent-primary"
               checked={form.superuser}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, superuser: e.target.checked }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, superuser: e.target.checked }))}
             />
             Superuser
           </label>
@@ -259,15 +235,10 @@ export default function UtenteFormDialog({
               {ruoli.isLoading ? (
                 <p className="text-sm text-muted-foreground">Caricamento…</p>
               ) : ruoliList.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Nessun ruolo disponibile
-                </p>
+                <p className="text-sm text-muted-foreground">Nessun ruolo disponibile</p>
               ) : (
                 ruoliList.map((r) => (
-                  <label
-                    key={r.id}
-                    className="flex items-center gap-2 text-sm"
-                  >
+                  <label key={r.id} className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       className="h-4 w-4 accent-primary"

@@ -7,9 +7,7 @@ export default function ContabilitaVociPage() {
         <CardHeader>
           <CardTitle className="text-xl">Piano dei conti</CardTitle>
         </CardHeader>
-        <CardContent className="text-muted-foreground">
-          Sezione in costruzione
-        </CardContent>
+        <CardContent className="text-muted-foreground">Sezione in costruzione</CardContent>
       </Card>
     </div>
   )

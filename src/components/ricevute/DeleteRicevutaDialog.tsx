@@ -51,9 +51,7 @@ export default function DeleteRicevutaDialog({
           <DialogTitle>Elimina ricevuta</DialogTitle>
           <DialogDescription>
             {ricevuta
-              ? `Sei sicuro di voler eliminare questa ricevuta di € ${ricevuta.importo.toFixed(
-                  2
-                )}?`
+              ? `Sei sicuro di voler eliminare questa ricevuta di € ${ricevuta.importo.toFixed(2)}?`
               : ""}
           </DialogDescription>
         </DialogHeader>
@@ -72,9 +70,7 @@ export default function DeleteRicevutaDialog({
             onClick={handleDelete}
             disabled={deleteRicevuta.isPending}
           >
-            {deleteRicevuta.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {deleteRicevuta.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Elimina
           </Button>
         </DialogFooter>

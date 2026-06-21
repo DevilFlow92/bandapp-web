@@ -33,6 +33,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Contabilità",
     items: [
+      { to: "/contabilita/configurazione", label: "Configurazione" },
       { to: "/contabilita/voci", label: "Piano dei conti" },
       { to: "/contabilita/movimenti", label: "Movimenti" },
     ],

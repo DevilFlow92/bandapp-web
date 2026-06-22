@@ -117,9 +117,7 @@ export default function ContabilitaConfigurazionePage() {
                     {config.chiuso ? (
                       <Badge variant="secondary">Chiuso</Badge>
                     ) : (
-                      <Badge className="border-transparent bg-emerald-600 text-white hover:bg-emerald-600/80">
-                        Aperto
-                      </Badge>
+                      <Badge variant="success">Aperto</Badge>
                     )}
                   </TableCell>
                   <TableCell>{config.chiuso_da_utente?.email ?? "—"}</TableCell>

@@ -103,20 +103,19 @@ export default function ConfigurazioneAnnoFormDialog({
       return
     }
 
-    const voceId =
-      form.voce_contabilita_quote_id === NONE_VALUE ? null : Number(form.voce_contabilita_quote_id)
+    const fields = {
+      quota_annuale_attesa: form.quota_annuale_attesa.trim(),
+      saldo_iniziale_cassa: form.saldo_iniziale_cassa.trim() || "0",
+      saldo_iniziale_banca: form.saldo_iniziale_banca.trim() || "0",
+      voce_contabilita_quote_id:
+        form.voce_contabilita_quote_id === NONE_VALUE
+          ? null
+          : Number(form.voce_contabilita_quote_id),
+    }
 
     try {
       if (isEdit && configurazione) {
-        await updateConfig.mutateAsync({
-          id: configurazione.id,
-          input: {
-            quota_annuale_attesa: form.quota_annuale_attesa.trim(),
-            saldo_iniziale_cassa: form.saldo_iniziale_cassa.trim() || "0",
-            saldo_iniziale_banca: form.saldo_iniziale_banca.trim() || "0",
-            voce_contabilita_quote_id: voceId,
-          },
-        })
+        await updateConfig.mutateAsync({ id: configurazione.id, input: fields })
         toast({ title: "Configurazione aggiornata" })
       } else {
         if (!banda) {
@@ -131,10 +130,7 @@ export default function ConfigurazioneAnnoFormDialog({
         await createConfig.mutateAsync({
           banda_codice: banda.codice,
           anno,
-          quota_annuale_attesa: form.quota_annuale_attesa.trim(),
-          saldo_iniziale_cassa: form.saldo_iniziale_cassa.trim() || "0",
-          saldo_iniziale_banca: form.saldo_iniziale_banca.trim() || "0",
-          voce_contabilita_quote_id: voceId,
+          ...fields,
         })
         toast({ title: "Configurazione creata" })
       }

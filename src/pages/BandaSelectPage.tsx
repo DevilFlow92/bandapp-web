@@ -4,13 +4,7 @@ import { Music } from "lucide-react"
 import { useBande } from "@/hooks/useBande"
 import { useBanda } from "@/context/BandaContext"
 import type { Banda } from "@/types/banda"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function BandaSelectPage() {
@@ -36,18 +30,12 @@ export default function BandaSelectPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">
-            Seleziona la banda
-          </CardTitle>
-          <CardDescription>
-            Scegli la banda con cui vuoi lavorare
-          </CardDescription>
+          <CardTitle className="text-2xl font-bold">Seleziona la banda</CardTitle>
+          <CardDescription>Scegli la banda con cui vuoi lavorare</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {isLoading || autoSelect ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full" />
-            ))
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
           ) : !bande || bande.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Nessuna banda disponibile

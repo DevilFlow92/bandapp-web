@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react"
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
 import type { Banda } from "@/types/banda"
 
 const STORAGE_KEY = "bandapp_banda"
@@ -43,10 +36,7 @@ export function BandaProvider({ children }: { children: ReactNode }) {
     setBandaState(null)
   }, [])
 
-  const value = useMemo(
-    () => ({ banda, setBanda, clearBanda }),
-    [banda, setBanda, clearBanda]
-  )
+  const value = useMemo(() => ({ banda, setBanda, clearBanda }), [banda, setBanda, clearBanda])
 
   return <BandaContext.Provider value={value}>{children}</BandaContext.Provider>
 }

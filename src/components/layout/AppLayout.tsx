@@ -59,8 +59,7 @@ export default function AppLayout() {
     navigate("/banda")
   }
 
-  const groups =
-    user?.superuser === true ? [...navGroups, adminGroup] : navGroups
+  const groups = user?.superuser === true ? [...navGroups, adminGroup] : navGroups
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -82,7 +81,7 @@ export default function AppLayout() {
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-white/10 text-white"
-                  : "text-white/60 hover:bg-white/5 hover:text-white"
+                  : "text-white/60 hover:bg-white/5 hover:text-white",
               )
             }
           >
@@ -106,7 +105,7 @@ export default function AppLayout() {
                         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                         isActive
                           ? "bg-white/10 text-white"
-                          : "text-white/60 hover:bg-white/5 hover:text-white"
+                          : "text-white/60 hover:bg-white/5 hover:text-white",
                       )
                     }
                   >
@@ -120,9 +119,7 @@ export default function AppLayout() {
 
         <div className="border-t border-white/10 p-4">
           <div className="mb-3 min-w-0">
-            <p className="truncate text-sm font-medium">
-              {user?.nome_completo ?? "Utente"}
-            </p>
+            <p className="truncate text-sm font-medium">{user?.nome_completo ?? "Utente"}</p>
             <p className="truncate text-xs text-white/50">{user?.email}</p>
           </div>
           <Button
@@ -140,9 +137,7 @@ export default function AppLayout() {
 
       <div className="pl-60">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-background px-6">
-          <h1 className="text-lg font-semibold">
-            Gestionale Associazione Musicale
-          </h1>
+          <h1 className="text-lg font-semibold">Gestionale Associazione Musicale</h1>
           <div className="flex items-center gap-3">
             {banda && (
               <span className="text-sm text-muted-foreground">

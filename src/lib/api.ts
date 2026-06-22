@@ -18,13 +18,13 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error)
-  }
+  },
 )
 
 /** Extracts a human-readable message from an Axios/unknown error. */
 export function getErrorMessage(
   error: unknown,
-  fallback = "Si è verificato un errore. Riprova."
+  fallback = "Si è verificato un errore. Riprova.",
 ): string {
   if (isAxiosError(error)) {
     const detail = error.response?.data?.detail

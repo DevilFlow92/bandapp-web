@@ -52,11 +52,7 @@ function groupByDomain(permessi: Permesso[]): [string, Permesso[]][] {
   return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b))
 }
 
-export default function RuoloFormDialog({
-  open,
-  onOpenChange,
-  ruolo,
-}: RuoloFormDialogProps) {
+export default function RuoloFormDialog({ open, onOpenChange, ruolo }: RuoloFormDialogProps) {
   const isEdit = Boolean(ruolo)
   const { toast } = useToast()
 
@@ -82,10 +78,7 @@ export default function RuoloFormDialog({
   }, [open, ruolo])
 
   const isSubmitting = createRuolo.isPending || updateRuolo.isPending
-  const groups = useMemo(
-    () => groupByDomain(permessi.data ?? []),
-    [permessi.data]
-  )
+  const groups = useMemo(() => groupByDomain(permessi.data ?? []), [permessi.data])
 
   const togglePermesso = (codice: string) => {
     setForm((f) => ({
@@ -141,9 +134,7 @@ export default function RuoloFormDialog({
         <DialogHeader>
           <DialogTitle>{isEdit ? "Modifica ruolo" : "Nuovo ruolo"}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? "Aggiorna i dati del ruolo."
-              : "Inserisci i dati del nuovo ruolo."}
+            {isEdit ? "Aggiorna i dati del ruolo." : "Inserisci i dati del nuovo ruolo."}
           </DialogDescription>
         </DialogHeader>
 
@@ -171,9 +162,7 @@ export default function RuoloFormDialog({
             <Input
               id="descrizione"
               value={form.descrizione}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, descrizione: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, descrizione: e.target.value }))}
             />
           </div>
 
@@ -183,9 +172,7 @@ export default function RuoloFormDialog({
               {permessi.isLoading ? (
                 <p className="text-sm text-muted-foreground">Caricamento…</p>
               ) : groups.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Nessun permesso disponibile
-                </p>
+                <p className="text-sm text-muted-foreground">Nessun permesso disponibile</p>
               ) : (
                 groups.map(([domain, perms]) => (
                   <div key={domain} className="space-y-1">
@@ -194,10 +181,7 @@ export default function RuoloFormDialog({
                     </p>
                     <div className="grid gap-1 sm:grid-cols-2">
                       {perms.map((p) => (
-                        <label
-                          key={p.codice}
-                          className="flex items-center gap-2 text-sm"
-                        >
+                        <label key={p.codice} className="flex items-center gap-2 text-sm">
                           <input
                             type="checkbox"
                             className="h-4 w-4 accent-primary"

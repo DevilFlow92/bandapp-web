@@ -90,12 +90,7 @@ export default function IscrizioneFormDialog({
   // Socio selection (create mode only). The soci endpoint does not support text
   // search, so we fetch the banda's soci once and filter them client-side. When
   // a preset socio is supplied the picker is skipped, so the fetch is disabled.
-  const sociQuery = useSoci(
-    1,
-    50,
-    banda?.codice ?? 0,
-    open && !isEdit && !presetSocio && !!banda
-  )
+  const sociQuery = useSoci(1, 50, banda?.codice ?? 0, open && !isEdit && !presetSocio && !!banda)
   const [search, setSearch] = useState("")
   const [selectedSocio, setSelectedSocio] = useState<Socio | null>(null)
 
@@ -107,9 +102,7 @@ export default function IscrizioneFormDialog({
     const q = search.trim().toLowerCase()
     if (!q) return items
     return items.filter((s) => {
-      const full = `${s.persona?.nome ?? ""} ${s.persona?.cognome ?? ""}`
-        .trim()
-        .toLowerCase()
+      const full = `${s.persona?.nome ?? ""} ${s.persona?.cognome ?? ""}`.trim().toLowerCase()
       return full.includes(q)
     })
   }, [sociQuery.data, search])
@@ -177,9 +170,7 @@ export default function IscrizioneFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Modifica iscrizione" : "Nuova iscrizione"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Modifica iscrizione" : "Nuova iscrizione"}</DialogTitle>
           <DialogDescription>
             {isEdit
               ? "Aggiorna i dati dell'iscrizione."
@@ -268,9 +259,7 @@ export default function IscrizioneFormDialog({
                 type="number"
                 required
                 value={form.anno}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, anno: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, anno: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -280,9 +269,7 @@ export default function IscrizioneFormDialog({
                 type="date"
                 required
                 value={form.data_iscrizione}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, data_iscrizione: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, data_iscrizione: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -330,9 +317,7 @@ export default function IscrizioneFormDialog({
               rows={3}
               className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               value={form.note}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, note: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
             />
           </div>
 

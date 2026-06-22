@@ -1,11 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type {
-  DocumentoResponse,
-  Lookup,
-  PagedResponse,
-  Spartito,
-} from "@/types/spartito"
+import type { DocumentoResponse, Lookup, PagedResponse, Spartito } from "@/types/spartito"
 
 export const SPARTITI_KEY = ["spartiti"] as const
 
@@ -19,7 +14,7 @@ const TIPO_DOCUMENTO_SPARTITO = 3
 async function uploadDocumento(
   file: File,
   tipoCodice: number,
-  note?: string | null
+  note?: string | null,
 ): Promise<DocumentoResponse> {
   const formData = new FormData()
   formData.append("file", file)
@@ -34,10 +29,7 @@ async function uploadDocumento(
 }
 
 /** Downloads a documento via an authenticated (cookie) request and saves it. */
-export async function downloadDocumento(
-  documentoId: number,
-  nome?: string | null
-): Promise<void> {
+export async function downloadDocumento(documentoId: number, nome?: string | null): Promise<void> {
   const { data } = await api.get<Blob>(`/documenti/${documentoId}/download`, {
     responseType: "blob",
   })
@@ -79,7 +71,7 @@ export function useSpartiti(
   pageSize: number,
   bandaCodice: number,
   tipoSpartitoCode?: number,
-  strumentoCode?: number
+  strumentoCode?: number,
 ) {
   return useQuery({
     queryKey: [
@@ -96,8 +88,7 @@ export function useSpartiti(
         page_size: pageSize,
         banda_codice: bandaCodice,
       }
-      if (tipoSpartitoCode !== undefined)
-        params.tipo_spartito_codice = tipoSpartitoCode
+      if (tipoSpartitoCode !== undefined) params.tipo_spartito_codice = tipoSpartitoCode
       if (strumentoCode !== undefined) params.strumento_codice = strumentoCode
       const { data } = await api.get<PagedResponse<Spartito>>("/spartiti/", {
         params,
@@ -117,11 +108,7 @@ export function useCreateSpartito() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ file, note, ...spartito }: CreateSpartitoInput) => {
-      const documento = await uploadDocumento(
-        file,
-        TIPO_DOCUMENTO_SPARTITO,
-        note
-      )
+      const documento = await uploadDocumento(file, TIPO_DOCUMENTO_SPARTITO, note)
       const { data } = await api.post<Spartito>("/spartiti/", {
         ...spartito,
         documento_id: documento.id,
@@ -138,13 +125,7 @@ export function useCreateSpartito() {
 export function useUpdateSpartito() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: number
-      input: UpdateSpartitoInput
-    }) => {
+    mutationFn: async ({ id, input }: { id: number; input: UpdateSpartitoInput }) => {
       const { data } = await api.patch<Spartito>(`/spartiti/${id}`, input)
       return data
     },

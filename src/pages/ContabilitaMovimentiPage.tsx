@@ -7,9 +7,7 @@ export default function ContabilitaMovimentiPage() {
         <CardHeader>
           <CardTitle className="text-xl">Movimenti</CardTitle>
         </CardHeader>
-        <CardContent className="text-muted-foreground">
-          Sezione in costruzione
-        </CardContent>
+        <CardContent className="text-muted-foreground">Sezione in costruzione</CardContent>
       </Card>
     </div>
   )

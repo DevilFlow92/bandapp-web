@@ -31,14 +31,14 @@ export function useConfigurazioniBandaAnno(
   bandaCodice: number,
   page: number,
   pageSize: number,
-  enabled = true
+  enabled = true,
 ) {
   return useQuery({
     queryKey: [...CONFIGURAZIONI_ANNO_KEY, bandaCodice, page, pageSize],
     queryFn: async () => {
       const { data } = await api.get<PagedResponse<ConfigurazioneBandaAnno>>(
         "/configurazioni-banda-anno/",
-        { params: { banda_codice: bandaCodice, page, page_size: pageSize } }
+        { params: { banda_codice: bandaCodice, page, page_size: pageSize } },
       )
       return data
     },
@@ -52,10 +52,7 @@ export function useCreateConfigurazioneAnno() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (input: CreateConfigurazioneAnnoInput) => {
-      const { data } = await api.post<ConfigurazioneBandaAnno>(
-        "/configurazioni-banda-anno/",
-        input
-      )
+      const { data } = await api.post<ConfigurazioneBandaAnno>("/configurazioni-banda-anno/", input)
       return data
     },
     onSuccess: () => {
@@ -68,16 +65,10 @@ export function useCreateConfigurazioneAnno() {
 export function useUpdateConfigurazioneAnno() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({
-      id,
-      input,
-    }: {
-      id: number
-      input: UpdateConfigurazioneAnnoInput
-    }) => {
+    mutationFn: async ({ id, input }: { id: number; input: UpdateConfigurazioneAnnoInput }) => {
       const { data } = await api.patch<ConfigurazioneBandaAnno>(
         `/configurazioni-banda-anno/${id}`,
-        input
+        input,
       )
       return data
     },
@@ -93,7 +84,7 @@ export function useChiudiAnno() {
   return useMutation({
     mutationFn: async (id: number) => {
       const { data } = await api.post<ConfigurazioneBandaAnno>(
-        `/configurazioni-banda-anno/${id}/chiudi`
+        `/configurazioni-banda-anno/${id}/chiudi`,
       )
       return data
     },
@@ -113,7 +104,7 @@ export function useRiapriAnno() {
   return useMutation({
     mutationFn: async (id: number) => {
       const { data } = await api.post<ConfigurazioneBandaAnno>(
-        `/configurazioni-banda-anno/${id}/riapri`
+        `/configurazioni-banda-anno/${id}/riapri`,
       )
       return data
     },
@@ -157,10 +148,9 @@ export function useLookupVociContabilita(bandaCodice: number, enabled = true) {
   return useQuery({
     queryKey: ["lookup", "voci-contabilita", bandaCodice],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<VoceContabilitaInConfig>>(
-        "/voci-contabilita/",
-        { params: { banda_codice: bandaCodice, page_size: VOCI_PAGE_SIZE } }
-      )
+      const { data } = await api.get<PagedResponse<VoceContabilitaInConfig>>("/voci-contabilita/", {
+        params: { banda_codice: bandaCodice, page_size: VOCI_PAGE_SIZE },
+      })
       return data.items
     },
     enabled,

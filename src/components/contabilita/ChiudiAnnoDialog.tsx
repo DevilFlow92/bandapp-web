@@ -50,9 +50,9 @@ export default function ChiudiAnnoDialog({
         <DialogHeader>
           <DialogTitle>Chiudi anno {configurazione?.anno}</DialogTitle>
           <DialogDescription>
-            Sei sicuro di voler chiudere l'anno {configurazione?.anno}? Una volta
-            chiuso, non sarà più possibile modificare i movimenti di cassa per
-            quest'anno. Solo un superuser potrà riaprirlo.
+            Sei sicuro di voler chiudere l'anno {configurazione?.anno}? Una volta chiuso, non sarà
+            più possibile modificare i movimenti di cassa per quest'anno. Solo un superuser potrà
+            riaprirlo.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -70,9 +70,7 @@ export default function ChiudiAnnoDialog({
             onClick={handleChiudi}
             disabled={chiudiAnno.isPending}
           >
-            {chiudiAnno.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {chiudiAnno.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Chiudi anno
           </Button>
         </DialogFooter>

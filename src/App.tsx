@@ -57,14 +57,8 @@ export default function App() {
                     path="contabilita/configurazione"
                     element={<ContabilitaConfigurazionePage />}
                   />
-                  <Route
-                    path="contabilita/voci"
-                    element={<ContabilitaVociPage />}
-                  />
-                  <Route
-                    path="contabilita/movimenti"
-                    element={<ContabilitaMovimentiPage />}
-                  />
+                  <Route path="contabilita/voci" element={<ContabilitaVociPage />} />
+                  <Route path="contabilita/movimenti" element={<ContabilitaMovimentiPage />} />
                   <Route element={<SuperuserGuard />}>
                     <Route path="admin/utenti" element={<AdminUtentiPage />} />
                     <Route path="admin/ruoli" element={<AdminRuoliPage />} />

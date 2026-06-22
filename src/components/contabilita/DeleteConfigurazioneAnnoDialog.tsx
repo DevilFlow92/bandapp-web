@@ -51,8 +51,7 @@ export default function DeleteConfigurazioneAnnoDialog({
         <DialogHeader>
           <DialogTitle>Elimina configurazione</DialogTitle>
           <DialogDescription>
-            Sei sicuro di voler eliminare la configurazione dell'anno{" "}
-            {configurazione?.anno}?
+            Sei sicuro di voler eliminare la configurazione dell'anno {configurazione?.anno}?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -70,9 +69,7 @@ export default function DeleteConfigurazioneAnnoDialog({
             onClick={handleDelete}
             disabled={deleteConfig.isPending}
           >
-            {deleteConfig.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {deleteConfig.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Elimina
           </Button>
         </DialogFooter>

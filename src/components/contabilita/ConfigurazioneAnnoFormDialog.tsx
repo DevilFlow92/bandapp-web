@@ -104,9 +104,7 @@ export default function ConfigurazioneAnnoFormDialog({
     }
 
     const voceId =
-      form.voce_contabilita_quote_id === NONE_VALUE
-        ? null
-        : Number(form.voce_contabilita_quote_id)
+      form.voce_contabilita_quote_id === NONE_VALUE ? null : Number(form.voce_contabilita_quote_id)
 
     try {
       if (isEdit && configurazione) {
@@ -150,9 +148,7 @@ export default function ConfigurazioneAnnoFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Modifica configurazione" : "Nuova configurazione"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Modifica configurazione" : "Nuova configurazione"}</DialogTitle>
           <DialogDescription>
             {isEdit
               ? "Aggiorna i dati della configurazione contabile."
@@ -186,16 +182,12 @@ export default function ConfigurazioneAnnoFormDialog({
               type="number"
               value={form.anno}
               disabled={isEdit || isClosed}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, anno: e.target.value }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, anno: e.target.value }))}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="quota_annuale_attesa">
-              Quota annuale attesa (€) *
-            </Label>
+            <Label htmlFor="quota_annuale_attesa">Quota annuale attesa (€) *</Label>
             <Input
               id="quota_annuale_attesa"
               type="number"
@@ -213,9 +205,7 @@ export default function ConfigurazioneAnnoFormDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="saldo_iniziale_cassa">
-                Saldo iniziale cassa (€)
-              </Label>
+              <Label htmlFor="saldo_iniziale_cassa">Saldo iniziale cassa (€)</Label>
               <Input
                 id="saldo_iniziale_cassa"
                 type="number"
@@ -231,9 +221,7 @@ export default function ConfigurazioneAnnoFormDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="saldo_iniziale_banca">
-                Saldo iniziale banca (€)
-              </Label>
+              <Label htmlFor="saldo_iniziale_banca">Saldo iniziale banca (€)</Label>
               <Input
                 id="saldo_iniziale_banca"
                 type="number"
@@ -274,8 +262,7 @@ export default function ConfigurazioneAnnoFormDialog({
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Necessaria per il flusso di cassa automatico quando un'iscrizione
-              viene pagata.
+              Necessaria per il flusso di cassa automatico quando un'iscrizione viene pagata.
             </p>
           </div>
 
@@ -290,9 +277,7 @@ export default function ConfigurazioneAnnoFormDialog({
             </Button>
             {!isClosed && (
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEdit ? "Salva" : "Crea"}
               </Button>
             )}

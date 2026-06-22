@@ -1,17 +1,6 @@
 import { useState } from "react"
-import {
-  ChevronLeft,
-  ChevronRight,
-  Lock,
-  Pencil,
-  Plus,
-  Trash2,
-  Unlock,
-} from "lucide-react"
-import {
-  useConfigurazioniBandaAnno,
-  useRiapriAnno,
-} from "@/hooks/useConfigurazioneAnno"
+import { ChevronLeft, ChevronRight, Lock, Pencil, Plus, Trash2, Unlock } from "lucide-react"
+import { useConfigurazioniBandaAnno, useRiapriAnno } from "@/hooks/useConfigurazioneAnno"
 import { useCurrentUser } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import type { ConfigurazioneBandaAnno } from "@/types/configurazione-anno"
@@ -46,15 +35,13 @@ export default function ContabilitaConfigurazionePage() {
     banda!.codice,
     page,
     PAGE_SIZE,
-    !!banda
+    !!banda,
   )
   const riapriAnno = useRiapriAnno()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<ConfigurazioneBandaAnno | null>(null)
-  const [chiudendo, setChiudendo] = useState<ConfigurazioneBandaAnno | null>(
-    null
-  )
+  const [chiudendo, setChiudendo] = useState<ConfigurazioneBandaAnno | null>(null)
   const [deleting, setDeleting] = useState<ConfigurazioneBandaAnno | null>(null)
 
   const configurazioni = data?.items ?? []
@@ -74,9 +61,7 @@ export default function ContabilitaConfigurazionePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Configurazione contabile
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Configurazione contabile</h1>
         <Button onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
           Nuova configurazione
@@ -110,19 +95,13 @@ export default function ContabilitaConfigurazionePage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell
-                  colSpan={COLUMNS}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={COLUMNS} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento delle configurazioni.
                 </TableCell>
               </TableRow>
             ) : configurazioni.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={COLUMNS}
-                  className="py-12 text-center text-muted-foreground"
-                >
+                <TableCell colSpan={COLUMNS} className="py-12 text-center text-muted-foreground">
                   Nessuna configurazione presente
                 </TableCell>
               </TableRow>
@@ -130,18 +109,10 @@ export default function ContabilitaConfigurazionePage() {
               configurazioni.map((config) => (
                 <TableRow key={config.id}>
                   <TableCell className="font-medium">{config.anno}</TableCell>
-                  <TableCell>
-                    {formatImporto(config.quota_annuale_attesa)}
-                  </TableCell>
-                  <TableCell>
-                    {formatImporto(config.saldo_iniziale_cassa)}
-                  </TableCell>
-                  <TableCell>
-                    {formatImporto(config.saldo_iniziale_banca)}
-                  </TableCell>
-                  <TableCell>
-                    {config.voce_contabilita_quote?.descrizione ?? "—"}
-                  </TableCell>
+                  <TableCell>{formatImporto(config.quota_annuale_attesa)}</TableCell>
+                  <TableCell>{formatImporto(config.saldo_iniziale_cassa)}</TableCell>
+                  <TableCell>{formatImporto(config.saldo_iniziale_banca)}</TableCell>
+                  <TableCell>{config.voce_contabilita_quote?.descrizione ?? "—"}</TableCell>
                   <TableCell>
                     {config.chiuso ? (
                       <Badge variant="secondary">Chiuso</Badge>

@@ -5,6 +5,7 @@ import { BandaProvider } from "@/context/BandaContext"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import AuthGuard from "@/components/layout/AuthGuard"
 import SuperuserGuard from "@/components/layout/SuperuserGuard"
+import PermissionGuard from "@/components/layout/PermissionGuard"
 import AppLayout from "@/components/layout/AppLayout"
 import LoginPage from "@/pages/LoginPage"
 import BandaSelectPage from "@/pages/BandaSelectPage"
@@ -55,14 +56,16 @@ export default function App() {
                   <Route path="iscrizioni" element={<IscrizioniPage />} />
                   <Route path="spartiti" element={<SpartitiPage />} />
                   <Route path="documenti" element={<DocumentiPage />} />
-                  <Route
-                    path="contabilita/configurazione"
-                    element={<ContabilitaConfigurazionePage />}
-                  />
-                  <Route path="contabilita/voci" element={<ContabilitaVociPage />} />
-                  <Route path="contabilita/movimenti" element={<ContabilitaMovimentiPage />} />
-                  <Route path="contabilita/rendiconto" element={<ContabilitaRendicontoPage />} />
-                  <Route path="contabilita/check-quote" element={<ContabilitaCheckQuotePage />} />
+                  <Route element={<PermissionGuard permission="contabilita:read" />}>
+                    <Route
+                      path="contabilita/configurazione"
+                      element={<ContabilitaConfigurazionePage />}
+                    />
+                    <Route path="contabilita/voci" element={<ContabilitaVociPage />} />
+                    <Route path="contabilita/movimenti" element={<ContabilitaMovimentiPage />} />
+                    <Route path="contabilita/rendiconto" element={<ContabilitaRendicontoPage />} />
+                    <Route path="contabilita/check-quote" element={<ContabilitaCheckQuotePage />} />
+                  </Route>
                   <Route element={<SuperuserGuard />}>
                     <Route path="admin/utenti" element={<AdminUtentiPage />} />
                     <Route path="admin/ruoli" element={<AdminRuoliPage />} />

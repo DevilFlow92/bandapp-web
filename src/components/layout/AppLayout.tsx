@@ -36,6 +36,8 @@ const navGroups: NavGroup[] = [
       { to: "/contabilita/configurazione", label: "Configurazione" },
       { to: "/contabilita/voci", label: "Piano dei conti" },
       { to: "/contabilita/movimenti", label: "Movimenti" },
+      { to: "/contabilita/rendiconto", label: "Rendiconto" },
+      { to: "/contabilita/check-quote", label: "Check Quote" },
     ],
   },
 ]
@@ -59,7 +61,12 @@ export default function AppLayout() {
     navigate("/banda")
   }
 
-  const groups = user?.superuser === true ? [...navGroups, adminGroup] : navGroups
+  const canContabilita =
+    user?.superuser === true || user?.permessi?.includes("contabilita:read") === true
+  const groups = [
+    ...navGroups.filter((g) => g.label !== "Contabilità" || canContabilita),
+    ...(user?.superuser === true ? [adminGroup] : []),
+  ]
 
   return (
     <div className="min-h-screen bg-muted/30">

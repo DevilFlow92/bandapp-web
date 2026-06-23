@@ -1,6 +1,11 @@
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, Download, Plus, Trash2 } from "lucide-react"
-import { downloadDocumento, useDocumenti, useLookupTipiDocumento } from "@/hooks/useDocumenti"
+import { ChevronLeft, ChevronRight, Download, Eye, Plus, Trash2 } from "lucide-react"
+import {
+  downloadDocumento,
+  previewDocumento,
+  useDocumenti,
+  useLookupTipiDocumento,
+} from "@/hooks/useDocumenti"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import type { Documento } from "@/types/documento"
@@ -168,6 +173,16 @@ export default function DocumentiPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      {documento.mime_type === "application/pdf" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Anteprima"
+                          onClick={() => previewDocumento(documento.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"

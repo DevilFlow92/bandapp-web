@@ -20,6 +20,7 @@ import ContabilitaConfigurazionePage from "@/pages/ContabilitaConfigurazionePage
 import ContabilitaVociPage from "@/pages/ContabilitaVociPage"
 import ContabilitaMovimentiPage from "@/pages/ContabilitaMovimentiPage"
 import ContabilitaRendicontoPage from "@/pages/ContabilitaRendicontoPage"
+import ContabilitaCheckQuotePage from "@/pages/ContabilitaCheckQuotePage"
 import AdminUtentiPage from "@/pages/AdminUtentiPage"
 import AdminRuoliPage from "@/pages/AdminRuoliPage"
 
@@ -61,6 +62,7 @@ export default function App() {
                   <Route path="contabilita/voci" element={<ContabilitaVociPage />} />
                   <Route path="contabilita/movimenti" element={<ContabilitaMovimentiPage />} />
                   <Route path="contabilita/rendiconto" element={<ContabilitaRendicontoPage />} />
+                  <Route path="contabilita/check-quote" element={<ContabilitaCheckQuotePage />} />
                   <Route element={<SuperuserGuard />}>
                     <Route path="admin/utenti" element={<AdminUtentiPage />} />
                     <Route path="admin/ruoli" element={<AdminRuoliPage />} />

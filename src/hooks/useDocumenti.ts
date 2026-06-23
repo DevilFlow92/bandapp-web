@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
+import api, { API_URL } from "@/lib/api"
 import type { PagedResponse } from "@/types/socio"
 import type { Documento, TipoDocumento } from "@/types/documento"
 
@@ -64,6 +64,11 @@ export function useDeleteDocumento() {
       queryClient.invalidateQueries({ queryKey: DOCUMENTI_KEY })
     },
   })
+}
+
+/** Opens a documento PDF inline in a new tab via the backend preview endpoint. */
+export function previewDocumento(id: number): void {
+  window.open(`${API_URL}/documenti/${id}/preview`, "_blank", "noopener,noreferrer")
 }
 
 /** Downloads a documento via an authenticated (cookie) request and saves it. */

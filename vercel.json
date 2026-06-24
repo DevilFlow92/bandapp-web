@@ -1,12 +1,13 @@
 {
-  "routes": [
+  "framework": "vite",
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "https://associazione-api-production.up.railway.app/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://associazione-api-production.up.railway.app/api/:path*"
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/((?!assets/).*)",
+      "destination": "/index.html"
     }
   ]
 }

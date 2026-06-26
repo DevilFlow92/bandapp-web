@@ -19,11 +19,6 @@ import DeleteEsternoDialog from "@/components/esterni/DeleteEsternoDialog"
 
 const PAGE_SIZE = 20
 
-function formatTariffa(value: number | null): string {
-  if (value == null) return "—"
-  return `€ ${value.toFixed(2)}`
-}
-
 export default function EsterniPage() {
   const { banda } = useBanda()
   const [page, setPage] = useState(1)
@@ -63,9 +58,7 @@ export default function EsterniPage() {
               <TableHead>Nome</TableHead>
               <TableHead>Cognome</TableHead>
               <TableHead>Codice Esterno</TableHead>
-              <TableHead>Specializzazione</TableHead>
               <TableHead>Strumento</TableHead>
-              <TableHead>Tariffa Oraria</TableHead>
               <TableHead>Stato</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
@@ -74,7 +67,7 @@ export default function EsterniPage() {
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 8 }).map((__, j) => (
+                  {Array.from({ length: 6 }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
@@ -83,13 +76,13 @@ export default function EsterniPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento degli esterni.
                 </TableCell>
               </TableRow>
             ) : esterni.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                   Nessun esterno trovato
                 </TableCell>
               </TableRow>
@@ -99,9 +92,7 @@ export default function EsterniPage() {
                   <TableCell>{esterno.persona?.nome ?? "—"}</TableCell>
                   <TableCell>{esterno.persona?.cognome ?? "—"}</TableCell>
                   <TableCell>{esterno.codice_esterno}</TableCell>
-                  <TableCell>{esterno.specializzazione ?? "—"}</TableCell>
                   <TableCell>{esterno.strumento?.descrizione ?? "—"}</TableCell>
-                  <TableCell>{formatTariffa(esterno.tariffa_oraria)}</TableCell>
                   <TableCell>
                     <Badge variant={esterno.attivo ? "default" : "secondary"}>
                       {esterno.attivo ? "Attivo" : "Inattivo"}

@@ -84,6 +84,9 @@ export default function FlussoCassaFormDialog({
   const [form, setForm] = useState<FormState>(emptyForm)
   const [error, setError] = useState<string | null>(null)
 
+  const vociList = voci.data ?? []
+  const natureList = nature.data ?? []
+
   useEffect(() => {
     if (!open) return
     setError(null)
@@ -102,9 +105,19 @@ export default function FlussoCassaFormDialog({
     }
   }, [open, flusso])
 
+  useEffect(() => {
+    if (isEdit) return
+    if (!form.voce_contabilita_id) return
+    const voce = vociList.find((v) => String(v.id) === form.voce_contabilita_id)
+    if (!voce) return
+    if (voce.sezione_rendiconto_codice === 1) {
+      setForm((f) => ({ ...f, segno: "-" }))
+    } else if (voce.sezione_rendiconto_codice === 2) {
+      setForm((f) => ({ ...f, segno: "+" }))
+    }
+  }, [form.voce_contabilita_id, isEdit, vociList])
+
   const isSubmitting = createFlusso.isPending || updateFlusso.isPending
-  const vociList = voci.data ?? []
-  const natureList = nature.data ?? []
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()

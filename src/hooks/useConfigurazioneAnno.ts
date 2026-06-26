@@ -11,7 +11,6 @@ import type {
 export const CONFIGURAZIONI_ANNO_KEY = ["configurazioni-banda-anno"] as const
 
 const VOCI_PAGE_SIZE = 100
-const LOOKUP_STALE_TIME = 5 * 60 * 1000
 
 export interface CreateConfigurazioneAnnoInput {
   banda_codice: number
@@ -154,6 +153,6 @@ export function useLookupVociContabilita(bandaCodice: number, enabled = true) {
       return data.items
     },
     enabled,
-    staleTime: LOOKUP_STALE_TIME,
+    staleTime: 0,
   })
 }

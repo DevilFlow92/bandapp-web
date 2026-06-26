@@ -39,16 +39,12 @@ interface EsternoFormDialogProps {
 
 interface DatiEsternoState {
   codice_esterno: string
-  specializzazione: string
-  tariffa_oraria: string
   strumento_codice: string
   attivo: boolean
 }
 
 const emptyDatiEsterno: DatiEsternoState = {
   codice_esterno: "",
-  specializzazione: "",
-  tariffa_oraria: "",
   strumento_codice: NONE_VALUE,
   attivo: true,
 }
@@ -94,8 +90,6 @@ export default function EsternoFormDialog({ open, onOpenChange, esterno }: Ester
     if (esterno) {
       setDati({
         codice_esterno: esterno.codice_esterno,
-        specializzazione: esterno.specializzazione ?? "",
-        tariffa_oraria: esterno.tariffa_oraria != null ? String(esterno.tariffa_oraria) : "",
         strumento_codice:
           esterno.strumento_codice != null ? String(esterno.strumento_codice) : NONE_VALUE,
         attivo: esterno.attivo,
@@ -111,17 +105,11 @@ export default function EsternoFormDialog({ open, onOpenChange, esterno }: Ester
     event.preventDefault()
     setError(null)
 
-    const tariffa_oraria = dati.tariffa_oraria.trim() === "" ? null : Number(dati.tariffa_oraria)
-    if (tariffa_oraria != null && Number.isNaN(tariffa_oraria)) {
-      setError("La tariffa oraria deve essere un numero valido.")
-      return
-    }
     if (dati.strumento_codice === NONE_VALUE) {
       setError("Strumento obbligatorio")
       return
     }
     const strumento_codice = Number(dati.strumento_codice)
-    const specializzazione = dati.specializzazione.trim() || null
 
     try {
       if (isEdit && esterno) {
@@ -129,8 +117,6 @@ export default function EsternoFormDialog({ open, onOpenChange, esterno }: Ester
           id: esterno.id,
           input: {
             codice_esterno: dati.codice_esterno,
-            specializzazione,
-            tariffa_oraria,
             strumento_codice,
             attivo: dati.attivo,
           },
@@ -163,8 +149,6 @@ export default function EsternoFormDialog({ open, onOpenChange, esterno }: Ester
 
         await createEsterno.mutateAsync({
           codice_esterno: dati.codice_esterno,
-          specializzazione,
-          tariffa_oraria,
           strumento_codice,
           attivo: dati.attivo,
           persona_id,
@@ -368,30 +352,6 @@ export default function EsternoFormDialog({ open, onOpenChange, esterno }: Ester
                   required
                   value={dati.codice_esterno}
                   onChange={(e) => setDati((d) => ({ ...d, codice_esterno: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="specializzazione">Specializzazione</Label>
-                <Input
-                  id="specializzazione"
-                  value={dati.specializzazione}
-                  onChange={(e) =>
-                    setDati((d) => ({
-                      ...d,
-                      specializzazione: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tariffa_oraria">Tariffa oraria (€)</Label>
-                <Input
-                  id="tariffa_oraria"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={dati.tariffa_oraria}
-                  onChange={(e) => setDati((d) => ({ ...d, tariffa_oraria: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">

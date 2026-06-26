@@ -3,9 +3,8 @@ import { ArrowLeftRight, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 
 import { useBanda } from "@/context/BandaContext"
 import { useFlussiCassa } from "@/hooks/useFlussiCassa"
 import { useConfigurazioniBandaAnno } from "@/hooks/useConfigurazioneAnno"
-import type { FlussoCassa, TipoFlusso } from "@/types/flusso-cassa"
+import type { FlussoCassa } from "@/types/flusso-cassa"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -28,7 +27,7 @@ import TrasferimentoFormDialog from "@/components/contabilita/TrasferimentoFormD
 import DeleteFlussoCassaDialog from "@/components/contabilita/DeleteFlussoCassaDialog"
 
 const PAGE_SIZE = 20
-const COLUMNS = 7
+const COLUMNS = 11
 const ALL = "__all__"
 const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = Array.from({ length: CURRENT_YEAR + 1 - 2020 + 1 }, (_, i) => 2020 + i)
@@ -41,31 +40,6 @@ function formatDate(iso: string): string {
 
 function formatImporto(importo: string): string {
   return `€ ${parseFloat(importo).toFixed(2)}`
-}
-
-interface TipoBadgeConfig {
-  label: string
-  className: string
-}
-
-const TIPO_CONFIG: Record<TipoFlusso, TipoBadgeConfig> = {
-  MOVIMENTO: { label: "Movimento", className: "" },
-  SALDO_INIZIALE: {
-    label: "Saldo iniziale",
-    className: "border-transparent bg-blue-100 text-blue-800 shadow hover:bg-blue-100/80",
-  },
-  TRASFERIMENTO_USCITA: {
-    label: "Trasf. uscita",
-    className: "border-transparent bg-orange-100 text-orange-800 shadow hover:bg-orange-100/80",
-  },
-  TRASFERIMENTO_ENTRATA: {
-    label: "Trasf. entrata",
-    className: "border-transparent bg-orange-100 text-orange-800 shadow hover:bg-orange-100/80",
-  },
-  AUTO_ISCRIZIONE: {
-    label: "Auto iscrizione",
-    className: "border-transparent bg-purple-100 text-purple-800 shadow hover:bg-purple-100/80",
-  },
 }
 
 type TipoFilter = typeof ALL | "MOVIMENTO" | "TRASFERIMENTO" | "AUTO_ISCRIZIONE" | "SALDO_INIZIALE"
@@ -95,16 +69,32 @@ export default function ContabilitaMovimentiPage() {
   const configAnno = configurazioni?.items.find((c) => c.anno === anno) ?? null
   const annoClosed = configAnno?.chiuso === true
 
+  const saldoIniziale =
+    parseFloat(configAnno?.saldo_iniziale_cassa ?? "0") +
+    parseFloat(configAnno?.saldo_iniziale_banca ?? "0")
+
   const totalPages = data?.meta.total_pages ?? 1
 
-  const filteredItems = useMemo(() => {
-    const items = data?.items ?? []
-    return items.filter((f) => {
-      if (naturaFilter !== ALL && String(f.natura_flusso_codice) !== naturaFilter) return false
-      if (!matchesTipoFilter(f, tipoFilter)) return false
-      return true
-    })
-  }, [data, naturaFilter, tipoFilter])
+  const { filteredItems, runningBalances } = useMemo(() => {
+    const items = (data?.items ?? [])
+      .filter((f) => {
+        if (naturaFilter !== ALL && String(f.natura_flusso_codice) !== naturaFilter) return false
+        if (!matchesTipoFilter(f, tipoFilter)) return false
+        return true
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.data_registrazione).getTime() - new Date(b.data_registrazione).getTime(),
+      )
+    const balances: number[] = items.reduce<number[]>((acc, f) => {
+      const importo = parseFloat(f.importo ?? "0")
+      const newSaldo =
+        (acc[acc.length - 1] ?? saldoIniziale) + (f.segno === "+" ? importo : -importo)
+      acc.push(newSaldo)
+      return acc
+    }, [])
+    return { filteredItems: items, runningBalances: balances }
+  }, [data, naturaFilter, tipoFilter, saldoIniziale])
 
   const handleAnnoChange = (value: string) => {
     setAnno(Number(value))
@@ -213,10 +203,14 @@ export default function ContabilitaMovimentiPage() {
             <TableRow>
               <TableHead>Data</TableHead>
               <TableHead>Descrizione</TableHead>
-              <TableHead>Voce</TableHead>
+              <TableHead>Note</TableHead>
+              <TableHead>Voce contabilità</TableHead>
               <TableHead>Natura</TableHead>
-              <TableHead>Tipo</TableHead>
+              <TableHead>Sezione</TableHead>
+              <TableHead>Voce</TableHead>
+              <TableHead>Sotto-voce</TableHead>
               <TableHead className="text-right">Importo</TableHead>
+              <TableHead className="text-right">Saldo</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
           </TableHeader>
@@ -244,23 +238,37 @@ export default function ContabilitaMovimentiPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredItems.map((flusso) => {
-                const tipoConf = TIPO_CONFIG[flusso.tipo]
-                return (
+              <>
+                {configAnno !== null && (
+                  <TableRow className="bg-muted/50 text-sm font-medium">
+                    <TableCell colSpan={5}>Saldo iniziale {anno} (cassa + banca)</TableCell>
+                    <TableCell />
+                    <TableCell />
+                    <TableCell />
+                    <TableCell />
+                    <TableCell className="text-right font-semibold tabular-nums">
+                      € {saldoIniziale.toFixed(2)}
+                    </TableCell>
+                    <TableCell />
+                  </TableRow>
+                )}
+                {filteredItems.map((flusso, index) => (
                   <TableRow key={flusso.id}>
                     <TableCell className="whitespace-nowrap">
                       {formatDate(flusso.data_registrazione)}
                     </TableCell>
                     <TableCell>{flusso.descrizione_operazione}</TableCell>
+                    <TableCell>{flusso.note ?? "—"}</TableCell>
                     <TableCell>{flusso.voce_contabilita?.voce_contabilita ?? "—"}</TableCell>
                     <TableCell>{flusso.natura_flusso?.descrizione ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant={tipoConf.className ? "outline" : "secondary"}
-                        className={tipoConf.className || undefined}
-                      >
-                        {tipoConf.label}
-                      </Badge>
+                      {flusso.voce_contabilita?.sezione_rendiconto?.descrizione ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      {flusso.voce_contabilita?.voce_rendiconto?.descrizione ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      {flusso.voce_contabilita?.sottovoce_rendiconto?.descrizione ?? "—"}
                     </TableCell>
                     <TableCell
                       className={`text-right font-medium tabular-nums ${
@@ -269,6 +277,13 @@ export default function ContabilitaMovimentiPage() {
                     >
                       {flusso.segno === "+" ? "+" : "-"}
                       {formatImporto(flusso.importo)}
+                    </TableCell>
+                    <TableCell
+                      className={`text-right font-medium tabular-nums ${
+                        runningBalances[index] >= 0 ? "text-emerald-600" : "text-destructive"
+                      }`}
+                    >
+                      € {runningBalances[index].toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
@@ -293,8 +308,8 @@ export default function ContabilitaMovimentiPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                )
-              })
+                ))}
+              </>
             )}
           </TableBody>
         </Table>

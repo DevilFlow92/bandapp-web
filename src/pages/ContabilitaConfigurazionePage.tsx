@@ -112,7 +112,7 @@ export default function ContabilitaConfigurazionePage() {
                   <TableCell>{formatImporto(config.quota_annuale_attesa)}</TableCell>
                   <TableCell>{formatImporto(config.saldo_iniziale_cassa)}</TableCell>
                   <TableCell>{formatImporto(config.saldo_iniziale_banca)}</TableCell>
-                  <TableCell>{config.voce_contabilita_quote?.descrizione ?? "—"}</TableCell>
+                  <TableCell>{config.voce_contabilita_quote?.voce_contabilita ?? "—"}</TableCell>
                   <TableCell>
                     {config.chiuso ? (
                       <Badge variant="secondary">Chiuso</Badge>

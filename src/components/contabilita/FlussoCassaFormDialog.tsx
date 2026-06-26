@@ -228,7 +228,7 @@ export default function FlussoCassaFormDialog({
               <SelectContent>
                 {vociList.map((voce) => (
                   <SelectItem key={voce.id} value={String(voce.id)}>
-                    {voce.descrizione}
+                    {voce.voce_contabilita}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -252,7 +252,7 @@ export default function ConfigurazioneAnnoFormDialog({
                 <SelectItem value={NONE_VALUE}>Nessuna voce</SelectItem>
                 {vociList.map((voce) => (
                   <SelectItem key={voce.id} value={String(voce.id)}>
-                    {voce.descrizione}
+                    {voce.voce_contabilita}
                   </SelectItem>
                 ))}
               </SelectContent>

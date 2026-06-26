@@ -2,7 +2,7 @@ export type { PagedResponse, PageMeta } from "@/types/socio"
 
 export interface VoceContabilitaInConfig {
   id: number
-  descrizione: string
+  voce_contabilita: string
 }
 
 export interface UtenteInConfig {

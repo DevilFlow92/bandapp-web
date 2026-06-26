@@ -7,6 +7,11 @@ export type TipoFlusso =
   | "TRASFERIMENTO_ENTRATA"
   | "AUTO_ISCRIZIONE"
 
+interface RendicontoRefInFlusso {
+  codice: number
+  descrizione: string
+}
+
 export interface FlussoCassa {
   id: number
   banda_codice: number
@@ -21,7 +26,14 @@ export interface FlussoCassa {
   iscrizione_id: number | null
   trasferimento_id: string | null
   natura_flusso?: { codice: number; descrizione: string } | null
-  voce_contabilita?: { id: number; voce_contabilita: string } | null
+  voce_contabilita?: {
+    id: number
+    voce_contabilita: string
+    sezione_rendiconto_codice: number
+    sezione_rendiconto?: RendicontoRefInFlusso | null
+    voce_rendiconto?: RendicontoRefInFlusso | null
+    sottovoce_rendiconto?: RendicontoRefInFlusso | null
+  } | null
 }
 
 export interface FlussoCassaCreate {

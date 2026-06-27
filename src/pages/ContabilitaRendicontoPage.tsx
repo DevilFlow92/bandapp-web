@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import {
   Cell,
@@ -243,8 +243,13 @@ export default function ContabilitaRendicontoPage() {
   const { banda } = useBanda()
   const { toast } = useToast()
   const [anno, setAnno] = useState(CURRENT_YEAR)
+  const [annoMensile, setAnnoMensile] = useState<number>(CURRENT_YEAR)
   const [isExporting, setIsExporting] = useState(false)
   const [showFuori, setShowFuori] = useState(false)
+
+  useEffect(() => {
+    setAnnoMensile(anno)
+  }, [anno])
 
   const enabled = !!banda
   const bandaCodice = banda!.codice
@@ -253,6 +258,9 @@ export default function ContabilitaRendicontoPage() {
   const { data, isLoading, isError } = useRendiconto(bandaCodice, anno, enabled)
   const { data: dataPrev } = useRendiconto(bandaCodice, annoPrec, enabled)
   const { data: mensileData } = useRendicontoMensile(bandaCodice, anno, enabled)
+  const { data: mensileDataPrev } = useRendicontoMensile(bandaCodice, anno - 1, enabled)
+
+  const activeMensileData = annoMensile === anno ? mensileData : mensileDataPrev
 
   const handleAnnoChange = (value: string) => {
     setAnno(Number(value))
@@ -325,7 +333,7 @@ export default function ContabilitaRendicontoPage() {
       .filter((d) => d.value > 0) ?? []
 
   const mensileChartData =
-    mensileData?.mensile.map((item) => ({
+    activeMensileData?.mensile.map((item) => ({
       mese: MESI[item.mese - 1],
       Entrate: parseFloat(item.entrate),
       Uscite: parseFloat(item.uscite),
@@ -509,8 +517,20 @@ export default function ContabilitaRendicontoPage() {
             </Card>
 
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-base">Andamento mensile</CardTitle>
+                <Select
+                  value={String(annoMensile)}
+                  onValueChange={(v) => setAnnoMensile(Number(v))}
+                >
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={String(anno)}>{anno}</SelectItem>
+                    <SelectItem value={String(anno - 1)}>{anno - 1}</SelectItem>
+                  </SelectContent>
+                </Select>
               </CardHeader>
               <CardContent>
                 {mensileChartData.length === 0 ? (

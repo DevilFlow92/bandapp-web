@@ -22,7 +22,7 @@ export function useBandePublic() {
     queryKey: ["bande", "public"],
     queryFn: async () => {
       const { data } = await api.get<PagedResponse<{ codice: number; descrizione: string }>>(
-        "/bande/",
+        "/bande/public",
         { params: { page_size: 50 } },
       )
       return data.items

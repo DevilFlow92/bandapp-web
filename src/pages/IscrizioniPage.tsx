@@ -77,7 +77,7 @@ function socioFullName(socio: Socio | undefined): string {
 
 export default function IscrizioniPage() {
   const { banda } = useBanda()
-  const canWrite = usePermission("servizi:write")
+  const canWrite = usePermission("iscrizioni:write")
   const [page, setPage] = useState(1)
   const [yearFilter, setYearFilter] = useState<string>(String(CURRENT_YEAR))
   const anno = yearFilter === ALL_YEARS ? undefined : Number(yearFilter)

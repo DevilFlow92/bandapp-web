@@ -52,7 +52,9 @@ export default function App() {
                   <Route path="soci/:id" element={<SocioDetailPage />} />
                   <Route path="esterni" element={<EsterniPage />} />
                   <Route path="servizi" element={<ServiziPage />} />
-                  <Route path="iscrizioni" element={<IscrizioniPage />} />
+                  <Route element={<PermissionGuard permission="iscrizioni:read" />}>
+                    <Route path="iscrizioni" element={<IscrizioniPage />} />
+                  </Route>
                   <Route path="spartiti" element={<SpartitiPage />} />
                   <Route path="documenti" element={<DocumentiPage />} />
                   <Route element={<PermissionGuard permission="contabilita:read" />}>

@@ -198,6 +198,47 @@ function FuoriBilancioPanel({ sezione }: { sezione: SezioneRendicontoAggregato }
   )
 }
 
+function FigurativiPanel({ label, anno }: { label: string; anno: number }) {
+  const zero = formatEuroNum(0)
+  return (
+    <div>
+      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </h3>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Descrizione</TableHead>
+            <TableHead className="text-right">{anno}</TableHead>
+            <TableHead className="text-right">{anno - 1}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow>
+            <TableCell>1) Da attività di interesse generale</TableCell>
+            <TableCell className="text-right tabular-nums text-muted-foreground">{zero}</TableCell>
+            <TableCell className="text-right tabular-nums text-muted-foreground">—</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>2) Da attività diverse</TableCell>
+            <TableCell className="text-right tabular-nums text-muted-foreground">{zero}</TableCell>
+            <TableCell className="text-right tabular-nums text-muted-foreground">—</TableCell>
+          </TableRow>
+          <TableRow className="border-t-2">
+            <TableCell className="font-bold">Totale</TableCell>
+            <TableCell className="text-right font-bold tabular-nums text-muted-foreground">
+              {zero}
+            </TableCell>
+            <TableCell className="text-right font-bold tabular-nums text-muted-foreground">
+              —
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+  )
+}
+
 export default function ContabilitaRendicontoPage() {
   const { banda } = useBanda()
   const { toast } = useToast()
@@ -276,6 +317,11 @@ export default function ContabilitaRendicontoPage() {
   const pieData =
     sezioneEntrate?.voci
       .map((v) => ({ name: v.descrizione, value: parseFloat(v.totale) }))
+      .filter((d) => d.value > 0) ?? []
+
+  const pieDataUscite =
+    sezioneUscite?.voci
+      .map((v) => ({ name: v.descrizione, value: Math.abs(parseFloat(v.totale)) }))
       .filter((d) => d.value > 0) ?? []
 
   const mensileChartData =
@@ -431,6 +477,39 @@ export default function ContabilitaRendicontoPage() {
 
             <Card>
               <CardHeader>
+                <CardTitle className="text-base">Uscite per voce (A–E)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pieDataUscite.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    Nessuna uscita registrata per l'anno {anno}.
+                  </p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={pieDataUscite}
+                        dataKey="value"
+                        nameKey="name"
+                        label={({ name, percent }) =>
+                          `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
+                        }
+                        labelLine={false}
+                      >
+                        {pieDataUscite.map((_, index) => (
+                          <Cell key={index} fill={PIE_COLORS[(index + 2) % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => formatEuroNum(Number(value))} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle className="text-base">Andamento mensile</CardTitle>
               </CardHeader>
               <CardContent>
@@ -518,6 +597,66 @@ export default function ContabilitaRendicontoPage() {
                   </span>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Cassa e banca</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Cassa e banca
+                  </h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Descrizione</TableHead>
+                        <TableHead className="text-right">{anno}</TableHead>
+                        <TableHead className="text-right">{annoPrec}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>Cassa</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatEuroNum(saldoFinaleCassa)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-muted-foreground">
+                          {dataPrev ? formatEuroNum(saldoFinaleCassaPrev) : "—"}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Depositi bancari e postali</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatEuroNum(saldoFinaleBanca)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-muted-foreground">
+                          {dataPrev ? formatEuroNum(saldoFinaleBancaPrev) : "—"}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+                <div aria-hidden />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Costi e proventi figurativi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 md:grid-cols-2">
+                <FigurativiPanel label="Costi figurativi" anno={anno} />
+                <FigurativiPanel label="Proventi figurativi" anno={anno} />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Redatto in conformità al modello D del D.M. n. 39/2020
+              </p>
             </CardContent>
           </Card>
 

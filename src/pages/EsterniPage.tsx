@@ -26,6 +26,7 @@ import {
 import EsternoFormDialog from "@/components/esterni/EsternoFormDialog"
 import DeleteEsternoDialog from "@/components/esterni/DeleteEsternoDialog"
 import IndirizziSection from "@/components/anagrafica/IndirizziSection"
+import ContattiSection from "@/components/anagrafica/ContattiSection"
 
 const PAGE_SIZE = 20
 
@@ -155,8 +156,11 @@ export default function EsterniPage() {
                     </TableRow>
                     {isExpanded && typeof esterno.persona?.id === "number" && (
                       <TableRow key={`${esterno.id}-indirizzi`}>
-                        <TableCell colSpan={colCount} className="bg-muted/30 p-4">
-                          <IndirizziSection personaId={esterno.persona.id} canWrite={canWrite} />
+                        <TableCell colSpan={colCount} className="bg-muted/30 p-0">
+                          <div className="grid gap-6 lg:grid-cols-2 p-4">
+                            <IndirizziSection personaId={esterno.persona.id} canWrite={canWrite} />
+                            <ContattiSection personaId={esterno.persona.id} canWrite={canWrite} />
+                          </div>
                         </TableCell>
                       </TableRow>
                     )}

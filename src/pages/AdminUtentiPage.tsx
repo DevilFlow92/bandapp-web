@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { ChevronLeft, ChevronRight, KeyRound, Pencil, Plus, Trash2 } from "lucide-react"
 import { useUtenti } from "@/hooks/useAdmin"
+import { usePermission } from "@/hooks/useAuth"
 import type { Utente } from "@/types/admin"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +21,7 @@ import DeleteUtenteDialog from "@/components/admin/DeleteUtenteDialog"
 const PAGE_SIZE = 20
 
 export default function AdminUtentiPage() {
+  const canWrite = usePermission("utenti:write")
   const [page, setPage] = useState(1)
   const { data, isLoading, isError } = useUtenti(page, PAGE_SIZE)
 
@@ -30,6 +32,7 @@ export default function AdminUtentiPage() {
 
   const utenti = data?.items ?? []
   const totalPages = data?.meta.total_pages ?? 1
+  const colCount = canWrite ? 7 : 6
 
   const openCreate = () => {
     setEditing(null)
@@ -45,10 +48,12 @@ export default function AdminUtentiPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Utenti</h1>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuovo utente
-        </Button>
+        {canWrite && (
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuovo utente
+          </Button>
+        )}
       </div>
 
       <div className="rounded-md border">
@@ -61,14 +66,14 @@ export default function AdminUtentiPage() {
               <TableHead>Stato</TableHead>
               <TableHead>Superuser</TableHead>
               <TableHead>Ruoli</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
+              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 7 }).map((__, j) => (
+                  {Array.from({ length: colCount }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
@@ -77,13 +82,13 @@ export default function AdminUtentiPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento degli utenti.
                 </TableCell>
               </TableRow>
             ) : utenti.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Nessun utente trovato
                 </TableCell>
               </TableRow>
@@ -112,34 +117,36 @@ export default function AdminUtentiPage() {
                   <TableCell>
                     {utente.ruoli.length > 0 ? utente.ruoli.map((r) => r.nome).join(", ") : "—"}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setPasswordFor(utente)}
-                        aria-label="Cambia password"
-                      >
-                        <KeyRound className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(utente)}
-                        aria-label="Modifica"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleting(utente)}
-                        aria-label="Elimina"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {canWrite && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setPasswordFor(utente)}
+                          aria-label="Cambia password"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(utente)}
+                          aria-label="Modifica"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleting(utente)}
+                          aria-label="Elimina"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

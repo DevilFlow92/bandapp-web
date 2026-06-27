@@ -8,6 +8,7 @@ import {
 } from "@/hooks/useDocumenti"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { usePermission } from "@/hooks/useAuth"
 import type { Documento } from "@/types/documento"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -56,6 +57,7 @@ function formatNote(note: string | null): string {
 
 export default function DocumentiPage() {
   const { toast } = useToast()
+  const canWrite = usePermission("archivio:write")
   const [page, setPage] = useState(1)
   const [tipoFilter, setTipoFilter] = useState<string>(ALL)
 
@@ -91,10 +93,12 @@ export default function DocumentiPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Documenti</h1>
-        <Button onClick={() => setUploadOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Carica documento
-        </Button>
+        {canWrite && (
+          <Button onClick={() => setUploadOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Carica documento
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-wrap items-end gap-4">
@@ -191,14 +195,16 @@ export default function DocumentiPage() {
                       >
                         <Download className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleting(documento)}
-                        aria-label="Elimina"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {canWrite && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleting(documento)}
+                          aria-label="Elimina"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

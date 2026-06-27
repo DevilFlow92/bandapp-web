@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { ArrowLeftRight, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useBanda } from "@/context/BandaContext"
+import { usePermission } from "@/hooks/useAuth"
 import { useFlussiCassa } from "@/hooks/useFlussiCassa"
 import { useConfigurazioniBandaAnno } from "@/hooks/useConfigurazioneAnno"
 import type { FlussoCassa } from "@/types/flusso-cassa"
@@ -53,6 +54,7 @@ function matchesTipoFilter(flusso: FlussoCassa, filter: TipoFilter): boolean {
 
 export default function ContabilitaMovimentiPage() {
   const { banda } = useBanda()
+  const canWrite = usePermission("contabilita:write")
   const [anno, setAnno] = useState(CURRENT_YEAR)
   const [page, setPage] = useState(1)
   const [naturaFilter, setNaturaFilter] = useState<string>(ALL)
@@ -74,6 +76,7 @@ export default function ContabilitaMovimentiPage() {
     parseFloat(configAnno?.saldo_iniziale_banca ?? "0")
 
   const totalPages = data?.meta.total_pages ?? 1
+  const colCount = canWrite ? COLUMNS : COLUMNS - 1
 
   const { filteredItems, runningBalances } = useMemo(() => {
     const items = (data?.items ?? [])
@@ -118,20 +121,22 @@ export default function ContabilitaMovimentiPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Movimenti di cassa</h1>
-        <div className="flex gap-2">
-          <Button onClick={openCreate} disabled={annoClosed}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nuovo movimento
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setTrasferimentoOpen(true)}
-            disabled={annoClosed}
-          >
-            <ArrowLeftRight className="mr-2 h-4 w-4" />
-            Nuovo trasferimento
-          </Button>
-        </div>
+        {canWrite && (
+          <div className="flex gap-2">
+            <Button onClick={openCreate} disabled={annoClosed}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nuovo movimento
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setTrasferimentoOpen(true)}
+              disabled={annoClosed}
+            >
+              <ArrowLeftRight className="mr-2 h-4 w-4" />
+              Nuovo trasferimento
+            </Button>
+          </div>
+        )}
       </div>
 
       {annoClosed && (
@@ -211,14 +216,14 @@ export default function ContabilitaMovimentiPage() {
               <TableHead>Sotto-voce</TableHead>
               <TableHead className="text-right">Importo</TableHead>
               <TableHead className="text-right">Saldo</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
+              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 7 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: COLUMNS }).map((__, j) => (
+                  {Array.from({ length: colCount }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
@@ -227,13 +232,13 @@ export default function ContabilitaMovimentiPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={COLUMNS} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento dei movimenti.
                 </TableCell>
               </TableRow>
             ) : filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={COLUMNS} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Nessun movimento registrato per l'anno {anno}.
                 </TableCell>
               </TableRow>
@@ -249,7 +254,7 @@ export default function ContabilitaMovimentiPage() {
                     <TableCell className="text-right font-semibold tabular-nums">
                       € {saldoIniziale.toFixed(2)}
                     </TableCell>
-                    <TableCell />
+                    {canWrite && <TableCell />}
                   </TableRow>
                 )}
                 {filteredItems.map((flusso, index) => (
@@ -285,28 +290,30 @@ export default function ContabilitaMovimentiPage() {
                     >
                       € {runningBalances[index].toFixed(2)}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(flusso)}
-                          disabled={!canEdit(flusso)}
-                          aria-label="Modifica"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleting(flusso)}
-                          disabled={annoClosed}
-                          aria-label="Elimina"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    {canWrite && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(flusso)}
+                            disabled={!canEdit(flusso)}
+                            aria-label="Modifica"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleting(flusso)}
+                            disabled={annoClosed}
+                            aria-label="Elimina"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useSoci } from "@/hooks/useSoci"
 import { useIscrizioni } from "@/hooks/useIscrizioni"
+import { usePermission } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import type { Socio } from "@/types/socio"
 import { Button } from "@/components/ui/button"
@@ -27,6 +28,7 @@ const STATO_ANNULLATA = 3
 export default function SociPage() {
   const navigate = useNavigate()
   const { banda } = useBanda()
+  const canWrite = usePermission("anagrafica:write")
   const [page, setPage] = useState(1)
   const { data, isLoading, isError } = useSoci(page, PAGE_SIZE, banda!.codice, !!banda)
   // A socio is "active" when they have a non-cancelled iscrizione for the
@@ -48,6 +50,7 @@ export default function SociPage() {
 
   const soci = data?.items ?? []
   const totalPages = data?.meta.total_pages ?? 1
+  const colCount = canWrite ? 7 : 6
 
   const openCreate = () => {
     setEditing(null)
@@ -63,10 +66,12 @@ export default function SociPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Soci</h1>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuovo socio
-        </Button>
+        {canWrite && (
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuovo socio
+          </Button>
+        )}
       </div>
 
       <div className="rounded-md border">
@@ -79,14 +84,14 @@ export default function SociPage() {
               <TableHead>Strumento</TableHead>
               <TableHead>Ruolo Banda</TableHead>
               <TableHead>Stato</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
+              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 7 }).map((__, j) => (
+                  {Array.from({ length: colCount }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
@@ -95,13 +100,13 @@ export default function SociPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento dei soci.
                 </TableCell>
               </TableRow>
             ) : soci.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Nessun socio trovato
                 </TableCell>
               </TableRow>
@@ -134,26 +139,28 @@ export default function SociPage() {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(socio)}
-                        aria-label="Modifica"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleting(socio)}
-                        aria-label="Rimuovi"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {canWrite && (
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(socio)}
+                          aria-label="Modifica"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleting(socio)}
+                          aria-label="Rimuovi"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { ChevronLeft, ChevronRight, Lock, Pencil, Plus, Trash2, Unlock } from "lucide-react"
 import { useConfigurazioniBandaAnno, useRiapriAnno } from "@/hooks/useConfigurazioneAnno"
-import { useCurrentUser } from "@/hooks/useAuth"
+import { useCurrentUser, usePermission } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import type { ConfigurazioneBandaAnno } from "@/types/configurazione-anno"
 import { Button } from "@/components/ui/button"
@@ -30,6 +30,7 @@ function formatImporto(value: string): string {
 export default function ContabilitaConfigurazionePage() {
   const { banda } = useBanda()
   const { data: user } = useCurrentUser()
+  const canWrite = usePermission("contabilita:write")
   const [page, setPage] = useState(1)
   const { data, isLoading, isError } = useConfigurazioniBandaAnno(
     banda!.codice,
@@ -47,6 +48,7 @@ export default function ContabilitaConfigurazionePage() {
   const configurazioni = data?.items ?? []
   const totalPages = data?.meta.total_pages ?? 1
   const canRiapri = user?.superuser === true
+  const colCount = canWrite ? COLUMNS : COLUMNS - 1
 
   const openCreate = () => {
     setEditing(null)
@@ -62,10 +64,12 @@ export default function ContabilitaConfigurazionePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Configurazione contabile</h1>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuova configurazione
-        </Button>
+        {canWrite && (
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuova configurazione
+          </Button>
+        )}
       </div>
 
       <div className="rounded-md border">
@@ -79,14 +83,14 @@ export default function ContabilitaConfigurazionePage() {
               <TableHead>Voce quote</TableHead>
               <TableHead>Stato</TableHead>
               <TableHead>Chiuso da</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
+              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: COLUMNS }).map((__, j) => (
+                  {Array.from({ length: colCount }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
@@ -95,13 +99,13 @@ export default function ContabilitaConfigurazionePage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={COLUMNS} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento delle configurazioni.
                 </TableCell>
               </TableRow>
             ) : configurazioni.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={COLUMNS} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Nessuna configurazione presente
                 </TableCell>
               </TableRow>
@@ -121,49 +125,51 @@ export default function ContabilitaConfigurazionePage() {
                     )}
                   </TableCell>
                   <TableCell>{config.chiuso_da_utente?.email ?? "—"}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(config)}
-                        disabled={config.chiuso}
-                        aria-label="Modifica"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {!config.chiuso && (
+                  {canWrite && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setChiudendo(config)}
-                          aria-label="Chiudi anno"
+                          onClick={() => openEdit(config)}
+                          disabled={config.chiuso}
+                          aria-label="Modifica"
                         >
-                          <Lock className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                      )}
-                      {config.chiuso && canRiapri && (
+                        {!config.chiuso && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setChiudendo(config)}
+                            aria-label="Chiudi anno"
+                          >
+                            <Lock className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {config.chiuso && canRiapri && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => riapriAnno.mutate(config.id)}
+                            disabled={riapriAnno.isPending}
+                            aria-label="Riapri anno"
+                          >
+                            <Unlock className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => riapriAnno.mutate(config.id)}
-                          disabled={riapriAnno.isPending}
-                          aria-label="Riapri anno"
+                          onClick={() => setDeleting(config)}
+                          disabled={config.chiuso}
+                          aria-label="Elimina"
                         >
-                          <Unlock className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleting(config)}
-                        disabled={config.chiuso}
-                        aria-label="Elimina"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

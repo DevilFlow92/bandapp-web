@@ -2,6 +2,7 @@ import { Fragment, useState } from "react"
 import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useServizi } from "@/hooks/useServizi"
 import { useRicevute } from "@/hooks/useRicevute"
+import { usePermission } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import type { Servizio } from "@/types/servizio"
 import type { Ricevuta } from "@/types/ricevuta"
@@ -70,10 +71,12 @@ function formatImporto(importo: number): string {
 /** Inline sub-row listing the ricevute of a single servizio. */
 function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; colSpan: number }) {
   const { data, isLoading, isError } = useRicevute(servizioId)
+  const canWrite = usePermission("servizi:write")
   const [formOpen, setFormOpen] = useState(false)
   const [deleting, setDeleting] = useState<Ricevuta | null>(null)
 
   const ricevute = data?.items ?? []
+  const ricevuteColCount = canWrite ? 5 : 4
 
   return (
     <TableRow className="hover:bg-transparent">
@@ -81,10 +84,12 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Ricevute</h3>
-            <Button size="sm" variant="outline" onClick={() => setFormOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Aggiungi ricevuta
-            </Button>
+            {canWrite && (
+              <Button size="sm" variant="outline" onClick={() => setFormOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Aggiungi ricevuta
+              </Button>
+            )}
           </div>
 
           <div className="rounded-md border bg-background">
@@ -95,14 +100,14 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
                   <TableHead>Data</TableHead>
                   <TableHead>Importo</TableHead>
                   <TableHead>Note in stampa</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  {canWrite && <TableHead className="text-right">Azioni</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   Array.from({ length: 2 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 5 }).map((__, j) => (
+                      {Array.from({ length: ricevuteColCount }).map((__, j) => (
                         <TableCell key={j}>
                           <Skeleton className="h-5 w-full" />
                         </TableCell>
@@ -111,13 +116,19 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
                   ))
                 ) : isError ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={ricevuteColCount}
+                      className="py-8 text-center text-muted-foreground"
+                    >
                       Errore nel caricamento delle ricevute.
                     </TableCell>
                   </TableRow>
                 ) : ricevute.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={ricevuteColCount}
+                      className="py-8 text-center text-muted-foreground"
+                    >
                       Nessuna ricevuta per questo servizio
                     </TableCell>
                   </TableRow>
@@ -133,16 +144,18 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
                       <TableCell>{formatData(ricevuta.data_ricevuta)}</TableCell>
                       <TableCell>{formatImporto(ricevuta.importo)}</TableCell>
                       <TableCell>{formatNote(ricevuta.note_in_stampa)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleting(ricevuta)}
-                          aria-label="Elimina"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
+                      {canWrite && (
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleting(ricevuta)}
+                            aria-label="Elimina"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
@@ -166,6 +179,7 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
 
 export default function ServiziPage() {
   const { banda } = useBanda()
+  const canWrite = usePermission("servizi:write")
   const [page, setPage] = useState(1)
   const [yearFilter, setYearFilter] = useState<string>(ALL_YEARS)
   const anno = yearFilter === ALL_YEARS ? undefined : Number(yearFilter)
@@ -181,6 +195,7 @@ export default function ServiziPage() {
 
   const servizi = data?.items ?? []
   const totalPages = data?.meta.total_pages ?? 1
+  const colCount = canWrite ? 7 : 6
 
   const openCreate = () => {
     setEditing(null)
@@ -201,10 +216,12 @@ export default function ServiziPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Servizi</h1>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuovo servizio
-        </Button>
+        {canWrite && (
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuovo servizio
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -236,14 +253,14 @@ export default function ServiziPage() {
               <TableHead>Data</TableHead>
               <TableHead>Indirizzo</TableHead>
               <TableHead>Note</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
+              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 7 }).map((__, j) => (
+                  {Array.from({ length: colCount }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
@@ -252,13 +269,13 @@ export default function ServiziPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento dei servizi.
                 </TableCell>
               </TableRow>
             ) : servizi.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Nessun servizio trovato
                 </TableCell>
               </TableRow>
@@ -288,28 +305,32 @@ export default function ServiziPage() {
                       <TableCell>{formatDataServizio(servizio.data_servizio)}</TableCell>
                       <TableCell>{formatIndirizzoServizio(servizio.indirizzo)}</TableCell>
                       <TableCell>{formatNote(servizio.note)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEdit(servizio)}
-                            aria-label="Modifica"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleting(servizio)}
-                            aria-label="Elimina"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
+                      {canWrite && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(servizio)}
+                              aria-label="Modifica"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleting(servizio)}
+                              aria-label="Elimina"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
-                    {expanded && <ServizioRicevutePanel servizioId={servizio.id} colSpan={7} />}
+                    {expanded && (
+                      <ServizioRicevutePanel servizioId={servizio.id} colSpan={colCount} />
+                    )}
                   </Fragment>
                 )
               })

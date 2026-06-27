@@ -4,7 +4,6 @@ import { Toaster } from "@/components/ui/toaster"
 import { BandaProvider } from "@/context/BandaContext"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import AuthGuard from "@/components/layout/AuthGuard"
-import SuperuserGuard from "@/components/layout/SuperuserGuard"
 import PermissionGuard from "@/components/layout/PermissionGuard"
 import AppLayout from "@/components/layout/AppLayout"
 import LoginPage from "@/pages/LoginPage"
@@ -66,8 +65,10 @@ export default function App() {
                     <Route path="contabilita/rendiconto" element={<ContabilitaRendicontoPage />} />
                     <Route path="contabilita/check-quote" element={<ContabilitaCheckQuotePage />} />
                   </Route>
-                  <Route element={<SuperuserGuard />}>
+                  <Route element={<PermissionGuard permission="utenti:read" />}>
                     <Route path="admin/utenti" element={<AdminUtentiPage />} />
+                  </Route>
+                  <Route element={<PermissionGuard permission="ruoli:read" />}>
                     <Route path="admin/ruoli" element={<AdminRuoliPage />} />
                   </Route>
                 </Route>

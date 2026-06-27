@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { ChevronDown, ChevronUp } from "lucide-react"
 import {
   Cell,
   CartesianGrid,
@@ -19,6 +20,7 @@ import {
   downloadRendicontoPdf,
   downloadRendicontoXlsx,
 } from "@/hooks/useRendiconto"
+import type { SezioneRendicontoAggregato, VoceRendicontoAggregato } from "@/types/rendiconto"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
@@ -49,12 +51,151 @@ const MESI = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ot
 
 const PIE_COLORS = ["#2563eb", "#16a34a", "#dc2626", "#d97706", "#9333ea", "#0891b2"]
 
-function formatEuro(v: string): string {
-  return `€ ${parseFloat(v).toFixed(2)}`
-}
-
 function formatEuroNum(v: number): string {
   return `€ ${v.toFixed(2)}`
+}
+
+function formatEuro(value: string | number | undefined): string {
+  const n = typeof value === "string" ? parseFloat(value) : (value ?? 0)
+  return isNaN(n) ? formatEuroNum(0) : formatEuroNum(n)
+}
+
+function findVocePrev(
+  sezionePrev: SezioneRendicontoAggregato | undefined,
+  voceCodice: number,
+): VoceRendicontoAggregato | undefined {
+  return sezionePrev?.voci.find((v) => v.codice === voceCodice)
+}
+
+function findSottovoce(vocePrev: VoceRendicontoAggregato | undefined, sottovoceCodice: number) {
+  return vocePrev?.sottovoci.find((sv) => sv.codice === sottovoceCodice)
+}
+
+function StatCard({
+  label,
+  value,
+  prevValue,
+  prevYear,
+  valueClassName,
+}: {
+  label: string
+  value: string
+  prevValue: string
+  prevYear: number
+  valueClassName?: string
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className={`text-2xl font-bold tabular-nums ${valueClassName ?? ""}`}>{value}</p>
+        <p className="mt-1 text-xs tabular-nums text-muted-foreground">
+          {prevYear}: {prevValue}
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function SezionePanel({
+  label,
+  anno,
+  sezione,
+  sezionePrev,
+}: {
+  label: string
+  anno: number
+  sezione?: SezioneRendicontoAggregato
+  sezionePrev?: SezioneRendicontoAggregato
+}) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Descrizione</TableHead>
+          <TableHead className="text-right">{anno}</TableHead>
+          <TableHead className="text-right">{anno - 1}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {(sezione?.voci ?? []).flatMap((voce) => {
+          const vocePrev = findVocePrev(sezionePrev, voce.codice)
+          return [
+            <TableRow key={`voce-${voce.codice}`} className="bg-muted/30">
+              <TableCell className="font-semibold">{voce.descrizione}</TableCell>
+              <TableCell className="text-right font-semibold tabular-nums">
+                {formatEuro(voce.totale)}
+              </TableCell>
+              <TableCell className="text-right font-semibold tabular-nums text-muted-foreground">
+                {formatEuro(vocePrev?.totale ?? "0")}
+              </TableCell>
+            </TableRow>,
+            ...voce.sottovoci.map((sv) => (
+              <TableRow key={`sv-${voce.codice}-${sv.codice}`}>
+                <TableCell className="pl-6 text-sm text-muted-foreground">
+                  {sv.descrizione}
+                </TableCell>
+                <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                  {formatEuro(sv.totale)}
+                </TableCell>
+                <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                  {formatEuro(findSottovoce(vocePrev, sv.codice)?.totale ?? "0")}
+                </TableCell>
+              </TableRow>
+            )),
+          ]
+        })}
+        <TableRow className="border-t-2">
+          <TableCell className="font-bold">Totale {label}</TableCell>
+          <TableCell className="text-right font-bold tabular-nums">
+            {formatEuro(sezione?.totale ?? "0")}
+          </TableCell>
+          <TableCell className="text-right font-bold tabular-nums text-muted-foreground">
+            {formatEuro(sezionePrev?.totale ?? "0")}
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  )
+}
+
+function FuoriBilancioPanel({ sezione }: { sezione: SezioneRendicontoAggregato }) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Descrizione</TableHead>
+          <TableHead className="text-right">Totale</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {sezione.voci.flatMap((voce) => [
+          <TableRow key={`fb-voce-${voce.codice}`} className="bg-muted/30">
+            <TableCell className="font-semibold">{voce.descrizione}</TableCell>
+            <TableCell className="text-right font-semibold tabular-nums">
+              {formatEuro(voce.totale)}
+            </TableCell>
+          </TableRow>,
+          ...voce.sottovoci.map((sv) => (
+            <TableRow key={`fb-sv-${voce.codice}-${sv.codice}`}>
+              <TableCell className="pl-6 text-sm text-muted-foreground">{sv.descrizione}</TableCell>
+              <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                {formatEuro(sv.totale)}
+              </TableCell>
+            </TableRow>
+          )),
+        ])}
+        <TableRow className="border-t-2">
+          <TableCell className="font-bold">Totale Fuori Bilancio</TableCell>
+          <TableCell className="text-right font-bold tabular-nums">
+            {formatEuro(sezione.totale)}
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  )
 }
 
 export default function ContabilitaRendicontoPage() {
@@ -62,11 +203,14 @@ export default function ContabilitaRendicontoPage() {
   const { toast } = useToast()
   const [anno, setAnno] = useState(CURRENT_YEAR)
   const [isExporting, setIsExporting] = useState(false)
+  const [showFuori, setShowFuori] = useState(false)
 
   const enabled = !!banda
   const bandaCodice = banda!.codice
+  const annoPrec = anno - 1
 
   const { data, isLoading, isError } = useRendiconto(bandaCodice, anno, enabled)
+  const { data: dataPrev } = useRendiconto(bandaCodice, annoPrec, enabled)
   const { data: mensileData } = useRendicontoMensile(bandaCodice, anno, enabled)
 
   const handleAnnoChange = (value: string) => {
@@ -102,14 +246,33 @@ export default function ContabilitaRendicontoPage() {
   const saldoFinaleCassa = parseFloat(totali?.saldo_finale_cassa ?? "0")
   const saldoFinaleBanca = parseFloat(totali?.saldo_finale_banca ?? "0")
   const liquiditaTotale = saldoFinaleCassa + saldoFinaleBanca
+  const saldoInizialeCassa = parseFloat(data?.saldo_iniziale_cassa ?? "0")
+  const saldoInizialeBanca = parseFloat(data?.saldo_iniziale_banca ?? "0")
 
-  const saldoInizialeTotal =
-    parseFloat(data?.saldo_iniziale_cassa ?? "0") + parseFloat(data?.saldo_iniziale_banca ?? "0")
+  const totaliPrev = dataPrev?.totali
+  const entratePrev = parseFloat(totaliPrev?.entrate ?? "0")
+  const uscitePrev = parseFloat(totaliPrev?.uscite ?? "0")
+  const avanzoPrev = parseFloat(totaliPrev?.avanzo_disavanzo ?? "0")
+  const saldoFinaleCassaPrev = parseFloat(totaliPrev?.saldo_finale_cassa ?? "0")
+  const saldoFinaleBancaPrev = parseFloat(totaliPrev?.saldo_finale_banca ?? "0")
+  const liquiditaTotalePrev = saldoFinaleCassaPrev + saldoFinaleBancaPrev
+  const saldoInizialeCassaPrev = parseFloat(dataPrev?.saldo_iniziale_cassa ?? "0")
+  const saldoInizialeBancaPrev = parseFloat(dataPrev?.saldo_iniziale_banca ?? "0")
+
+  const saldoInizialeTotal = saldoInizialeCassa + saldoInizialeBanca
   const saldoFinaleTotal = saldoFinaleCassa + saldoFinaleBanca
   const quadraturaDiff = Math.abs(saldoInizialeTotal + avanzo - saldoFinaleTotal)
   const quadraturaOk = quadraturaDiff < 0.01
 
+  const sezioneUscite = data?.sezioni.find((s) => s.descrizione.toLowerCase() === "uscite")
   const sezioneEntrate = data?.sezioni.find((s) => s.descrizione.toLowerCase() === "entrate")
+  const sezioneFuori = data?.sezioni.find((s) => s.descrizione.toLowerCase().includes("fuori"))
+
+  const sezioneUscitePrev = dataPrev?.sezioni.find((s) => s.descrizione.toLowerCase() === "uscite")
+  const sezioneEntratePrev = dataPrev?.sezioni.find(
+    (s) => s.descrizione.toLowerCase() === "entrate",
+  )
+
   const pieData =
     sezioneEntrate?.voci
       .map((v) => ({ name: v.descrizione, value: parseFloat(v.totale) }))
@@ -121,6 +284,8 @@ export default function ContabilitaRendicontoPage() {
       Entrate: parseFloat(item.entrate),
       Uscite: parseFloat(item.uscite),
     })) ?? []
+
+  const showFuoriSection = !!sezioneFuori && parseFloat(sezioneFuori.totale) !== 0
 
   return (
     <div className="space-y-6">
@@ -172,68 +337,55 @@ export default function ContabilitaRendicontoPage() {
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Entrate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold tabular-nums">{formatEuroNum(entrate)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Uscite</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold tabular-nums">{formatEuroNum(uscite)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Avanzo / Disavanzo
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p
-                  className={`text-2xl font-bold tabular-nums ${
-                    avanzo >= 0 ? "text-emerald-600" : "text-destructive"
-                  }`}
-                >
-                  {formatEuroNum(avanzo)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Saldo finale cassa
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold tabular-nums">{formatEuroNum(saldoFinaleCassa)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Saldo finale banca
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold tabular-nums">{formatEuroNum(saldoFinaleBanca)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Liquidità totale
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold tabular-nums">{formatEuroNum(liquiditaTotale)}</p>
-              </CardContent>
-            </Card>
+            <StatCard
+              label="Saldo iniziale cassa"
+              value={formatEuroNum(saldoInizialeCassa)}
+              prevValue={formatEuroNum(saldoInizialeCassaPrev)}
+              prevYear={annoPrec}
+            />
+            <StatCard
+              label="Saldo iniziale banca"
+              value={formatEuroNum(saldoInizialeBanca)}
+              prevValue={formatEuroNum(saldoInizialeBancaPrev)}
+              prevYear={annoPrec}
+            />
+            <StatCard
+              label="Entrate totali"
+              value={formatEuroNum(entrate)}
+              prevValue={formatEuroNum(entratePrev)}
+              prevYear={annoPrec}
+            />
+            <StatCard
+              label="Uscite totali"
+              value={formatEuroNum(uscite)}
+              prevValue={formatEuroNum(uscitePrev)}
+              prevYear={annoPrec}
+            />
+            <StatCard
+              label="Avanzo / Disavanzo"
+              value={formatEuroNum(avanzo)}
+              prevValue={formatEuroNum(avanzoPrev)}
+              prevYear={annoPrec}
+              valueClassName={avanzo >= 0 ? "text-emerald-600" : "text-destructive"}
+            />
+            <StatCard
+              label="Saldo finale cassa"
+              value={formatEuroNum(saldoFinaleCassa)}
+              prevValue={formatEuroNum(saldoFinaleCassaPrev)}
+              prevYear={annoPrec}
+            />
+            <StatCard
+              label="Saldo finale banca"
+              value={formatEuroNum(saldoFinaleBanca)}
+              prevValue={formatEuroNum(saldoFinaleBancaPrev)}
+              prevYear={annoPrec}
+            />
+            <StatCard
+              label="Liquidità totale"
+              value={formatEuroNum(liquiditaTotale)}
+              prevValue={formatEuroNum(liquiditaTotalePrev)}
+              prevYear={annoPrec}
+            />
           </div>
 
           <div className="flex items-center gap-2">
@@ -319,45 +471,79 @@ export default function ContabilitaRendicontoPage() {
             <CardHeader>
               <CardTitle className="text-base">Modello D — Aggregato per sezione</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Descrizione</TableHead>
-                    <TableHead className="text-right">Totale</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(data?.sezioni ?? []).flatMap((sezione) => [
-                    <TableRow key={`sezione-${sezione.codice}`} className="bg-muted/40">
-                      <TableCell className="font-bold">{sezione.descrizione}</TableCell>
-                      <TableCell className="text-right font-bold tabular-nums">
-                        {formatEuro(sezione.totale)}
-                      </TableCell>
-                    </TableRow>,
-                    ...sezione.voci.flatMap((voce) => [
-                      <TableRow key={`voce-${sezione.codice}-${voce.codice}`}>
-                        <TableCell className="font-semibold">{voce.descrizione}</TableCell>
-                        <TableCell className="text-right font-semibold tabular-nums">
-                          {formatEuro(voce.totale)}
-                        </TableCell>
-                      </TableRow>,
-                      ...voce.sottovoci.map((sv) => (
-                        <TableRow key={`sv-${sezione.codice}-${voce.codice}-${sv.codice}`}>
-                          <TableCell className="pl-8 text-muted-foreground">
-                            {sv.descrizione}
-                          </TableCell>
-                          <TableCell className="text-right tabular-nums text-muted-foreground">
-                            {formatEuro(sv.totale)}
-                          </TableCell>
-                        </TableRow>
-                      )),
-                    ]),
-                  ])}
-                </TableBody>
-              </Table>
+            <CardContent>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Uscite
+                  </h3>
+                  <SezionePanel
+                    label="Uscite"
+                    anno={anno}
+                    sezione={sezioneUscite}
+                    sezionePrev={sezioneUscitePrev}
+                  />
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Entrate
+                  </h3>
+                  <SezionePanel
+                    label="Entrate"
+                    anno={anno}
+                    sezione={sezioneEntrate}
+                    sezionePrev={sezioneEntratePrev}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between border-t-2 pt-3">
+                <span className="font-bold">
+                  {avanzo >= 0 ? "Avanzo di gestione" : "Disavanzo di gestione"}
+                </span>
+                <div className="flex items-center gap-6">
+                  <span
+                    className={`text-lg font-bold tabular-nums ${
+                      avanzo >= 0 ? "text-emerald-600" : "text-destructive"
+                    }`}
+                  >
+                    {formatEuro(data?.totali.avanzo_disavanzo ?? "0")}
+                  </span>
+                  <span
+                    className={`text-sm tabular-nums ${
+                      avanzoPrev >= 0 ? "text-emerald-600/70" : "text-destructive/70"
+                    }`}
+                  >
+                    {annoPrec}: {formatEuro(dataPrev?.totali.avanzo_disavanzo ?? "0")}
+                  </span>
+                </div>
+              </div>
             </CardContent>
           </Card>
+
+          {showFuoriSection && (
+            <Card>
+              <CardHeader>
+                <button
+                  type="button"
+                  onClick={() => setShowFuori((prev) => !prev)}
+                  className="flex w-full items-center justify-between text-left"
+                >
+                  <CardTitle className="text-base">Fuori Bilancio</CardTitle>
+                  {showFuori ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+              </CardHeader>
+              {showFuori && (
+                <CardContent>
+                  <FuoriBilancioPanel sezione={sezioneFuori!} />
+                </CardContent>
+              )}
+            </Card>
+          )}
         </>
       )}
     </div>

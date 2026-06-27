@@ -7,6 +7,7 @@ import AuthGuard from "@/components/layout/AuthGuard"
 import PermissionGuard from "@/components/layout/PermissionGuard"
 import AppLayout from "@/components/layout/AppLayout"
 import LoginPage from "@/pages/LoginPage"
+import ResetPasswordPage from "@/pages/ResetPasswordPage"
 import BandaSelectPage from "@/pages/BandaSelectPage"
 import DashboardPage from "@/pages/DashboardPage"
 import SociPage from "@/pages/SociPage"
@@ -41,6 +42,7 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
               <Route element={<AuthGuard />}>
                 {/* Banda selection lives inside auth but outside the app shell. */}

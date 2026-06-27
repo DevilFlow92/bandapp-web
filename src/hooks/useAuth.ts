@@ -53,3 +53,32 @@ export function useLogout() {
     },
   })
 }
+
+export function useRequestPasswordReset() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      await api.post("/auth/password-reset/request", { email })
+    },
+  })
+}
+
+export function useConfirmPasswordReset() {
+  return useMutation({
+    mutationFn: async ({ token, new_password }: { token: string; new_password: string }) => {
+      await api.post("/auth/password-reset/confirm", { token, new_password })
+    },
+  })
+}
+
+export function useRegister() {
+  return useMutation({
+    mutationFn: async (data: {
+      email: string
+      password: string
+      nome_completo?: string
+      banda_codice: number
+    }) => {
+      await api.post("/auth/register", data)
+    },
+  })
+}

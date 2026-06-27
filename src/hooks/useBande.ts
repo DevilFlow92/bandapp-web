@@ -16,3 +16,17 @@ export function useBande() {
     staleTime: 10 * 60 * 1000,
   })
 }
+
+export function useBandePublic() {
+  return useQuery({
+    queryKey: ["bande", "public"],
+    queryFn: async () => {
+      const { data } = await api.get<PagedResponse<{ codice: number; descrizione: string }>>(
+        "/bande/",
+        { params: { page_size: 50 } },
+      )
+      return data.items
+    },
+    staleTime: 10 * 60 * 1000,
+  })
+}

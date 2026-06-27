@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table"
 import IscrizioneFormDialog from "@/components/iscrizioni/IscrizioneFormDialog"
 import IndirizziSection from "@/components/anagrafica/IndirizziSection"
+import ContattiSection from "@/components/anagrafica/ContattiSection"
 
 /** Formats an ISO date string ("YYYY-MM-DD") as "DD/MM/YYYY". */
 function formatDate(iso: string | null | undefined): string {
@@ -212,11 +213,14 @@ export default function SocioDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Section 3 — Indirizzi */}
+      {/* Section 3 — Indirizzi & Contatti */}
       {socio?.persona?.id && (
-        <div className="lg:col-span-3">
-          <IndirizziSection personaId={socio.persona.id} canWrite={canWrite} />
-        </div>
+        <>
+          <div className="lg:col-span-3 grid gap-6 lg:grid-cols-2">
+            <IndirizziSection personaId={socio.persona.id} canWrite={canWrite} />
+            <ContattiSection personaId={socio.persona.id} canWrite={canWrite} />
+          </div>
+        </>
       )}
 
       <IscrizioneFormDialog

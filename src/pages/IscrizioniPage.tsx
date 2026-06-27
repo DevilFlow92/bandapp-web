@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useIscrizioni, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
 import { useSoci } from "@/hooks/useSoci"
+import { usePermission } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import type { Iscrizione } from "@/types/iscrizione"
 import type { Socio } from "@/types/socio"
@@ -76,6 +77,7 @@ function socioFullName(socio: Socio | undefined): string {
 
 export default function IscrizioniPage() {
   const { banda } = useBanda()
+  const canWrite = usePermission("servizi:write")
   const [page, setPage] = useState(1)
   const [yearFilter, setYearFilter] = useState<string>(String(CURRENT_YEAR))
   const anno = yearFilter === ALL_YEARS ? undefined : Number(yearFilter)
@@ -103,6 +105,7 @@ export default function IscrizioniPage() {
 
   const iscrizioni = data?.items ?? []
   const totalPages = data?.meta.total_pages ?? 1
+  const colCount = canWrite ? 7 : 6
 
   const openCreate = () => {
     setEditing(null)
@@ -123,10 +126,12 @@ export default function IscrizioniPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Iscrizioni</h1>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuova iscrizione
-        </Button>
+        {canWrite && (
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuova iscrizione
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -158,14 +163,14 @@ export default function IscrizioniPage() {
               <TableHead>Quota</TableHead>
               <TableHead>Stato</TableHead>
               <TableHead>Note</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
+              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 7 }).map((__, j) => (
+                  {Array.from({ length: colCount }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
@@ -174,13 +179,13 @@ export default function IscrizioniPage() {
               ))
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Errore nel caricamento delle iscrizioni.
                 </TableCell>
               </TableRow>
             ) : iscrizioni.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
                   Nessuna iscrizione trovata
                 </TableCell>
               </TableRow>
@@ -205,26 +210,28 @@ export default function IscrizioniPage() {
                       )}
                     </TableCell>
                     <TableCell>{formatNote(iscrizione.note)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(iscrizione)}
-                          aria-label="Modifica"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleting(iscrizione)}
-                          aria-label="Elimina"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    {canWrite && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(iscrizione)}
+                            aria-label="Modifica"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleting(iscrizione)}
+                            aria-label="Elimina"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 )
               })

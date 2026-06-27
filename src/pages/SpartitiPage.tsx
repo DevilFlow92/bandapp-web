@@ -2,6 +2,7 @@ import { useState } from "react"
 import { ChevronLeft, ChevronRight, Download, Pencil, Plus, Trash2 } from "lucide-react"
 import { downloadDocumento, useLookupTipiSpartito, useSpartiti } from "@/hooks/useSpartiti"
 import { useLookupStrumenti } from "@/hooks/useSoci"
+import { usePermission } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import { useToast } from "@/hooks/use-toast"
 import { getErrorMessage } from "@/lib/api"
@@ -38,6 +39,7 @@ function formatPosizione(spartito: Spartito): string {
 export default function SpartitiPage() {
   const { banda } = useBanda()
   const { toast } = useToast()
+  const canWrite = usePermission("archivio:write")
   const [page, setPage] = useState(1)
   const [tipoFilter, setTipoFilter] = useState<string>(ALL)
   const [strumentoFilter, setStrumentoFilter] = useState<string>(ALL)
@@ -98,10 +100,12 @@ export default function SpartitiPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Spartiti</h1>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuovo spartito
-        </Button>
+        {canWrite && (
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuovo spartito
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-wrap items-end gap-4">
@@ -196,22 +200,26 @@ export default function SpartitiPage() {
                       >
                         <Download className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(spartito)}
-                        aria-label="Modifica"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleting(spartito)}
-                        aria-label="Elimina"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {canWrite && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(spartito)}
+                            aria-label="Modifica"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleting(spartito)}
+                            aria-label="Elimina"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

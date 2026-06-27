@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
 import { LayoutDashboard, Music, LogOut, Repeat } from "lucide-react"
-import { useCurrentUser, useLogout } from "@/hooks/useAuth"
+import { useCurrentUser, useLogout, usePermission } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -61,11 +61,13 @@ export default function AppLayout() {
     navigate("/banda")
   }
 
-  const canContabilita =
-    user?.superuser === true || user?.permessi?.includes("contabilita:read") === true
+  const canContabilita = usePermission("contabilita:read")
+  const canUtenti = usePermission("utenti:read")
+  const canRuoli = usePermission("ruoli:read")
+  const canAdmin = user?.superuser === true || canUtenti || canRuoli
   const groups = [
     ...navGroups.filter((g) => g.label !== "Contabilità" || canContabilita),
-    ...(user?.superuser === true ? [adminGroup] : []),
+    ...(canAdmin ? [adminGroup] : []),
   ]
 
   return (

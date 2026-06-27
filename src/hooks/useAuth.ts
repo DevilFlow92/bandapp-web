@@ -32,6 +32,15 @@ export function useLogin() {
   })
 }
 
+/**
+ * Returns whether the current user holds the given permission code.
+ * Superusers bypass all checks. Single source of truth for RBAC in the UI.
+ */
+export function usePermission(codice: string): boolean {
+  const { data: user } = useCurrentUser()
+  return user?.superuser === true || user?.permessi?.includes(codice) === true
+}
+
 /** Revokes the current session and clears the cached user. */
 export function useLogout() {
   const queryClient = useQueryClient()

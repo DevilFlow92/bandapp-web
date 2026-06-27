@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { ChevronDown, ChevronUp } from "lucide-react"
+import { ChevronDown, ChevronUp, X } from "lucide-react"
 import {
   Cell,
   CartesianGrid,
@@ -246,6 +246,10 @@ export default function ContabilitaRendicontoPage() {
   const [annoMensile, setAnnoMensile] = useState<number>(CURRENT_YEAR)
   const [isExporting, setIsExporting] = useState(false)
   const [showFuori, setShowFuori] = useState(false)
+  const [selectedVoceUscite, setSelectedVoceUscite] = useState<VoceRendicontoAggregato | null>(null)
+  const [selectedVoceEntrate, setSelectedVoceEntrate] = useState<VoceRendicontoAggregato | null>(
+    null,
+  )
 
   useEffect(() => {
     setAnnoMensile(anno)
@@ -310,6 +314,8 @@ export default function ContabilitaRendicontoPage() {
 
   const saldoInizialeTotal = saldoInizialeCassa + saldoInizialeBanca
   const saldoFinaleTotal = saldoFinaleCassa + saldoFinaleBanca
+  const liquiditaIniziale = saldoInizialeCassa + saldoInizialeBanca
+  const liquiditaInizialePrev = saldoInizialeCassaPrev + saldoInizialeBancaPrev
   const quadraturaDiff = Math.abs(saldoInizialeTotal + avanzo - saldoFinaleTotal)
   const quadraturaOk = quadraturaDiff < 0.01
 
@@ -338,6 +344,16 @@ export default function ContabilitaRendicontoPage() {
       Entrate: parseFloat(item.entrate),
       Uscite: parseFloat(item.uscite),
     })) ?? []
+
+  const drillDataUscite =
+    selectedVoceUscite?.sottovoci
+      .map((sv) => ({ name: sv.descrizione, value: Math.abs(parseFloat(sv.totale)) }))
+      .filter((d) => d.value > 0) ?? []
+
+  const drillDataEntrate =
+    selectedVoceEntrate?.sottovoci
+      .map((sv) => ({ name: sv.descrizione, value: Math.abs(parseFloat(sv.totale)) }))
+      .filter((d) => d.value > 0) ?? []
 
   const showFuoriSection = !!sezioneFuori && parseFloat(sezioneFuori.totale) !== 0
 
@@ -404,24 +420,14 @@ export default function ContabilitaRendicontoPage() {
               prevYear={annoPrec}
             />
             <StatCard
-              label="Entrate totali"
-              value={formatEuroNum(entrate)}
-              prevValue={formatEuroNum(entratePrev)}
+              label="Liquidità totale iniziale"
+              value={formatEuroNum(liquiditaIniziale)}
+              prevValue={formatEuroNum(liquiditaInizialePrev)}
               prevYear={annoPrec}
             />
-            <StatCard
-              label="Uscite totali"
-              value={formatEuroNum(uscite)}
-              prevValue={formatEuroNum(uscitePrev)}
-              prevYear={annoPrec}
-            />
-            <StatCard
-              label="Avanzo / Disavanzo"
-              value={formatEuroNum(avanzo)}
-              prevValue={formatEuroNum(avanzoPrev)}
-              prevYear={annoPrec}
-              valueClassName={avanzo >= 0 ? "text-emerald-600" : "text-destructive"}
-            />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
             <StatCard
               label="Saldo finale cassa"
               value={formatEuroNum(saldoFinaleCassa)}
@@ -435,10 +441,32 @@ export default function ContabilitaRendicontoPage() {
               prevYear={annoPrec}
             />
             <StatCard
-              label="Liquidità totale"
+              label="Liquidità totale finale"
               value={formatEuroNum(liquiditaTotale)}
               prevValue={formatEuroNum(liquiditaTotalePrev)}
               prevYear={annoPrec}
+            />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <StatCard
+              label="Uscite totali"
+              value={formatEuroNum(uscite)}
+              prevValue={formatEuroNum(uscitePrev)}
+              prevYear={annoPrec}
+            />
+            <StatCard
+              label="Entrate totali"
+              value={formatEuroNum(entrate)}
+              prevValue={formatEuroNum(entratePrev)}
+              prevYear={annoPrec}
+            />
+            <StatCard
+              label="Avanzo / Disavanzo"
+              value={formatEuroNum(avanzo)}
+              prevValue={formatEuroNum(avanzoPrev)}
+              prevYear={annoPrec}
+              valueClassName={avanzo >= 0 ? "text-emerald-600" : "text-destructive"}
             />
           </div>
 
@@ -452,39 +480,6 @@ export default function ContabilitaRendicontoPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Entrate per voce (A–E)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {pieData.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    Nessuna entrata registrata per l'anno {anno}.
-                  </p>
-                ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        dataKey="value"
-                        nameKey="name"
-                        label={({ name, percent }) =>
-                          `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
-                        }
-                        labelLine={false}
-                      >
-                        {pieData.map((_, index) => (
-                          <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => formatEuroNum(Number(value))} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle className="text-base">Uscite per voce (A–E)</CardTitle>
               </CardHeader>
               <CardContent>
@@ -493,25 +488,175 @@ export default function ContabilitaRendicontoPage() {
                     Nessuna uscita registrata per l'anno {anno}.
                   </p>
                 ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={pieDataUscite}
-                        dataKey="value"
-                        nameKey="name"
-                        label={({ name, percent }) =>
-                          `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
-                        }
-                        labelLine={false}
-                      >
-                        {pieDataUscite.map((_, index) => (
-                          <Cell key={index} fill={PIE_COLORS[(index + 2) % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => formatEuroNum(Number(value))} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="flex gap-4">
+                    <div className={selectedVoceUscite ? "w-1/2" : "w-full"}>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={pieDataUscite}
+                            dataKey="value"
+                            nameKey="name"
+                            label={({ name, percent }) =>
+                              `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
+                            }
+                            labelLine={false}
+                            onClick={(data) => {
+                              const name = (data as { name?: string }).name
+                              const voce =
+                                sezioneUscite?.voci.find((v) => v.descrizione === name) ?? null
+                              setSelectedVoceUscite((prev) =>
+                                prev?.codice === voce?.codice ? null : voce,
+                              )
+                            }}
+                            style={{ cursor: "pointer" }}
+                          >
+                            {pieDataUscite.map((_, index) => (
+                              <Cell
+                                key={index}
+                                fill={PIE_COLORS[(index + 2) % PIE_COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => formatEuroNum(Number(value))} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {selectedVoceUscite && (
+                      <div className="relative w-1/2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVoceUscite(null)}
+                          className="absolute top-0 right-0 text-muted-foreground hover:text-foreground"
+                          aria-label="Chiudi dettaglio"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <p className="text-xs font-medium text-center mb-2 text-muted-foreground">
+                          {selectedVoceUscite.descrizione}
+                        </p>
+                        {drillDataUscite.length === 0 ? (
+                          <p className="py-8 text-center text-xs text-muted-foreground">
+                            Nessun dettaglio.
+                          </p>
+                        ) : (
+                          <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                              <Pie
+                                data={drillDataUscite}
+                                dataKey="value"
+                                nameKey="name"
+                                label={({ name, percent }) =>
+                                  `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
+                                }
+                                labelLine={false}
+                              >
+                                {drillDataUscite.map((_, index) => (
+                                  <Cell
+                                    key={index}
+                                    fill={PIE_COLORS[(index + 4) % PIE_COLORS.length]}
+                                  />
+                                ))}
+                              </Pie>
+                              <Tooltip formatter={(value) => formatEuroNum(Number(value))} />
+                              <Legend />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Entrate per voce (A–E)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pieData.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    Nessuna entrata registrata per l'anno {anno}.
+                  </p>
+                ) : (
+                  <div className="flex gap-4">
+                    <div className={selectedVoceEntrate ? "w-1/2" : "w-full"}>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            dataKey="value"
+                            nameKey="name"
+                            label={({ name, percent }) =>
+                              `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
+                            }
+                            labelLine={false}
+                            onClick={(data) => {
+                              const name = (data as { name?: string }).name
+                              const voce =
+                                sezioneEntrate?.voci.find((v) => v.descrizione === name) ?? null
+                              setSelectedVoceEntrate((prev) =>
+                                prev?.codice === voce?.codice ? null : voce,
+                              )
+                            }}
+                            style={{ cursor: "pointer" }}
+                          >
+                            {pieData.map((_, index) => (
+                              <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => formatEuroNum(Number(value))} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {selectedVoceEntrate && (
+                      <div className="relative w-1/2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVoceEntrate(null)}
+                          className="absolute top-0 right-0 text-muted-foreground hover:text-foreground"
+                          aria-label="Chiudi dettaglio"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <p className="text-xs font-medium text-center mb-2 text-muted-foreground">
+                          {selectedVoceEntrate.descrizione}
+                        </p>
+                        {drillDataEntrate.length === 0 ? (
+                          <p className="py-8 text-center text-xs text-muted-foreground">
+                            Nessun dettaglio.
+                          </p>
+                        ) : (
+                          <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                              <Pie
+                                data={drillDataEntrate}
+                                dataKey="value"
+                                nameKey="name"
+                                label={({ name, percent }) =>
+                                  `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
+                                }
+                                labelLine={false}
+                              >
+                                {drillDataEntrate.map((_, index) => (
+                                  <Cell
+                                    key={index}
+                                    fill={PIE_COLORS[(index + 4) % PIE_COLORS.length]}
+                                  />
+                                ))}
+                              </Pie>
+                              <Tooltip formatter={(value) => formatEuroNum(Number(value))} />
+                              <Legend />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>

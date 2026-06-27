@@ -1,5 +1,13 @@
 import { useState } from "react"
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react"
 import { useEsterni } from "@/hooks/useEsterni"
 import { usePermission } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
@@ -17,6 +25,7 @@ import {
 } from "@/components/ui/table"
 import EsternoFormDialog from "@/components/esterni/EsternoFormDialog"
 import DeleteEsternoDialog from "@/components/esterni/DeleteEsternoDialog"
+import IndirizziSection from "@/components/anagrafica/IndirizziSection"
 
 const PAGE_SIZE = 20
 
@@ -29,10 +38,11 @@ export default function EsterniPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Esterno | null>(null)
   const [deleting, setDeleting] = useState<Esterno | null>(null)
+  const [expandedId, setExpandedId] = useState<number | null>(null)
 
   const esterni = data?.items ?? []
   const totalPages = data?.meta.total_pages ?? 1
-  const colCount = canWrite ? 6 : 5
+  const colCount = canWrite ? 7 : 6
 
   const openCreate = () => {
     setEditing(null)
@@ -60,6 +70,7 @@ export default function EsterniPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-8" />
               <TableHead>Nome</TableHead>
               <TableHead>Cognome</TableHead>
               <TableHead>Codice Esterno</TableHead>
@@ -92,41 +103,66 @@ export default function EsterniPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              esterni.map((esterno) => (
-                <TableRow key={esterno.id}>
-                  <TableCell>{esterno.persona?.nome ?? "—"}</TableCell>
-                  <TableCell>{esterno.persona?.cognome ?? "—"}</TableCell>
-                  <TableCell>{esterno.codice_esterno}</TableCell>
-                  <TableCell>{esterno.strumento?.descrizione ?? "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant={esterno.attivo ? "default" : "secondary"}>
-                      {esterno.attivo ? "Attivo" : "Inattivo"}
-                    </Badge>
-                  </TableCell>
-                  {canWrite && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(esterno)}
-                          aria-label="Modifica"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleting(esterno)}
-                          aria-label="Rimuovi"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
+              esterni.map((esterno) => {
+                const isExpanded = expandedId === esterno.id
+                const toggleExpand = () =>
+                  setExpandedId((prev) => (prev === esterno.id ? null : esterno.id))
+                return (
+                  <>
+                    <TableRow
+                      key={esterno.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={toggleExpand}
+                    >
+                      <TableCell>
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </TableCell>
+                      <TableCell>{esterno.persona?.nome ?? "—"}</TableCell>
+                      <TableCell>{esterno.persona?.cognome ?? "—"}</TableCell>
+                      <TableCell>{esterno.codice_esterno}</TableCell>
+                      <TableCell>{esterno.strumento?.descrizione ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={esterno.attivo ? "default" : "secondary"}>
+                          {esterno.attivo ? "Attivo" : "Inattivo"}
+                        </Badge>
+                      </TableCell>
+                      {canWrite && (
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(esterno)}
+                              aria-label="Modifica"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleting(esterno)}
+                              aria-label="Rimuovi"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                    {isExpanded && typeof esterno.persona?.id === "number" && (
+                      <TableRow key={`${esterno.id}-indirizzi`}>
+                        <TableCell colSpan={colCount} className="bg-muted/30 p-4">
+                          <IndirizziSection personaId={esterno.persona.id} canWrite={canWrite} />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                )
+              })
             )}
           </TableBody>
         </Table>

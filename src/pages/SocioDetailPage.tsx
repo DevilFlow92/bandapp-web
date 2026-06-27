@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Plus } from "lucide-react"
 import { useSocio } from "@/hooks/useSoci"
 import { useIscrizioni, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
+import { usePermission } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -16,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import IscrizioneFormDialog from "@/components/iscrizioni/IscrizioneFormDialog"
+import IndirizziSection from "@/components/anagrafica/IndirizziSection"
 
 /** Formats an ISO date string ("YYYY-MM-DD") as "DD/MM/YYYY". */
 function formatDate(iso: string | null | undefined): string {
@@ -75,6 +77,7 @@ export default function SocioDetailPage() {
     return items
   }, [iscrizioniData])
 
+  const canWrite = usePermission("anagrafica:write")
   const [formOpen, setFormOpen] = useState(false)
 
   const persona = socio?.persona
@@ -208,6 +211,13 @@ export default function SocioDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Section 3 — Indirizzi */}
+      {socio?.persona?.id && (
+        <div className="lg:col-span-3">
+          <IndirizziSection personaId={socio.persona.id} canWrite={canWrite} />
+        </div>
+      )}
 
       <IscrizioneFormDialog
         open={formOpen}

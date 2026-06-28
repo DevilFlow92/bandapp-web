@@ -122,96 +122,98 @@ export default function DocumentiPage() {
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Dimensione</TableHead>
-              <TableHead>Data caricamento</TableHead>
-              <TableHead>Note</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 6 }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  ))}
+      <div className="overflow-x-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Dimensione</TableHead>
+                <TableHead>Data caricamento</TableHead>
+                <TableHead>Note</TableHead>
+                <TableHead className="text-right">Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 6 }).map((__, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-5 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                    Errore nel caricamento dei documenti.
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : isError ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                  Errore nel caricamento dei documenti.
-                </TableCell>
-              </TableRow>
-            ) : documenti.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                  Nessun documento caricato
-                </TableCell>
-              </TableRow>
-            ) : (
-              documenti.map((documento) => (
-                <TableRow key={documento.id}>
-                  <TableCell>
-                    <button
-                      type="button"
-                      onClick={() => handleDownload(documento)}
-                      className="text-left font-medium text-primary hover:underline"
-                    >
-                      {documento.nome}
-                    </button>
+              ) : documenti.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                    Nessun documento caricato
                   </TableCell>
-                  <TableCell>{documento.tipo_documento?.descrizione ?? "—"}</TableCell>
-                  <TableCell>{formatBytes(documento.dimensione_bytes)}</TableCell>
-                  <TableCell>{formatDateTime(documento.caricato_il)}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatNote(documento.note)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      {documento.mime_type === "application/pdf" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Anteprima"
-                          onClick={() => previewDocumento(documento.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
+                </TableRow>
+              ) : (
+                documenti.map((documento) => (
+                  <TableRow key={documento.id}>
+                    <TableCell>
+                      <button
+                        type="button"
                         onClick={() => handleDownload(documento)}
-                        aria-label="Scarica"
+                        className="text-left font-medium text-primary hover:underline"
                       >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      {canWrite && (
+                        {documento.nome}
+                      </button>
+                    </TableCell>
+                    <TableCell>{documento.tipo_documento?.descrizione ?? "—"}</TableCell>
+                    <TableCell>{formatBytes(documento.dimensione_bytes)}</TableCell>
+                    <TableCell>{formatDateTime(documento.caricato_il)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatNote(documento.note)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        {documento.mime_type === "application/pdf" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Anteprima"
+                            onClick={() => previewDocumento(documento.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setDeleting(documento)}
-                          aria-label="Elimina"
+                          onClick={() => handleDownload(documento)}
+                          aria-label="Scarica"
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Download className="h-4 w-4" />
                         </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                        {canWrite && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleting(documento)}
+                            aria-label="Elimina"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

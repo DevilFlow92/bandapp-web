@@ -92,75 +92,77 @@ export default function ContabilitaVociPage() {
         </Select>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome voce</TableHead>
-              <TableHead>Sezione</TableHead>
-              <TableHead>Voce rendiconto</TableHead>
-              <TableHead>Sottovoce</TableHead>
-              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: colCount }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : isError ? (
+      <div className="overflow-x-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Errore nel caricamento delle voci.
-                </TableCell>
+                <TableHead>Nome voce</TableHead>
+                <TableHead>Sezione</TableHead>
+                <TableHead>Voce rendiconto</TableHead>
+                <TableHead>Sottovoce</TableHead>
+                {canWrite && <TableHead className="text-right">Azioni</TableHead>}
               </TableRow>
-            ) : voci.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Nessuna voce configurata. Le voci minime vengono create automaticamente alla prima
-                  configurazione anno.
-                </TableCell>
-              </TableRow>
-            ) : (
-              voci.map((voce) => (
-                <TableRow key={voce.id}>
-                  <TableCell className="font-medium">{voce.voce_contabilita}</TableCell>
-                  <TableCell>{voce.sezione_rendiconto?.descrizione ?? "—"}</TableCell>
-                  <TableCell>{voce.voce_rendiconto?.descrizione ?? "—"}</TableCell>
-                  <TableCell>{voce.sottovoce_rendiconto?.descrizione ?? "—"}</TableCell>
-                  {canWrite && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(voce)}
-                          aria-label="Modifica"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleting(voce)}
-                          aria-label="Elimina"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: colCount }).map((__, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-5 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Errore nel caricamento delle voci.
+                  </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : voci.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Nessuna voce configurata. Le voci minime vengono create automaticamente alla
+                    prima configurazione anno.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                voci.map((voce) => (
+                  <TableRow key={voce.id}>
+                    <TableCell className="font-medium">{voce.voce_contabilita}</TableCell>
+                    <TableCell>{voce.sezione_rendiconto?.descrizione ?? "—"}</TableCell>
+                    <TableCell>{voce.voce_rendiconto?.descrizione ?? "—"}</TableCell>
+                    <TableCell>{voce.sottovoce_rendiconto?.descrizione ?? "—"}</TableCell>
+                    {canWrite && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(voce)}
+                            aria-label="Modifica"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleting(voce)}
+                            aria-label="Elimina"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

@@ -27,7 +27,7 @@ export default function BandaSelectPage() {
   }, [autoSelect, bande, setBanda, navigate])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">Seleziona la banda</CardTitle>
@@ -41,17 +41,19 @@ export default function BandaSelectPage() {
               Nessuna banda disponibile
             </p>
           ) : (
-            bande.map((banda) => (
-              <button
-                key={banda.codice}
-                type="button"
-                onClick={() => handleSelect(banda)}
-                className="flex w-full items-center gap-3 rounded-md border p-4 text-left text-sm font-medium transition-colors hover:border-primary hover:bg-accent"
-              >
-                <Music className="h-5 w-5 shrink-0 text-muted-foreground" />
-                {banda.descrizione}
-              </button>
-            ))
+            <div className="max-h-[60vh] overflow-y-auto space-y-2">
+              {bande.map((banda) => (
+                <button
+                  key={banda.codice}
+                  type="button"
+                  onClick={() => handleSelect(banda)}
+                  className="flex w-full items-center gap-3 rounded-md border p-4 text-left text-sm font-medium transition-colors hover:border-primary hover:bg-accent"
+                >
+                  <Music className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  {banda.descrizione}
+                </button>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

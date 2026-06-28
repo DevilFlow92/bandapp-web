@@ -67,109 +67,114 @@ export default function EsterniPage() {
         )}
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-8" />
-              <TableHead>Nome</TableHead>
-              <TableHead>Cognome</TableHead>
-              <TableHead>Codice Esterno</TableHead>
-              <TableHead>Strumento</TableHead>
-              <TableHead>Stato</TableHead>
-              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: colCount }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  ))}
+      <div className="overflow-x-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-8" />
+                <TableHead>Nome</TableHead>
+                <TableHead>Cognome</TableHead>
+                <TableHead>Codice Esterno</TableHead>
+                <TableHead>Strumento</TableHead>
+                <TableHead>Stato</TableHead>
+                {canWrite && <TableHead className="text-right">Azioni</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: colCount }).map((__, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-5 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Errore nel caricamento degli esterni.
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : isError ? (
-              <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Errore nel caricamento degli esterni.
-                </TableCell>
-              </TableRow>
-            ) : esterni.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Nessun esterno trovato
-                </TableCell>
-              </TableRow>
-            ) : (
-              esterni.map((esterno) => {
-                const isExpanded = expandedId === esterno.id
-                const toggleExpand = () =>
-                  setExpandedId((prev) => (prev === esterno.id ? null : esterno.id))
-                return (
-                  <>
-                    <TableRow
-                      key={esterno.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={toggleExpand}
-                    >
-                      <TableCell>
-                        {isExpanded ? (
-                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : esterni.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Nessun esterno trovato
+                  </TableCell>
+                </TableRow>
+              ) : (
+                esterni.map((esterno) => {
+                  const isExpanded = expandedId === esterno.id
+                  const toggleExpand = () =>
+                    setExpandedId((prev) => (prev === esterno.id ? null : esterno.id))
+                  return (
+                    <>
+                      <TableRow
+                        key={esterno.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={toggleExpand}
+                      >
+                        <TableCell>
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </TableCell>
+                        <TableCell>{esterno.persona?.nome ?? "—"}</TableCell>
+                        <TableCell>{esterno.persona?.cognome ?? "—"}</TableCell>
+                        <TableCell>{esterno.codice_esterno}</TableCell>
+                        <TableCell>{esterno.strumento?.descrizione ?? "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={esterno.attivo ? "default" : "secondary"}>
+                            {esterno.attivo ? "Attivo" : "Inattivo"}
+                          </Badge>
+                        </TableCell>
+                        {canWrite && (
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEdit(esterno)}
+                                aria-label="Modifica"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleting(esterno)}
+                                aria-label="Rimuovi"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         )}
-                      </TableCell>
-                      <TableCell>{esterno.persona?.nome ?? "—"}</TableCell>
-                      <TableCell>{esterno.persona?.cognome ?? "—"}</TableCell>
-                      <TableCell>{esterno.codice_esterno}</TableCell>
-                      <TableCell>{esterno.strumento?.descrizione ?? "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant={esterno.attivo ? "default" : "secondary"}>
-                          {esterno.attivo ? "Attivo" : "Inattivo"}
-                        </Badge>
-                      </TableCell>
-                      {canWrite && (
-                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEdit(esterno)}
-                              aria-label="Modifica"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeleting(esterno)}
-                              aria-label="Rimuovi"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                    {isExpanded && typeof esterno.persona?.id === "number" && (
-                      <TableRow key={`${esterno.id}-indirizzi`}>
-                        <TableCell colSpan={colCount} className="bg-muted/30 p-0">
-                          <div className="grid gap-6 lg:grid-cols-2 p-4">
-                            <IndirizziSection personaId={esterno.persona.id} canWrite={canWrite} />
-                            <ContattiSection personaId={esterno.persona.id} canWrite={canWrite} />
-                          </div>
-                        </TableCell>
                       </TableRow>
-                    )}
-                  </>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
+                      {isExpanded && typeof esterno.persona?.id === "number" && (
+                        <TableRow key={`${esterno.id}-indirizzi`}>
+                          <TableCell colSpan={colCount} className="bg-muted/30 p-0">
+                            <div className="grid gap-6 lg:grid-cols-2 p-4">
+                              <IndirizziSection
+                                personaId={esterno.persona.id}
+                                canWrite={canWrite}
+                              />
+                              <ContattiSection personaId={esterno.persona.id} canWrite={canWrite} />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

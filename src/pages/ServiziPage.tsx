@@ -92,75 +92,77 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
             )}
           </div>
 
-          <div className="rounded-md border bg-background">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Esterno</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Importo</TableHead>
-                  <TableHead>Note in stampa</TableHead>
-                  {canWrite && <TableHead className="text-right">Azioni</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  Array.from({ length: 2 }).map((_, i) => (
-                    <TableRow key={i}>
-                      {Array.from({ length: ricevuteColCount }).map((__, j) => (
-                        <TableCell key={j}>
-                          <Skeleton className="h-5 w-full" />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : isError ? (
+          <div className="overflow-x-auto">
+            <div className="rounded-md border bg-background">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell
-                      colSpan={ricevuteColCount}
-                      className="py-8 text-center text-muted-foreground"
-                    >
-                      Errore nel caricamento delle ricevute.
-                    </TableCell>
+                    <TableHead>Esterno</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Importo</TableHead>
+                    <TableHead>Note in stampa</TableHead>
+                    {canWrite && <TableHead className="text-right">Azioni</TableHead>}
                   </TableRow>
-                ) : ricevute.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={ricevuteColCount}
-                      className="py-8 text-center text-muted-foreground"
-                    >
-                      Nessuna ricevuta per questo servizio
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  ricevute.map((ricevuta) => (
-                    <TableRow key={ricevuta.id}>
-                      <TableCell>
-                        {ricevuta.esterno
-                          ? `${ricevuta.esterno.persona?.nome ?? ""} ${ricevuta.esterno.persona?.cognome ?? ""}`.trim() ||
-                            ricevuta.esterno.codice_esterno
-                          : "—"}
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    Array.from({ length: 2 }).map((_, i) => (
+                      <TableRow key={i}>
+                        {Array.from({ length: ricevuteColCount }).map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-5 w-full" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : isError ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={ricevuteColCount}
+                        className="py-8 text-center text-muted-foreground"
+                      >
+                        Errore nel caricamento delle ricevute.
                       </TableCell>
-                      <TableCell>{formatData(ricevuta.data_ricevuta)}</TableCell>
-                      <TableCell>{formatImporto(ricevuta.importo)}</TableCell>
-                      <TableCell>{formatNote(ricevuta.note_in_stampa)}</TableCell>
-                      {canWrite && (
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleting(ricevuta)}
-                            aria-label="Elimina"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      )}
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : ricevute.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={ricevuteColCount}
+                        className="py-8 text-center text-muted-foreground"
+                      >
+                        Nessuna ricevuta per questo servizio
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    ricevute.map((ricevuta) => (
+                      <TableRow key={ricevuta.id}>
+                        <TableCell>
+                          {ricevuta.esterno
+                            ? `${ricevuta.esterno.persona?.nome ?? ""} ${ricevuta.esterno.persona?.cognome ?? ""}`.trim() ||
+                              ricevuta.esterno.codice_esterno
+                            : "—"}
+                        </TableCell>
+                        <TableCell>{formatData(ricevuta.data_ricevuta)}</TableCell>
+                        <TableCell>{formatImporto(ricevuta.importo)}</TableCell>
+                        <TableCell>{formatNote(ricevuta.note_in_stampa)}</TableCell>
+                        {canWrite && (
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleting(ricevuta)}
+                              aria-label="Elimina"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
 
@@ -243,100 +245,104 @@ export default function ServiziPage() {
         </Select>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10" />
-              <TableHead>Descrizione</TableHead>
-              <TableHead>Anno</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead>Indirizzo</TableHead>
-              <TableHead>Note</TableHead>
-              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: colCount }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : isError ? (
+      <div className="overflow-x-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Errore nel caricamento dei servizi.
-                </TableCell>
+                <TableHead className="w-10" />
+                <TableHead>Descrizione</TableHead>
+                <TableHead>Anno</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Indirizzo</TableHead>
+                <TableHead>Note</TableHead>
+                {canWrite && <TableHead className="text-right">Azioni</TableHead>}
               </TableRow>
-            ) : servizi.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Nessun servizio trovato
-                </TableCell>
-              </TableRow>
-            ) : (
-              servizi.map((servizio) => {
-                const expanded = expandedId === servizio.id
-                return (
-                  <Fragment key={servizio.id}>
-                    <TableRow>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleExpanded(servizio.id)}
-                          aria-label={expanded ? "Comprimi" : "Espandi"}
-                          aria-expanded={expanded}
-                        >
-                          {expanded ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </Button>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: colCount }).map((__, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-5 w-full" />
                       </TableCell>
-                      <TableCell className="font-medium">{servizio.descrizione_servizio}</TableCell>
-                      <TableCell>{servizio.anno}</TableCell>
-                      <TableCell>{formatDataServizio(servizio.data_servizio)}</TableCell>
-                      <TableCell>{formatIndirizzoServizio(servizio.indirizzo)}</TableCell>
-                      <TableCell>{formatNote(servizio.note)}</TableCell>
-                      {canWrite && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEdit(servizio)}
-                              aria-label="Modifica"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeleting(servizio)}
-                              aria-label="Elimina"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
+                    ))}
+                  </TableRow>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Errore nel caricamento dei servizi.
+                  </TableCell>
+                </TableRow>
+              ) : servizi.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Nessun servizio trovato
+                  </TableCell>
+                </TableRow>
+              ) : (
+                servizi.map((servizio) => {
+                  const expanded = expandedId === servizio.id
+                  return (
+                    <Fragment key={servizio.id}>
+                      <TableRow>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleExpanded(servizio.id)}
+                            aria-label={expanded ? "Comprimi" : "Espandi"}
+                            aria-expanded={expanded}
+                          >
+                            {expanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
                         </TableCell>
+                        <TableCell className="font-medium">
+                          {servizio.descrizione_servizio}
+                        </TableCell>
+                        <TableCell>{servizio.anno}</TableCell>
+                        <TableCell>{formatDataServizio(servizio.data_servizio)}</TableCell>
+                        <TableCell>{formatIndirizzoServizio(servizio.indirizzo)}</TableCell>
+                        <TableCell>{formatNote(servizio.note)}</TableCell>
+                        {canWrite && (
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEdit(servizio)}
+                                aria-label="Modifica"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleting(servizio)}
+                                aria-label="Elimina"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                      {expanded && (
+                        <ServizioRicevutePanel servizioId={servizio.id} colSpan={colCount} />
                       )}
-                    </TableRow>
-                    {expanded && (
-                      <ServizioRicevutePanel servizioId={servizio.id} colSpan={colCount} />
-                    )}
-                  </Fragment>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
+                    </Fragment>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

@@ -153,91 +153,93 @@ export default function IscrizioniPage() {
         </Select>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Socio</TableHead>
-              <TableHead>Anno</TableHead>
-              <TableHead>Data iscrizione</TableHead>
-              <TableHead>Quota</TableHead>
-              <TableHead>Stato</TableHead>
-              <TableHead>Note</TableHead>
-              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: colCount }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : isError ? (
+      <div className="overflow-x-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Errore nel caricamento delle iscrizioni.
-                </TableCell>
+                <TableHead>Socio</TableHead>
+                <TableHead>Anno</TableHead>
+                <TableHead>Data iscrizione</TableHead>
+                <TableHead>Quota</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead>Note</TableHead>
+                {canWrite && <TableHead className="text-right">Azioni</TableHead>}
               </TableRow>
-            ) : iscrizioni.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Nessuna iscrizione trovata
-                </TableCell>
-              </TableRow>
-            ) : (
-              iscrizioni.map((iscrizione) => {
-                const descrizione = statoById.get(iscrizione.stato_iscrizione_codice)
-                return (
-                  <TableRow key={iscrizione.id}>
-                    <TableCell className="font-medium">
-                      {socioFullName(sociById.get(iscrizione.socio_id))}
-                    </TableCell>
-                    <TableCell>{iscrizione.anno}</TableCell>
-                    <TableCell>{formatDate(iscrizione.data_iscrizione)}</TableCell>
-                    <TableCell>{formatQuota(iscrizione.quota_partecipazione)}</TableCell>
-                    <TableCell>
-                      {descrizione ? (
-                        <Badge variant="outline" className={statoBadgeClass(descrizione)}>
-                          {descrizione}
-                        </Badge>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell>{formatNote(iscrizione.note)}</TableCell>
-                    {canWrite && (
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEdit(iscrizione)}
-                            aria-label="Modifica"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleting(iscrizione)}
-                            aria-label="Elimina"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: colCount }).map((__, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-5 w-full" />
                       </TableCell>
-                    )}
+                    ))}
                   </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Errore nel caricamento delle iscrizioni.
+                  </TableCell>
+                </TableRow>
+              ) : iscrizioni.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Nessuna iscrizione trovata
+                  </TableCell>
+                </TableRow>
+              ) : (
+                iscrizioni.map((iscrizione) => {
+                  const descrizione = statoById.get(iscrizione.stato_iscrizione_codice)
+                  return (
+                    <TableRow key={iscrizione.id}>
+                      <TableCell className="font-medium">
+                        {socioFullName(sociById.get(iscrizione.socio_id))}
+                      </TableCell>
+                      <TableCell>{iscrizione.anno}</TableCell>
+                      <TableCell>{formatDate(iscrizione.data_iscrizione)}</TableCell>
+                      <TableCell>{formatQuota(iscrizione.quota_partecipazione)}</TableCell>
+                      <TableCell>
+                        {descrizione ? (
+                          <Badge variant="outline" className={statoBadgeClass(descrizione)}>
+                            {descrizione}
+                          </Badge>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell>{formatNote(iscrizione.note)}</TableCell>
+                      {canWrite && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(iscrizione)}
+                              aria-label="Modifica"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleting(iscrizione)}
+                              aria-label="Elimina"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

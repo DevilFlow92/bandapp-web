@@ -62,7 +62,7 @@ export default function SetPasswordDialog({ open, onOpenChange, utente }: SetPas
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Cambia password</DialogTitle>
           <DialogDescription>Imposta una nuova password per {utente?.email}.</DialogDescription>

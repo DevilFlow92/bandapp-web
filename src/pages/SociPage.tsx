@@ -74,98 +74,100 @@ export default function SociPage() {
         )}
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Cognome</TableHead>
-              <TableHead>Codice Socio</TableHead>
-              <TableHead>Strumento</TableHead>
-              <TableHead>Ruolo Banda</TableHead>
-              <TableHead>Stato</TableHead>
-              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: colCount }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : isError ? (
+      <div className="overflow-x-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Errore nel caricamento dei soci.
-                </TableCell>
+                <TableHead>Nome</TableHead>
+                <TableHead>Cognome</TableHead>
+                <TableHead>Codice Socio</TableHead>
+                <TableHead>Strumento</TableHead>
+                <TableHead>Ruolo Banda</TableHead>
+                <TableHead>Stato</TableHead>
+                {canWrite && <TableHead className="text-right">Azioni</TableHead>}
               </TableRow>
-            ) : soci.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Nessun socio trovato
-                </TableCell>
-              </TableRow>
-            ) : (
-              soci.map((socio) => (
-                <TableRow
-                  key={socio.id}
-                  className="cursor-pointer hover:bg-slate-50"
-                  onClick={() => navigate(`/soci/${socio.id}`)}
-                >
-                  <TableCell>{socio.persona?.nome ?? "—"}</TableCell>
-                  <TableCell>{socio.persona?.cognome ?? "—"}</TableCell>
-                  <TableCell>{socio.codice_socio}</TableCell>
-                  <TableCell>{socio.strumento?.descrizione ?? "—"}</TableCell>
-                  <TableCell>{socio.ruolo_banda?.descrizione ?? "—"}</TableCell>
-                  <TableCell>
-                    {activeSocioIds.has(socio.id) ? (
-                      <Badge
-                        variant="outline"
-                        className="border-transparent bg-green-100 text-green-800"
-                      >
-                        Attivo
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="border-transparent bg-gray-100 text-gray-700"
-                      >
-                        Inattivo
-                      </Badge>
-                    )}
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: colCount }).map((__, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-5 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Errore nel caricamento dei soci.
                   </TableCell>
-                  {canWrite && (
-                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(socio)}
-                          aria-label="Modifica"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleting(socio)}
-                          aria-label="Rimuovi"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : soci.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Nessun socio trovato
+                  </TableCell>
+                </TableRow>
+              ) : (
+                soci.map((socio) => (
+                  <TableRow
+                    key={socio.id}
+                    className="cursor-pointer hover:bg-slate-50"
+                    onClick={() => navigate(`/soci/${socio.id}`)}
+                  >
+                    <TableCell>{socio.persona?.nome ?? "—"}</TableCell>
+                    <TableCell>{socio.persona?.cognome ?? "—"}</TableCell>
+                    <TableCell>{socio.codice_socio}</TableCell>
+                    <TableCell>{socio.strumento?.descrizione ?? "—"}</TableCell>
+                    <TableCell>{socio.ruolo_banda?.descrizione ?? "—"}</TableCell>
+                    <TableCell>
+                      {activeSocioIds.has(socio.id) ? (
+                        <Badge
+                          variant="outline"
+                          className="border-transparent bg-green-100 text-green-800"
+                        >
+                          Attivo
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="border-transparent bg-gray-100 text-gray-700"
+                        >
+                          Inattivo
+                        </Badge>
+                      )}
+                    </TableCell>
+                    {canWrite && (
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(socio)}
+                            aria-label="Modifica"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleting(socio)}
+                            aria-label="Rimuovi"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

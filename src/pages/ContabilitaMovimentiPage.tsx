@@ -202,124 +202,126 @@ export default function ContabilitaMovimentiPage() {
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Descrizione</TableHead>
-              <TableHead>Note</TableHead>
-              <TableHead>Voce contabilità</TableHead>
-              <TableHead>Natura</TableHead>
-              <TableHead>Sezione</TableHead>
-              <TableHead>Voce</TableHead>
-              <TableHead>Sotto-voce</TableHead>
-              <TableHead className="text-right">Importo</TableHead>
-              <TableHead className="text-right">Saldo</TableHead>
-              {canWrite && <TableHead className="text-right">Azioni</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 7 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: colCount }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : isError ? (
+      <div className="overflow-x-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Errore nel caricamento dei movimenti.
-                </TableCell>
+                <TableHead>Data</TableHead>
+                <TableHead>Descrizione</TableHead>
+                <TableHead>Note</TableHead>
+                <TableHead>Voce contabilità</TableHead>
+                <TableHead>Natura</TableHead>
+                <TableHead>Sezione</TableHead>
+                <TableHead>Voce</TableHead>
+                <TableHead>Sotto-voce</TableHead>
+                <TableHead className="text-right">Importo</TableHead>
+                <TableHead className="text-right">Saldo</TableHead>
+                {canWrite && <TableHead className="text-right">Azioni</TableHead>}
               </TableRow>
-            ) : filteredItems.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
-                  Nessun movimento registrato per l'anno {anno}.
-                </TableCell>
-              </TableRow>
-            ) : (
-              <>
-                {configAnno !== null && (
-                  <TableRow className="bg-muted/50 text-sm font-medium">
-                    <TableCell colSpan={5}>Saldo iniziale {anno} (cassa + banca)</TableCell>
-                    <TableCell />
-                    <TableCell />
-                    <TableCell />
-                    <TableCell />
-                    <TableCell className="text-right font-semibold tabular-nums">
-                      € {saldoIniziale.toFixed(2)}
-                    </TableCell>
-                    {canWrite && <TableCell />}
-                  </TableRow>
-                )}
-                {filteredItems.map((flusso, index) => (
-                  <TableRow key={flusso.id}>
-                    <TableCell className="whitespace-nowrap">
-                      {formatDate(flusso.data_registrazione)}
-                    </TableCell>
-                    <TableCell>{flusso.descrizione_operazione}</TableCell>
-                    <TableCell>{flusso.note ?? "—"}</TableCell>
-                    <TableCell>{flusso.voce_contabilita?.voce_contabilita ?? "—"}</TableCell>
-                    <TableCell>{flusso.natura_flusso?.descrizione ?? "—"}</TableCell>
-                    <TableCell>
-                      {flusso.voce_contabilita?.sezione_rendiconto?.descrizione ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      {flusso.voce_contabilita?.voce_rendiconto?.descrizione ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      {flusso.voce_contabilita?.sottovoce_rendiconto?.descrizione ?? "—"}
-                    </TableCell>
-                    <TableCell
-                      className={`text-right font-medium tabular-nums ${
-                        flusso.segno === "+" ? "text-emerald-600" : "text-destructive"
-                      }`}
-                    >
-                      {flusso.segno === "+" ? "+" : "-"}
-                      {formatImporto(flusso.importo)}
-                    </TableCell>
-                    <TableCell
-                      className={`text-right font-medium tabular-nums ${
-                        runningBalances[index] >= 0 ? "text-emerald-600" : "text-destructive"
-                      }`}
-                    >
-                      € {runningBalances[index].toFixed(2)}
-                    </TableCell>
-                    {canWrite && (
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEdit(flusso)}
-                            disabled={!canEdit(flusso)}
-                            aria-label="Modifica"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleting(flusso)}
-                            disabled={annoClosed}
-                            aria-label="Elimina"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 7 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: colCount }).map((__, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-5 w-full" />
                       </TableCell>
-                    )}
+                    ))}
                   </TableRow>
-                ))}
-              </>
-            )}
-          </TableBody>
-        </Table>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Errore nel caricamento dei movimenti.
+                  </TableCell>
+                </TableRow>
+              ) : filteredItems.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="py-12 text-center text-muted-foreground">
+                    Nessun movimento registrato per l'anno {anno}.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <>
+                  {configAnno !== null && (
+                    <TableRow className="bg-muted/50 text-sm font-medium">
+                      <TableCell colSpan={5}>Saldo iniziale {anno} (cassa + banca)</TableCell>
+                      <TableCell />
+                      <TableCell />
+                      <TableCell />
+                      <TableCell />
+                      <TableCell className="text-right font-semibold tabular-nums">
+                        € {saldoIniziale.toFixed(2)}
+                      </TableCell>
+                      {canWrite && <TableCell />}
+                    </TableRow>
+                  )}
+                  {filteredItems.map((flusso, index) => (
+                    <TableRow key={flusso.id}>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDate(flusso.data_registrazione)}
+                      </TableCell>
+                      <TableCell>{flusso.descrizione_operazione}</TableCell>
+                      <TableCell>{flusso.note ?? "—"}</TableCell>
+                      <TableCell>{flusso.voce_contabilita?.voce_contabilita ?? "—"}</TableCell>
+                      <TableCell>{flusso.natura_flusso?.descrizione ?? "—"}</TableCell>
+                      <TableCell>
+                        {flusso.voce_contabilita?.sezione_rendiconto?.descrizione ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        {flusso.voce_contabilita?.voce_rendiconto?.descrizione ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        {flusso.voce_contabilita?.sottovoce_rendiconto?.descrizione ?? "—"}
+                      </TableCell>
+                      <TableCell
+                        className={`text-right font-medium tabular-nums ${
+                          flusso.segno === "+" ? "text-emerald-600" : "text-destructive"
+                        }`}
+                      >
+                        {flusso.segno === "+" ? "+" : "-"}
+                        {formatImporto(flusso.importo)}
+                      </TableCell>
+                      <TableCell
+                        className={`text-right font-medium tabular-nums ${
+                          runningBalances[index] >= 0 ? "text-emerald-600" : "text-destructive"
+                        }`}
+                      >
+                        € {runningBalances[index].toFixed(2)}
+                      </TableCell>
+                      {canWrite && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(flusso)}
+                              disabled={!canEdit(flusso)}
+                              aria-label="Modifica"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleting(flusso)}
+                              disabled={annoClosed}
+                              aria-label="Elimina"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

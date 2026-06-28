@@ -147,86 +147,88 @@ export default function SpartitiPage() {
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Documento</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Strumento</TableHead>
-              <TableHead>Posizione</TableHead>
-              <TableHead className="text-right">Azioni</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 5 }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-5 w-full" />
+      <div className="overflow-x-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Documento</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Strumento</TableHead>
+                <TableHead>Posizione</TableHead>
+                <TableHead className="text-right">Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 5 }).map((__, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-5 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                    Errore nel caricamento degli spartiti.
+                  </TableCell>
+                </TableRow>
+              ) : spartiti.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                    Nessuno spartito trovato
+                  </TableCell>
+                </TableRow>
+              ) : (
+                spartiti.map((spartito) => (
+                  <TableRow key={spartito.id}>
+                    <TableCell className="font-medium">{spartito.documento?.nome ?? "—"}</TableCell>
+                    <TableCell>{spartito.tipo_spartito?.descrizione ?? "—"}</TableCell>
+                    <TableCell>
+                      {spartito.strumento ? spartito.strumento.descrizione : "Partitura completa"}
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : isError ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
-                  Errore nel caricamento degli spartiti.
-                </TableCell>
-              </TableRow>
-            ) : spartiti.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
-                  Nessuno spartito trovato
-                </TableCell>
-              </TableRow>
-            ) : (
-              spartiti.map((spartito) => (
-                <TableRow key={spartito.id}>
-                  <TableCell className="font-medium">{spartito.documento?.nome ?? "—"}</TableCell>
-                  <TableCell>{spartito.tipo_spartito?.descrizione ?? "—"}</TableCell>
-                  <TableCell>
-                    {spartito.strumento ? spartito.strumento.descrizione : "Partitura completa"}
-                  </TableCell>
-                  <TableCell>{formatPosizione(spartito)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDownload(spartito)}
-                        aria-label="Scarica"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      {canWrite && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEdit(spartito)}
-                            aria-label="Modifica"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleting(spartito)}
-                            aria-label="Elimina"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                    <TableCell>{formatPosizione(spartito)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDownload(spartito)}
+                          aria-label="Scarica"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        {canWrite && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(spartito)}
+                              aria-label="Modifica"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleting(spartito)}
+                              aria-label="Elimina"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

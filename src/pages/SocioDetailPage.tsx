@@ -157,58 +157,60 @@ export default function SocioDetailPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Anno</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Quota</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Note</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {iscrizioniLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
-                      {Array.from({ length: 5 }).map((__, j) => (
-                        <TableCell key={j}>
-                          <Skeleton className="h-5 w-full" />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : iscrizioni.length === 0 ? (
+          <div className="overflow-x-auto">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
-                      Nessuna iscrizione registrata
-                    </TableCell>
+                    <TableHead>Anno</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Quota</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead>Note</TableHead>
                   </TableRow>
-                ) : (
-                  iscrizioni.map((iscrizione) => {
-                    const descrizione = statoById.get(iscrizione.stato_iscrizione_codice)
-                    return (
-                      <TableRow key={iscrizione.id}>
-                        <TableCell className="font-medium">{iscrizione.anno}</TableCell>
-                        <TableCell>{formatDate(iscrizione.data_iscrizione)}</TableCell>
-                        <TableCell>{formatQuota(iscrizione.quota_partecipazione)}</TableCell>
-                        <TableCell>
-                          {descrizione ? (
-                            <Badge variant="outline" className={statoBadgeClass(descrizione)}>
-                              {descrizione}
-                            </Badge>
-                          ) : (
-                            "—"
-                          )}
-                        </TableCell>
-                        <TableCell>{iscrizione.note || "—"}</TableCell>
+                </TableHeader>
+                <TableBody>
+                  {iscrizioniLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <TableRow key={i}>
+                        {Array.from({ length: 5 }).map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-5 w-full" />
+                          </TableCell>
+                        ))}
                       </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
+                    ))
+                  ) : iscrizioni.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                        Nessuna iscrizione registrata
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    iscrizioni.map((iscrizione) => {
+                      const descrizione = statoById.get(iscrizione.stato_iscrizione_codice)
+                      return (
+                        <TableRow key={iscrizione.id}>
+                          <TableCell className="font-medium">{iscrizione.anno}</TableCell>
+                          <TableCell>{formatDate(iscrizione.data_iscrizione)}</TableCell>
+                          <TableCell>{formatQuota(iscrizione.quota_partecipazione)}</TableCell>
+                          <TableCell>
+                            {descrizione ? (
+                              <Badge variant="outline" className={statoBadgeClass(descrizione)}>
+                                {descrizione}
+                              </Badge>
+                            ) : (
+                              "—"
+                            )}
+                          </TableCell>
+                          <TableCell>{iscrizione.note || "—"}</TableCell>
+                        </TableRow>
+                      )
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>

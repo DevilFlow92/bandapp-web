@@ -190,75 +190,77 @@ export default function ContabilitaCheckQuotePage() {
         </Select>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Codice</TableHead>
-              <TableHead>Nominativo</TableHead>
-              <TableHead className="text-right">Quota attesa</TableHead>
-              <TableHead className="text-right">Quota versata</TableHead>
-              <TableHead className="text-right">Differenza</TableHead>
-              <TableHead>Stato</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 7 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: COLUMNS }).map((__, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : isError ? (
+      <div className="overflow-x-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={COLUMNS} className="py-12 text-center text-muted-foreground">
-                  {getErrorMessage(error)}
-                </TableCell>
+                <TableHead>Codice</TableHead>
+                <TableHead>Nominativo</TableHead>
+                <TableHead className="text-right">Quota attesa</TableHead>
+                <TableHead className="text-right">Quota versata</TableHead>
+                <TableHead className="text-right">Differenza</TableHead>
+                <TableHead>Stato</TableHead>
               </TableRow>
-            ) : filteredSoci.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={COLUMNS} className="py-12 text-center text-muted-foreground">
-                  Nessun socio per l'anno selezionato.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredSoci.map((socio) => {
-                const diff = parseFloat(socio.differenza)
-                const statoConf = STATO_CONFIG[socio.stato]
-                const nominativo =
-                  `${socio.cognome ?? ""} ${socio.nome ?? ""}`.trim() || socio.codice_socio
-                return (
-                  <TableRow key={socio.socio_id}>
-                    <TableCell className="font-mono text-sm">{socio.codice_socio}</TableCell>
-                    <TableCell>{nominativo}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatEuro(socio.quota_attesa)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatEuro(socio.quota_versata)}
-                    </TableCell>
-                    <TableCell
-                      className={`text-right tabular-nums font-medium ${
-                        diff >= 0 ? "text-emerald-600" : "text-destructive"
-                      }`}
-                    >
-                      {formatEuro(socio.differenza)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={statoConf.className}>
-                        {statoConf.label}
-                      </Badge>
-                    </TableCell>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 7 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: COLUMNS }).map((__, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-5 w-full" />
+                      </TableCell>
+                    ))}
                   </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={COLUMNS} className="py-12 text-center text-muted-foreground">
+                    {getErrorMessage(error)}
+                  </TableCell>
+                </TableRow>
+              ) : filteredSoci.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={COLUMNS} className="py-12 text-center text-muted-foreground">
+                    Nessun socio per l'anno selezionato.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredSoci.map((socio) => {
+                  const diff = parseFloat(socio.differenza)
+                  const statoConf = STATO_CONFIG[socio.stato]
+                  const nominativo =
+                    `${socio.cognome ?? ""} ${socio.nome ?? ""}`.trim() || socio.codice_socio
+                  return (
+                    <TableRow key={socio.socio_id}>
+                      <TableCell className="font-mono text-sm">{socio.codice_socio}</TableCell>
+                      <TableCell>{nominativo}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatEuro(socio.quota_attesa)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatEuro(socio.quota_versata)}
+                      </TableCell>
+                      <TableCell
+                        className={`text-right tabular-nums font-medium ${
+                          diff >= 0 ? "text-emerald-600" : "text-destructive"
+                        }`}
+                      >
+                        {formatEuro(socio.differenza)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={statoConf.className}>
+                          {statoConf.label}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   )

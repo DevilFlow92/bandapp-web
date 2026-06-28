@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react"
 import { useCurrentUser, useLogin, useRequestPasswordReset, useRegister } from "@/hooks/useAuth"
+import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons"
 import { useBandePublic } from "@/hooks/useBande"
 import { getErrorMessage } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -154,6 +155,16 @@ export default function LoginPage() {
                     Registrati
                   </Button>
                 </div>
+                {/* Divider */}
+                <div className="relative my-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">oppure</span>
+                  </div>
+                </div>
+                <SocialLoginButtons />
               </CardContent>
             </form>
           </>

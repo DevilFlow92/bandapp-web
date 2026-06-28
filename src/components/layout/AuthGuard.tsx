@@ -4,6 +4,9 @@ import { useCurrentUser } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 
 export default function AuthGuard() {
+  // OAuth redirects here after successful login. The backend sets the session cookie,
+  // and useCurrentUser() will refetch /auth/me to hydrate the session. The axios
+  // instance is configured with withCredentials: true, so the cookie is sent.
   const { data: user, isLoading } = useCurrentUser()
   const { banda } = useBanda()
   const location = useLocation()

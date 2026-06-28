@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import type { LoginRequest, User } from "@/types/auth"
+import { redirectToOAuth } from "@/lib/oauth"
+import type { OAuthProvider } from "@/lib/oauth"
 
 export const AUTH_ME_KEY = ["auth", "me"] as const
 
@@ -81,4 +83,10 @@ export function useRegister() {
       await api.post("/auth/register", data)
     },
   })
+}
+
+export function useOAuthLogin() {
+  return {
+    login: (provider: OAuthProvider) => redirectToOAuth(provider),
+  }
 }

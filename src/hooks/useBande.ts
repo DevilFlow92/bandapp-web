@@ -3,12 +3,11 @@ import api from "@/lib/api"
 import type { Banda } from "@/types/banda"
 import type { PagedResponse } from "@/types/socio"
 
-/** Loads the bande lookup (up to 100 entries). No auth required. */
 export function useBande() {
   return useQuery({
     queryKey: ["bande"],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<Banda>>("/bande", {
+      const { data } = await api.get<PagedResponse<Banda>>("/bande/public", {
         params: { page_size: 100 },
       })
       return data.items

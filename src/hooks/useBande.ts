@@ -8,7 +8,7 @@ export function useBande() {
   return useQuery({
     queryKey: ["bande"],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<Banda>>("/bande/", {
+      const { data } = await api.get<PagedResponse<Banda>>("/bande", {
         params: { page_size: 100 },
       })
       return data.items

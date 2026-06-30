@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type { PagedResponse } from "@/types/socio"
 import type { MacroSezione, SottoCartella } from "@/types/archivio"
 
 export const MACRO_SEZIONI_KEY = ["macro-sezioni"] as const
@@ -25,10 +24,10 @@ export function useSottoCartelle(macroSezioneCodice: number | null) {
   return useQuery({
     queryKey: [...SOTTO_CARTELLE_KEY, macroSezioneCodice],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<SottoCartella>>("/sotto-cartelle/", {
+      const { data } = await api.get<SottoCartella[]>("/sotto-cartelle/", {
         params: { macro_sezione_codice: macroSezioneCodice },
       })
-      return data.items
+      return data
     },
     enabled: macroSezioneCodice !== null,
   })
@@ -48,7 +47,7 @@ export function useCreateSottoCartella() {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SOTTO_CARTELLE_KEY })
+      queryClient.invalidateQueries({ queryKey: SOTTO_CARTELLE_KEY, exact: false })
     },
   })
 }
@@ -61,7 +60,7 @@ export function useDeleteSottoCartella() {
       await api.delete(`/sotto-cartelle/${id}`)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SOTTO_CARTELLE_KEY })
+      queryClient.invalidateQueries({ queryKey: SOTTO_CARTELLE_KEY, exact: false })
     },
   })
 }

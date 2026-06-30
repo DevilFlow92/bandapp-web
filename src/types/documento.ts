@@ -3,6 +3,11 @@ export interface TipoDocumento {
   descrizione: string
 }
 
+export interface SottoCartellaInDocumento {
+  id: number
+  nome: string
+}
+
 export interface Documento {
   id: number
   nome: string
@@ -13,4 +18,6 @@ export interface Documento {
   caricato_il: string // ISO datetime
   note: string | null
   file_path: string
+  sotto_cartella_id: number | null
+  sotto_cartella: SottoCartellaInDocumento | null
 }

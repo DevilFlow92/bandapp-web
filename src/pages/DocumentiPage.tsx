@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableBody,
@@ -105,7 +104,11 @@ export default function DocumentiPage() {
 
   // View resolution for the content area.
   const showDocumenti = selectedMacroSezione === null || selectedSottoCartella !== null
-  const canWriteHere = selectedSottoCartella !== null && canWriteSelected
+  const canWriteHere = canWriteSelected
+  const isTutti = selectedMacroSezione === null && selectedSottoCartella === null
+  const isUnderMacroSezione = selectedMacroSezione !== null && selectedSottoCartella === null
+  const showSezioneCartella = isTutti || isUnderMacroSezione
+  const numTableCols = showSezioneCartella ? 6 : 4
 
   const itemClass = (active: boolean) =>
     cn(
@@ -217,6 +220,12 @@ export default function DocumentiPage() {
             <div className="flex flex-col items-center justify-center gap-3 py-20 text-center text-muted-foreground">
               <FolderOpen className="h-10 w-10" />
               <p>Seleziona una cartella per visualizzare i documenti.</p>
+              {canWriteHere && (
+                <Button size="sm" onClick={() => setUploadOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Carica documento
+                </Button>
+              )}
             </div>
           ) : (
             <>
@@ -237,7 +246,12 @@ export default function DocumentiPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nome</TableHead>
-                      <TableHead>Tipo</TableHead>
+                      {showSezioneCartella && (
+                        <>
+                          <TableHead>Sezione</TableHead>
+                          <TableHead>Cartella</TableHead>
+                        </>
+                      )}
                       <TableHead>Caricato il</TableHead>
                       <TableHead className="text-right">Dimensione</TableHead>
                       <TableHead className="text-right">Azioni</TableHead>
@@ -247,7 +261,7 @@ export default function DocumentiPage() {
                     {isLoading ? (
                       Array.from({ length: 4 }).map((_, i) => (
                         <TableRow key={i}>
-                          {Array.from({ length: 5 }).map((__, j) => (
+                          {Array.from({ length: numTableCols }).map((__, j) => (
                             <TableCell key={j}>
                               <Skeleton className="h-5 w-full" />
                             </TableCell>
@@ -256,7 +270,10 @@ export default function DocumentiPage() {
                       ))
                     ) : (data?.items ?? []).length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                        <TableCell
+                          colSpan={numTableCols}
+                          className="py-12 text-center text-muted-foreground"
+                        >
                           <FolderOpen className="mx-auto mb-2 h-8 w-8" />
                           Nessun documento.
                         </TableCell>
@@ -267,13 +284,16 @@ export default function DocumentiPage() {
                           <TableCell className="max-w-xs truncate" title={doc.nome}>
                             {doc.nome}
                           </TableCell>
-                          <TableCell>
-                            {doc.tipo_documento ? (
-                              <Badge variant="secondary">{doc.tipo_documento.descrizione}</Badge>
-                            ) : (
-                              "—"
-                            )}
-                          </TableCell>
+                          {showSezioneCartella && (
+                            <>
+                              <TableCell>
+                                {macroSezioni?.find(
+                                  (ms) => ms.codice === doc.sotto_cartella?.macro_sezione_codice,
+                                )?.nome ?? "—"}
+                              </TableCell>
+                              <TableCell>{doc.sotto_cartella?.nome ?? "—"}</TableCell>
+                            </>
+                          )}
                           <TableCell className="whitespace-nowrap">
                             {formatDate(doc.caricato_il)}
                           </TableCell>
@@ -347,11 +367,11 @@ export default function DocumentiPage() {
         </div>
       </div>
 
-      {selectedSottoCartella && (
+      {selectedMacroSezione && (
         <UploadDialog
           open={uploadOpen}
           onOpenChange={setUploadOpen}
-          sottoCartellaId={selectedSottoCartella.id}
+          sottoCartellaId={selectedSottoCartella?.id}
         />
       )}
       {selectedMacroSezione && (
@@ -368,7 +388,7 @@ export default function DocumentiPage() {
 interface UploadDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  sottoCartellaId: number
+  sottoCartellaId: number | undefined
 }
 
 function UploadDialog({ open, onOpenChange, sottoCartellaId }: UploadDialogProps) {

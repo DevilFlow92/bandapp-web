@@ -6,6 +6,7 @@ export interface TipoDocumento {
 export interface SottoCartellaInDocumento {
   id: number
   nome: string
+  macro_sezione_codice: number
 }
 
 export interface Documento {

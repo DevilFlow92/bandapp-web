@@ -8,12 +8,24 @@ export const DOCUMENTI_KEY = ["documenti"] as const
 /**
  * Lists documenti with pagination, optionally filtered by tipo documento.
  */
-export function useDocumenti(page: number, pageSize: number, tipoDocumentoCodice?: number) {
+export function useDocumenti(
+  page: number,
+  pageSize: number,
+  tipoDocumentoCodice?: number,
+  sottoCartellaId?: number,
+) {
   return useQuery({
-    queryKey: [...DOCUMENTI_KEY, page, pageSize, tipoDocumentoCodice ?? null],
+    queryKey: [
+      ...DOCUMENTI_KEY,
+      page,
+      pageSize,
+      tipoDocumentoCodice ?? null,
+      sottoCartellaId ?? null,
+    ],
     queryFn: async () => {
       const params: Record<string, number> = { page, page_size: pageSize }
       if (tipoDocumentoCodice !== undefined) params.tipo_documento_codice = tipoDocumentoCodice
+      if (sottoCartellaId !== undefined) params.sotto_cartella_id = sottoCartellaId
       const { data } = await api.get<PagedResponse<Documento>>("/documenti/", {
         params,
       })
@@ -27,6 +39,7 @@ export interface UploadDocumentoInput {
   file: File
   tipo_documento_codice?: number
   note?: string
+  sotto_cartella_id?: number
 }
 
 /**
@@ -36,12 +49,18 @@ export interface UploadDocumentoInput {
 export function useUploadDocumento() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ file, tipo_documento_codice, note }: UploadDocumentoInput) => {
+    mutationFn: async ({
+      file,
+      tipo_documento_codice,
+      note,
+      sotto_cartella_id,
+    }: UploadDocumentoInput) => {
       const formData = new FormData()
       formData.append("file", file)
       const params: Record<string, string | number> = {}
       if (tipo_documento_codice !== undefined) params.tipo_documento_codice = tipo_documento_codice
       if (note && note.trim()) params.note = note.trim()
+      if (sotto_cartella_id !== undefined) params.sotto_cartella_id = sotto_cartella_id
       const { data } = await api.post<Documento>("/documenti/", formData, {
         params,
       })

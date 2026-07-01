@@ -98,6 +98,33 @@ export function useDeleteNomeParte() {
   })
 }
 
+export function useUploadAudioNomeParte() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, file }: { id: number; file: File }) => {
+      const formData = new FormData()
+      formData.append("file", file)
+      const { data } = await api.post<NomeParte>(`/nome-parti/${id}/audio`, formData)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: NOME_PARTI_KEY })
+    },
+  })
+}
+
+export function useDeleteAudioNomeParte() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/nome-parti/${id}/audio`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: NOME_PARTI_KEY })
+    },
+  })
+}
+
 /** Tipo documento "Spartito" — used when uploading a spartito's file. */
 const TIPO_DOCUMENTO_SPARTITO = 3
 

@@ -1,9 +1,12 @@
 import { useState } from "react"
+import { Trash2 } from "lucide-react"
 import {
   useCreateNomeParte,
   useUpdateNomeParte,
   useCreateSpartito,
   useLookupTipiSpartito,
+  useUploadAudioNomeParte,
+  useDeleteAudioNomeParte,
   type CreateNomeParteInput,
   type UpdateNomeParteInput,
 } from "@/hooks/useSpartiti"
@@ -44,17 +47,20 @@ export function NuovaComposizioneDialog({ open, onOpenChange }: ComposizioneDial
   const { toast } = useToast()
   const { banda } = useBanda()
   const create = useCreateNomeParte()
+  const uploadAudio = useUploadAudioNomeParte()
   const tipi = useLookupTipiSpartito()
   const [nome, setNome] = useState("")
   const [tipo, setTipo] = useState("")
   const [url, setUrl] = useState("")
   const [note, setNote] = useState("")
+  const [audioFile, setAudioFile] = useState<File | null>(null)
 
   const reset = () => {
     setNome("")
     setTipo("")
     setUrl("")
     setNote("")
+    setAudioFile(null)
   }
 
   const handleSubmit = async () => {
@@ -70,7 +76,10 @@ export function NuovaComposizioneDialog({ open, onOpenChange }: ComposizioneDial
       note: note.trim() || null,
     }
     try {
-      await create.mutateAsync(input)
+      const newNomeParte = await create.mutateAsync(input)
+      if (audioFile) {
+        await uploadAudio.mutateAsync({ id: newNomeParte.id, file: audioFile })
+      }
       reset()
       onOpenChange(false)
     } catch (err) {
@@ -128,6 +137,19 @@ export function NuovaComposizioneDialog({ open, onOpenChange }: ComposizioneDial
               onChange={(e) => setNote(e.target.value)}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="np-audio">File audio (opzionale)</Label>
+            <input
+              id="np-audio"
+              type="file"
+              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
+              accept="audio/*,video/*,.mp3,.mp4,.wav,.ogg,.flac,.aac"
+              onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+            />
+            <p className="text-xs text-muted-foreground">
+              mp3, mp4, wav e altri formati audio/video
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={create.isPending}>
@@ -149,11 +171,14 @@ interface ModificaDialogProps extends ComposizioneDialogProps {
 export function ModificaComposizioneDialog({ nomeParte, open, onOpenChange }: ModificaDialogProps) {
   const { toast } = useToast()
   const update = useUpdateNomeParte()
+  const uploadAudio = useUploadAudioNomeParte()
+  const deleteAudio = useDeleteAudioNomeParte()
   const tipi = useLookupTipiSpartito()
   const [nome, setNome] = useState(nomeParte.nome)
   const [tipo, setTipo] = useState(String(nomeParte.tipo_spartito_codice))
   const [url, setUrl] = useState(nomeParte.url_riferimento ?? "")
   const [note, setNote] = useState(nomeParte.note ?? "")
+  const [audioFile, setAudioFile] = useState<File | null>(null)
 
   const handleSubmit = async () => {
     if (!nome.trim() || !tipo) {
@@ -168,6 +193,9 @@ export function ModificaComposizioneDialog({ nomeParte, open, onOpenChange }: Mo
     }
     try {
       await update.mutateAsync({ id: nomeParte.id, input })
+      if (audioFile) {
+        await uploadAudio.mutateAsync({ id: nomeParte.id, file: audioFile })
+      }
       onOpenChange(false)
     } catch (err) {
       toast({ variant: "destructive", title: "Errore", description: getErrorMessage(err) })
@@ -175,7 +203,13 @@ export function ModificaComposizioneDialog({ nomeParte, open, onOpenChange }: Mo
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) setAudioFile(null)
+        onOpenChange(o)
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Modifica composizione</DialogTitle>
@@ -217,6 +251,34 @@ export function ModificaComposizioneDialog({ nomeParte, open, onOpenChange }: Mo
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>File audio</Label>
+            {nomeParte.documento_audio_id != null && !audioFile && (
+              <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                  {nomeParte.documento_audio?.nome ?? "File audio caricato"}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 shrink-0 p-0 text-destructive"
+                  onClick={() => deleteAudio.mutate(nomeParte.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+            <input
+              type="file"
+              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
+              accept="audio/*,video/*,.mp3,.mp4,.wav,.ogg,.flac,.aac"
+              onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)}
+            />
+            {nomeParte.documento_audio_id == null && !audioFile && (
+              <p className="text-xs text-muted-foreground">Nessun file audio — opzionale</p>
+            )}
           </div>
         </div>
         <DialogFooter>

@@ -6,6 +6,7 @@ import {
   Eye,
   ExternalLink,
   FolderOpen,
+  Music,
   Music2,
   Pencil,
   Plus,
@@ -91,6 +92,20 @@ function NomeParteDetail({ nomeParte, onBack }: { nomeParte: NomeParte; onBack: 
               onClick={() => window.open(nomeParte.url_riferimento!, "_blank")}
             >
               <ExternalLink className="mr-1 h-3.5 w-3.5" /> Ascolta / Guarda
+            </Button>
+          )}
+          {nomeParte.documento_audio_id != null && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                window.open(
+                  `${API_URL}/documenti/${nomeParte.documento_audio_id}/preview`,
+                  "_blank",
+                )
+              }
+            >
+              <Music className="mr-1 h-3.5 w-3.5" /> Ascolta file
             </Button>
           )}
         </div>
@@ -337,13 +352,31 @@ export default function SpartitiPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 text-xs"
+                    className="h-7 w-7 p-0"
                     onClick={(e) => {
                       e.stopPropagation()
                       window.open(item.url_riferimento!, "_blank")
                     }}
+                    title="Apri link esterno"
                   >
-                    <ExternalLink className="mr-1 h-3 w-3" /> Ascolta
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                {item.documento_audio_id != null && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      window.open(
+                        `${API_URL}/documenti/${item.documento_audio_id}/preview`,
+                        "_blank",
+                      )
+                    }}
+                    title="Ascolta file audio"
+                  >
+                    <Music className="h-3.5 w-3.5" />
                   </Button>
                 )}
                 {item.note && (

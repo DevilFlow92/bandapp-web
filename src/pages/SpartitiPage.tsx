@@ -47,6 +47,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+function isPreviewable(mimeType: string | undefined | null): boolean {
+  if (!mimeType) return false
+  return mimeType === "application/pdf" || mimeType.startsWith("image/")
+}
+
 const PAGE_SIZE = 12
 const PAGE_SIZE_PARTI = 50
 const ALL = "__all__"
@@ -154,35 +159,32 @@ function NomeParteDetail({ nomeParte, onBack }: { nomeParte: NomeParte; onBack: 
                       <TableCell>{collocazione || "—"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          {isPreviewable(spartito.documento?.mime_type) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                window.open(
+                                  `${API_URL}/documenti/${spartito.documento_id}/preview`,
+                                  "_blank",
+                                )
+                              }
+                              aria-label="Anteprima"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
                           {spartito.documento_id != null && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  window.open(
-                                    `${API_URL}/documenti/${spartito.documento_id}/preview`,
-                                    "_blank",
-                                  )
-                                }
-                                aria-label="Anteprima"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  downloadDocumento(
-                                    spartito.documento_id!,
-                                    spartito.documento?.nome,
-                                  )
-                                }
-                                aria-label="Scarica"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            </>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                downloadDocumento(spartito.documento_id!, spartito.documento?.nome)
+                              }
+                              aria-label="Scarica"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
                           )}
                           <Button
                             variant="ghost"

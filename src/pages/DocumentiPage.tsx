@@ -48,6 +48,11 @@ import {
 
 const PAGE_SIZE = 20
 
+function isPreviewable(mimeType: string | undefined | null): boolean {
+  if (!mimeType) return false
+  return mimeType === "application/pdf" || mimeType.startsWith("image/")
+}
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
@@ -302,14 +307,16 @@ export default function DocumentiPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => previewDocumento(doc.id)}
-                                aria-label="Anteprima"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
+                              {isPreviewable(doc.mime_type) && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => previewDocumento(doc.id)}
+                                  aria-label="Anteprima"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -407,10 +414,6 @@ function UploadDialog({ open, onOpenChange, sottoCartellaId }: UploadDialogProps
       toast({ variant: "destructive", title: "Seleziona un file da caricare." })
       return
     }
-    if (file.type !== "application/pdf") {
-      toast({ variant: "destructive", title: "Sono ammessi solo file PDF." })
-      return
-    }
     try {
       await upload.mutateAsync({
         file,
@@ -438,10 +441,10 @@ function UploadDialog({ open, onOpenChange, sottoCartellaId }: UploadDialogProps
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">File (PDF)</label>
+            <label className="text-sm font-medium">File</label>
             <Input
               type="file"
-              accept=".pdf"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.mp3,.mp4,.wav,.ogg,.flac,.xml,.mxl,.musicxml,.zip,.rar,.7z"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
           </div>

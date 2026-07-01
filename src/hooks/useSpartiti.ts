@@ -1,8 +1,102 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type { DocumentoResponse, Lookup, PagedResponse, Spartito } from "@/types/spartito"
+import type {
+  DocumentoResponse,
+  Lookup,
+  NomeParte,
+  PagedResponse,
+  Spartito,
+} from "@/types/spartito"
 
+export const NOME_PARTI_KEY = ["nome-parti"] as const
 export const SPARTITI_KEY = ["spartiti"] as const
+
+export interface CreateNomeParteInput {
+  nome: string
+  tipo_spartito_codice: number
+  banda_codice: number
+  url_riferimento?: string | null
+  note?: string | null
+}
+
+export interface UpdateNomeParteInput {
+  nome?: string
+  tipo_spartito_codice?: number
+  url_riferimento?: string | null
+  note?: string | null
+}
+
+export function useNomeParti(
+  bandaCodice: number,
+  page: number,
+  pageSize: number,
+  tipoSpartitoCode?: number,
+) {
+  return useQuery({
+    queryKey: [...NOME_PARTI_KEY, bandaCodice, page, pageSize, tipoSpartitoCode ?? null],
+    queryFn: async () => {
+      const params: Record<string, number> = {
+        banda_codice: bandaCodice,
+        page,
+        page_size: pageSize,
+      }
+      if (tipoSpartitoCode !== undefined) params.tipo_spartito_codice = tipoSpartitoCode
+      const { data } = await api.get<PagedResponse<NomeParte>>("/nome-parti/", { params })
+      return data
+    },
+    enabled: !!bandaCodice,
+    placeholderData: (previous) => previous,
+  })
+}
+
+export function useNomeParte(id: number | null) {
+  return useQuery({
+    queryKey: [...NOME_PARTI_KEY, id],
+    queryFn: async () => {
+      const { data } = await api.get<NomeParte>(`/nome-parti/${id}`)
+      return data
+    },
+    enabled: id !== null,
+  })
+}
+
+export function useCreateNomeParte() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: CreateNomeParteInput) => {
+      const { data } = await api.post<NomeParte>("/nome-parti/", input)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: NOME_PARTI_KEY })
+    },
+  })
+}
+
+export function useUpdateNomeParte() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: number; input: UpdateNomeParteInput }) => {
+      const { data } = await api.patch<NomeParte>(`/nome-parti/${id}`, input)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: NOME_PARTI_KEY })
+    },
+  })
+}
+
+export function useDeleteNomeParte() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/nome-parti/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: NOME_PARTI_KEY })
+    },
+  })
+}
 
 /** Tipo documento "Spartito" — used when uploading a spartito's file. */
 const TIPO_DOCUMENTO_SPARTITO = 3
@@ -44,8 +138,9 @@ export async function downloadDocumento(documentoId: number, nome?: string | nul
 }
 
 export interface CreateSpartitoInput {
-  file: File
+  file?: File | null
   note?: string | null
+  nome_parte_id: number
   banda_codice: number
   tipo_spartito_codice: number
   strumento_codice?: number | null
@@ -55,6 +150,7 @@ export interface CreateSpartitoInput {
 }
 
 export interface UpdateSpartitoInput {
+  nome_parte_id?: number
   tipo_spartito_codice?: number
   strumento_codice?: number | null
   scaffale?: string | null
@@ -72,6 +168,7 @@ export function useSpartiti(
   bandaCodice: number,
   tipoSpartitoCode?: number,
   strumentoCode?: number,
+  nomeParteId?: number,
 ) {
   return useQuery({
     queryKey: [
@@ -81,6 +178,7 @@ export function useSpartiti(
       pageSize,
       tipoSpartitoCode ?? null,
       strumentoCode ?? null,
+      nomeParteId ?? null,
     ],
     queryFn: async () => {
       const params: Record<string, number> = {
@@ -90,6 +188,7 @@ export function useSpartiti(
       }
       if (tipoSpartitoCode !== undefined) params.tipo_spartito_codice = tipoSpartitoCode
       if (strumentoCode !== undefined) params.strumento_codice = strumentoCode
+      if (nomeParteId !== undefined) params.nome_parte_id = nomeParteId
       const { data } = await api.get<PagedResponse<Spartito>>("/spartiti/", {
         params,
       })
@@ -108,15 +207,20 @@ export function useCreateSpartito() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ file, note, ...spartito }: CreateSpartitoInput) => {
-      const documento = await uploadDocumento(file, TIPO_DOCUMENTO_SPARTITO, note)
+      let documento_id: number | undefined
+      if (file) {
+        const documento = await uploadDocumento(file, TIPO_DOCUMENTO_SPARTITO, note)
+        documento_id = documento.id
+      }
       const { data } = await api.post<Spartito>("/spartiti/", {
         ...spartito,
-        documento_id: documento.id,
+        ...(documento_id !== undefined ? { documento_id } : {}),
       })
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SPARTITI_KEY })
+      queryClient.invalidateQueries({ queryKey: NOME_PARTI_KEY })
     },
   })
 }
@@ -144,6 +248,7 @@ export function useDeleteSpartito() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SPARTITI_KEY })
+      queryClient.invalidateQueries({ queryKey: NOME_PARTI_KEY })
     },
   })
 }

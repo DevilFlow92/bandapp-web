@@ -29,7 +29,7 @@ export interface Spartito {
   nome_parte?: { id: number; nome: string } | null
   tipo_spartito?: { codice: number; descrizione: string } | null
   strumento?: { codice: number; descrizione: string } | null
-  documento?: { id: number; nome: string } | null
+  documento?: { id: number; nome: string; mime_type?: string } | null
 }
 
 /** Shape returned by POST /documenti/ after a successful upload. */

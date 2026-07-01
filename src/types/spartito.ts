@@ -14,6 +14,8 @@ export interface NomeParte {
   note: string | null
   tipo_spartito?: { codice: number; descrizione: string } | null
   num_parti: number
+  documento_audio_id: number | null
+  documento_audio: { id: number; nome: string; mime_type: string } | null
 }
 
 export interface Spartito {

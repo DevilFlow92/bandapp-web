@@ -31,16 +31,25 @@ export function useNomeParti(
   page: number,
   pageSize: number,
   tipoSpartitoCode?: number,
+  nome?: string,
 ) {
   return useQuery({
-    queryKey: [...NOME_PARTI_KEY, bandaCodice, page, pageSize, tipoSpartitoCode ?? null],
+    queryKey: [
+      ...NOME_PARTI_KEY,
+      bandaCodice,
+      page,
+      pageSize,
+      tipoSpartitoCode ?? null,
+      nome ?? null,
+    ],
     queryFn: async () => {
-      const params: Record<string, number> = {
+      const params: Record<string, number | string> = {
         banda_codice: bandaCodice,
         page,
         page_size: pageSize,
       }
       if (tipoSpartitoCode !== undefined) params.tipo_spartito_codice = tipoSpartitoCode
+      if (nome && nome.trim()) params.nome = nome.trim()
       const { data } = await api.get<PagedResponse<NomeParte>>("/nome-parti/", { params })
       return data
     },

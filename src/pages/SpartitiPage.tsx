@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   ChevronLeft,
   ChevronRight,
@@ -30,6 +30,7 @@ import {
 } from "@/components/spartiti/ComposizioneDialogs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -262,10 +263,26 @@ export default function SpartitiPage() {
   const [tipoFilter, setTipoFilter] = useState<number | undefined>(undefined)
   const [nuovaOpen, setNuovaOpen] = useState(false)
   const [modificaTarget, setModificaTarget] = useState<NomeParte | null>(null)
+  const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [search])
 
   const tipi = useLookupTipiSpartito()
   const deleteNomeParte = useDeleteNomeParte()
-  const { data, isLoading } = useNomeParti(banda?.codice ?? 0, page, PAGE_SIZE, tipoFilter)
+  const { data, isLoading } = useNomeParti(
+    banda?.codice ?? 0,
+    page,
+    PAGE_SIZE,
+    tipoFilter,
+    debouncedSearch || undefined,
+  )
   const totalPages = data?.meta.total_pages ?? 1
 
   if (selectedNomeParte) {
@@ -283,26 +300,34 @@ export default function SpartitiPage() {
         </Button>
       </div>
 
-      <div className="w-48">
-        <Select
-          value={tipoFilter !== undefined ? String(tipoFilter) : ALL}
-          onValueChange={(v) => {
-            setPage(1)
-            setTipoFilter(v === ALL ? undefined : Number(v))
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Tutti i tipi</SelectItem>
-            {tipi.data?.map((t) => (
-              <SelectItem key={t.codice} value={String(t.codice)}>
-                {t.descrizione}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="w-48">
+          <Select
+            value={tipoFilter !== undefined ? String(tipoFilter) : ALL}
+            onValueChange={(v) => {
+              setPage(1)
+              setTipoFilter(v === ALL ? undefined : Number(v))
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Tutti i tipi</SelectItem>
+              {tipi.data?.map((t) => (
+                <SelectItem key={t.codice} value={String(t.codice)}>
+                  {t.descrizione}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Input
+          placeholder="Cerca composizione..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-56"
+        />
       </div>
 
       {isLoading ? (

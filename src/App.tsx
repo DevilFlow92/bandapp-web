@@ -17,6 +17,7 @@ import ServiziPage from "@/pages/ServiziPage"
 import SpartitiPage from "@/pages/SpartitiPage"
 import IscrizioniPage from "@/pages/IscrizioniPage"
 import DocumentiPage from "@/pages/DocumentiPage"
+import ModulisticaPage from "@/pages/ModulisticaPage"
 import ContabilitaConfigurazionePage from "@/pages/ContabilitaConfigurazionePage"
 import ContabilitaVociPage from "@/pages/ContabilitaVociPage"
 import ContabilitaMovimentiPage from "@/pages/ContabilitaMovimentiPage"
@@ -59,6 +60,7 @@ export default function App() {
                   </Route>
                   <Route path="spartiti" element={<SpartitiPage />} />
                   <Route path="documenti" element={<DocumentiPage />} />
+                  <Route path="modulistica" element={<ModulisticaPage />} />
                   <Route element={<PermissionGuard permission="contabilita:read" />}>
                     <Route
                       path="contabilita/configurazione"

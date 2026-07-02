@@ -1,13 +1,13 @@
 import { useState } from "react"
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
-import { LayoutDashboard, Music, LogOut, Repeat, Menu } from "lucide-react"
+import { LayoutDashboard, Music, LogOut, Repeat, Menu, FileText } from "lucide-react"
 import { useCurrentUser, useLogout, usePermission } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 
-type NavItem = { to: string; label: string }
+type NavItem = { to: string; label: string; icon?: React.ReactNode }
 type NavGroup = { label: string; items: NavItem[] }
 
 const navGroups: NavGroup[] = [
@@ -30,6 +30,12 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/spartiti", label: "Spartiti" },
       { to: "/documenti", label: "Documenti" },
+    ],
+  },
+  {
+    label: "Modulistica",
+    items: [
+      { to: "/modulistica", label: "Modulistica", icon: <FileText className="h-4 w-4 shrink-0" /> },
     ],
   },
   {
@@ -82,7 +88,7 @@ function SidebarNav({ groups, onNavigate }: SidebarNavProps) {
             {group.label}
           </p>
           <div className="space-y-1">
-            {group.items.map(({ to, label }) => (
+            {group.items.map(({ to, label, icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -96,6 +102,7 @@ function SidebarNav({ groups, onNavigate }: SidebarNavProps) {
                   )
                 }
               >
+                {icon}
                 {label}
               </NavLink>
             ))}

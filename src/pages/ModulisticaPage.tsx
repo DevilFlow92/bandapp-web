@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { ChevronLeft, ChevronRight, FileText, Pencil, Plus, Trash2 } from "lucide-react"
 import {
   useTemplates,
@@ -167,13 +168,13 @@ function ModificaModuloDialog({
 }
 
 export default function ModulisticaPage() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [nuovaOpen, setNuovaOpen] = useState(false)
   const [modificaTarget, setModificaTarget] = useState<Template | null>(null)
   const deleteTemplate = useDeleteTemplate()
   const { data, isLoading } = useTemplates(page, PAGE_SIZE)
   const totalPages = data?.meta.total_pages ?? 1
-  const { toast } = useToast()
 
   return (
     <div className="space-y-6">
@@ -231,7 +232,7 @@ export default function ModulisticaPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => toast({ title: "Editor in arrivo." })}
+                  onClick={() => navigate(`/modulistica/${template.id}`)}
                 >
                   <FileText className="mr-1 h-3.5 w-3.5" /> Apri editor
                 </Button>

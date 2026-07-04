@@ -40,6 +40,17 @@ export function useTemplates(page: number, pageSize: number) {
   })
 }
 
+export function useTemplate(id: number) {
+  return useQuery({
+    queryKey: [...TEMPLATES_KEY, id],
+    queryFn: async () => {
+      const { data } = await api.get<Template>(`/templates/${id}`)
+      return data
+    },
+    enabled: Number.isFinite(id),
+  })
+}
+
 export function useCreateTemplate() {
   const queryClient = useQueryClient()
   return useMutation({

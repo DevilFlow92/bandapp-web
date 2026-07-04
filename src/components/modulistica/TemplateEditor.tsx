@@ -2,11 +2,12 @@ import { useEffect, useRef, type ReactNode } from "react"
 import { EditorContent, useEditor, type Editor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import type { JSONContent } from "@tiptap/core"
-import { Bold, Heading1, Heading2, Heading3, Italic, Pilcrow, PlusCircle } from "lucide-react"
+import { Bold, Heading1, Heading2, Heading3, Italic, Pilcrow } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { Mergefield } from "@/components/modulistica/MergefieldNode"
+import MergefieldLibrary from "@/components/modulistica/MergefieldLibrary"
 
 const ONCHANGE_DEBOUNCE_MS = 500
 
@@ -89,19 +90,6 @@ function Toolbar({ editor }: { editor: Editor }) {
       >
         <Italic className="h-4 w-4" />
       </ToolbarButton>
-
-      <Separator orientation="vertical" className="mx-1 h-6" />
-
-      {/* Placeholder di test: sarà sostituito dalla sidebar libreria campi nel prossimo CR. */}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="h-8 gap-1.5"
-        onClick={() => editor.chain().focus().insertMergefield("socio.nome").run()}
-      >
-        <PlusCircle className="h-4 w-4" /> Campo di prova (socio.nome)
-      </Button>
     </div>
   )
 }
@@ -152,18 +140,25 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
   if (!editor) return null
 
   return (
-    <div className="rounded-md border">
-      <Toolbar editor={editor} />
-      <EditorContent
-        editor={editor}
-        className={cn(
-          "min-h-[400px] px-4 py-3 text-sm [&_.ProseMirror]:min-h-[380px] [&_.ProseMirror]:outline-none",
-          "[&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-2xl [&_h1]:font-bold",
-          "[&_h2]:mb-2 [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-semibold",
-          "[&_h3]:mb-1 [&_h3]:mt-2 [&_h3]:text-lg [&_h3]:font-semibold",
-          "[&_p]:mb-2",
-        )}
-      />
+    <div className="flex flex-col gap-4 md:flex-row">
+      <div className="rounded-md border md:w-[70%]">
+        <Toolbar editor={editor} />
+        <EditorContent
+          editor={editor}
+          className={cn(
+            "min-h-[400px] px-4 py-3 text-sm [&_.ProseMirror]:min-h-[380px] [&_.ProseMirror]:outline-none",
+            "[&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-2xl [&_h1]:font-bold",
+            "[&_h2]:mb-2 [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-semibold",
+            "[&_h3]:mb-1 [&_h3]:mt-2 [&_h3]:text-lg [&_h3]:font-semibold",
+            "[&_p]:mb-2",
+          )}
+        />
+      </div>
+      <div className="md:w-[30%]">
+        <MergefieldLibrary
+          onInsert={(chiave) => editor.chain().focus().insertMergefield(chiave).run()}
+        />
+      </div>
     </div>
   )
 }

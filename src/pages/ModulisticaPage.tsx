@@ -1,23 +1,12 @@
 import { useState } from "react"
-import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Eye,
-  FileText,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react"
+import { ChevronLeft, ChevronRight, FileText, Pencil, Plus, Trash2 } from "lucide-react"
 import {
   useTemplates,
   useCreateTemplate,
   useUpdateTemplate,
   useDeleteTemplate,
-  downloadTemplate,
 } from "@/hooks/useModulistica"
 import type { Template } from "@/types/modulistica"
-import { API_URL } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,16 +22,7 @@ import {
 } from "@/components/ui/dialog"
 
 const PAGE_SIZE = 12
-
-function isPreviewable(mimeType: string | undefined | null): boolean {
-  if (!mimeType) return false
-  return mimeType === "application/pdf" || mimeType.startsWith("image/")
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
+const EMPTY_CONTENUTO_JSON = { type: "doc", content: [] }
 
 function NuovoModuloDialog({
   open,
@@ -53,31 +33,30 @@ function NuovoModuloDialog({
 }) {
   const [nome, setNome] = useState("")
   const [descrizione, setDescrizione] = useState("")
-  const [file, setFile] = useState<File | null>(null)
   const createTemplate = useCreateTemplate()
   const { toast } = useToast()
 
   function reset() {
     setNome("")
     setDescrizione("")
-    setFile(null)
   }
 
   async function handleSubmit() {
-    if (!nome.trim() || !file) {
-      toast({ variant: "destructive", title: "Nome e file sono obbligatori." })
+    if (!nome.trim()) {
+      toast({ variant: "destructive", title: "Il nome è obbligatorio." })
       return
     }
     try {
       await createTemplate.mutateAsync({
-        file,
         nome: nome.trim(),
         descrizione: descrizione.trim() || null,
+        contenuto_json: EMPTY_CONTENUTO_JSON,
+        entita_richieste: [],
       })
       reset()
       onOpenChange(false)
     } catch {
-      toast({ variant: "destructive", title: "Errore durante il caricamento. Riprova." })
+      toast({ variant: "destructive", title: "Errore durante la creazione. Riprova." })
     }
   }
 
@@ -113,22 +92,13 @@ function NuovoModuloDialog({
               placeholder="Descrizione opzionale"
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="nm-file">File *</Label>
-            <Input
-              id="nm-file"
-              type="file"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.mp3,.mp4,.wav,.xml,.mxl,.musicxml,.zip"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            />
-          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annulla
           </Button>
           <Button onClick={handleSubmit} disabled={createTemplate.isPending}>
-            {createTemplate.isPending ? "Caricamento..." : "Salva"}
+            {createTemplate.isPending ? "Creazione..." : "Salva"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -182,9 +152,6 @@ function ModificaModuloDialog({
               onChange={(e) => setDescrizione(e.target.value)}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Per cambiare il file, elimina e ricrea il modulo.
-          </p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -206,6 +173,7 @@ export default function ModulisticaPage() {
   const deleteTemplate = useDeleteTemplate()
   const { data, isLoading } = useTemplates(page, PAGE_SIZE)
   const totalPages = data?.meta.total_pages ?? 1
+  const { toast } = useToast()
 
   return (
     <div className="space-y-6">
@@ -237,7 +205,7 @@ export default function ModulisticaPage() {
       ) : (data?.items ?? []).length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-center text-muted-foreground">
           <FileText className="h-10 w-10" />
-          <p>Nessun modulo caricato.</p>
+          <p>Nessun modulo creato.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -255,51 +223,18 @@ export default function ModulisticaPage() {
                     {template.descrizione}
                   </p>
                 )}
-                {template.documento && (
-                  <>
-                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <FileText className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{template.documento.nome}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatBytes(template.documento.dimensione_bytes)}
-                    </p>
-                  </>
-                )}
                 <p className="text-xs text-muted-foreground">
                   Aggiornato il {new Date(template.aggiornato_il).toLocaleDateString("it-IT")}
                 </p>
-                <div className="flex gap-1 pt-1">
-                  {isPreviewable(template.documento?.mime_type) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      aria-label="Anteprima"
-                      onClick={() =>
-                        window.open(
-                          `${API_URL}/documenti/${template.documento_id}/preview`,
-                          "_blank",
-                        )
-                      }
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {template.documento_id != null && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      aria-label="Scarica"
-                      onClick={() => downloadTemplate(template.id, template.documento?.nome)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
               </CardContent>
               <CardFooter className="gap-2 pt-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => toast({ title: "Editor in arrivo." })}
+                >
+                  <FileText className="mr-1 h-3.5 w-3.5" /> Apri editor
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => setModificaTarget(template)}>
                   <Pencil className="mr-1 h-3.5 w-3.5" /> Modifica
                 </Button>

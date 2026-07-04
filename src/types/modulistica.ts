@@ -15,3 +15,7 @@ export interface MergeFieldDefinition {
 }
 
 export type MergeFieldsByEntity = Record<string, MergeFieldDefinition[]>
+
+export interface MergeFieldsResponse {
+  entita: MergeFieldsByEntity
+}

@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import TemplateEditor from "@/components/modulistica/TemplateEditor"
 import EntitySelector from "@/components/modulistica/EntitySelector"
 import TemplatePreviewPane from "@/components/modulistica/TemplatePreviewPane"
+import EntitaRequiredPicker from "@/components/modulistica/EntitaRequiredPicker"
 
 export default function TemplateEditorPage() {
   const navigate = useNavigate()
@@ -32,15 +33,22 @@ export default function TemplateEditorPage() {
 
   const [contenutoJson, setContenutoJson] = useState<object | null>(null)
   const [entities, setEntities] = useState<Record<string, number>>({})
+  const [entitaRichieste, setEntitaRichieste] = useState<string[]>([])
 
-  const entitaRichieste = template?.entita_richieste ?? []
-  const isEntitiesComplete = entitaRichieste.every((entita) => entities[entita] != null)
+  const isEntitiesComplete =
+    entitaRichieste.length > 0 && entitaRichieste.every((entita) => entities[entita] != null)
   const effectiveContent = contenutoJson ?? template?.contenuto_json ?? null
 
   const previewMutateRef = useRef(previewTemplate.mutate)
   useEffect(() => {
     previewMutateRef.current = previewTemplate.mutate
   }, [previewTemplate.mutate])
+
+  useEffect(() => {
+    if (template) {
+      setEntitaRichieste(template.entita_richieste)
+    }
+  }, [template])
 
   useEffect(() => {
     if (!template || !effectiveContent || !isEntitiesComplete) return
@@ -60,11 +68,14 @@ export default function TemplateEditorPage() {
   )
 
   async function handleSave() {
-    if (!contenutoJson) return
+    if (!template) return
     try {
+      const input: Record<string, unknown> = {}
+      if (contenutoJson) input.contenuto_json = contenutoJson
+      if (entitaRichieste.length > 0) input.entita_richieste = entitaRichieste
       await updateTemplate.mutateAsync({
         id: templateId,
-        input: { contenuto_json: contenutoJson },
+        input,
       })
       toast({ title: "Modulo salvato" })
     } catch {
@@ -138,6 +149,8 @@ export default function TemplateEditorPage() {
             />
 
             <div className="space-y-4">
+              <EntitaRequiredPicker value={entitaRichieste} onChange={setEntitaRichieste} />
+
               <EntitySelector
                 entitaRichieste={entitaRichieste}
                 value={entities}

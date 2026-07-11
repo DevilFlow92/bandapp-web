@@ -82,7 +82,7 @@ export default function MergefieldLibrary({ onInsert }: MergefieldLibraryProps) 
                   <button
                     key={campo.chiave}
                     type="button"
-                    onClick={() => onInsert(campo.chiave)}
+                    onClick={() => onInsert(`${entita}.${campo.chiave}`)}
                     className="rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                     title={campo.chiave}
                   >

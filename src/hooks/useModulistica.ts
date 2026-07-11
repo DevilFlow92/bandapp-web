@@ -24,7 +24,18 @@ export interface UpdateTemplateInput {
 
 export interface GenerateTemplateInput {
   id: number
+  contenuto_json: object
   entities: Record<string, number>
+}
+
+export interface PreviewTemplateInput {
+  id: number
+  contenuto_json: object
+  entities: Record<string, number>
+}
+
+export interface TemplatePreviewResponse {
+  html: string
 }
 
 export function useTemplates(page: number, pageSize: number) {
@@ -96,8 +107,11 @@ export function useDeleteTemplate() {
 
 export function useGenerateDocx() {
   return useMutation({
-    mutationFn: async ({ id, entities }: GenerateTemplateInput) => {
-      const { data } = await api.post<Documento>(`/templates/${id}/generate/docx`, { entities })
+    mutationFn: async ({ id, contenuto_json, entities }: GenerateTemplateInput) => {
+      const { data } = await api.post<Documento>(`/templates/${id}/generate/docx`, {
+        contenuto_json,
+        entities,
+      })
       return data
     },
   })
@@ -105,8 +119,24 @@ export function useGenerateDocx() {
 
 export function useGeneratePdf() {
   return useMutation({
-    mutationFn: async ({ id, entities }: GenerateTemplateInput) => {
-      const { data } = await api.post<Documento>(`/templates/${id}/generate/pdf`, { entities })
+    mutationFn: async ({ id, contenuto_json, entities }: GenerateTemplateInput) => {
+      const { data } = await api.post<Documento>(`/templates/${id}/generate/pdf`, {
+        contenuto_json,
+        entities,
+      })
+      return data
+    },
+  })
+}
+
+/** Renders a template preview with mergefields resolved against real entity data. */
+export function usePreviewTemplate() {
+  return useMutation({
+    mutationFn: async ({ id, contenuto_json, entities }: PreviewTemplateInput) => {
+      const { data } = await api.post<TemplatePreviewResponse>(`/templates/${id}/preview`, {
+        contenuto_json,
+        entities,
+      })
       return data
     },
   })

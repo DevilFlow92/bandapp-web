@@ -1,12 +1,22 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
-import { useTemplate, useUpdateTemplate } from "@/hooks/useModulistica"
+import {
+  downloadDocumento,
+  useGenerateDocx,
+  useGeneratePdf,
+  usePreviewTemplate,
+  useTemplate,
+  useUpdateTemplate,
+} from "@/hooks/useModulistica"
 import { useToast } from "@/hooks/use-toast"
+import { getErrorMessage } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import TemplateEditor from "@/components/modulistica/TemplateEditor"
+import EntitySelector from "@/components/modulistica/EntitySelector"
+import TemplatePreviewPane from "@/components/modulistica/TemplatePreviewPane"
 
 export default function TemplateEditorPage() {
   const navigate = useNavigate()
@@ -15,9 +25,27 @@ export default function TemplateEditorPage() {
 
   const { data: template, isLoading, isError } = useTemplate(templateId)
   const updateTemplate = useUpdateTemplate()
+  const previewTemplate = usePreviewTemplate()
+  const generateDocx = useGenerateDocx()
+  const generatePdf = useGeneratePdf()
   const { toast } = useToast()
 
   const [contenutoJson, setContenutoJson] = useState<object | null>(null)
+  const [entities, setEntities] = useState<Record<string, number>>({})
+
+  const entitaRichieste = template?.entita_richieste ?? []
+  const isEntitiesComplete = entitaRichieste.every((entita) => entities[entita] != null)
+  const effectiveContent = contenutoJson ?? template?.contenuto_json ?? null
+
+  const previewMutateRef = useRef(previewTemplate.mutate)
+  useEffect(() => {
+    previewMutateRef.current = previewTemplate.mutate
+  }, [previewTemplate.mutate])
+
+  useEffect(() => {
+    if (!template || !effectiveContent || !isEntitiesComplete) return
+    previewMutateRef.current({ id: template.id, contenuto_json: effectiveContent, entities })
+  }, [template, effectiveContent, entities, isEntitiesComplete])
 
   const backButton = (
     <Button
@@ -41,6 +69,34 @@ export default function TemplateEditorPage() {
       toast({ title: "Modulo salvato" })
     } catch {
       toast({ variant: "destructive", title: "Errore durante il salvataggio. Riprova." })
+    }
+  }
+
+  async function handleGenerateDocx() {
+    if (!template || !effectiveContent) return
+    try {
+      const documento = await generateDocx.mutateAsync({
+        id: template.id,
+        contenuto_json: effectiveContent,
+        entities,
+      })
+      await downloadDocumento(documento.id, documento.nome)
+    } catch (err) {
+      toast({ variant: "destructive", title: getErrorMessage(err) })
+    }
+  }
+
+  async function handleGeneratePdf() {
+    if (!template || !effectiveContent) return
+    try {
+      const documento = await generatePdf.mutateAsync({
+        id: template.id,
+        contenuto_json: effectiveContent,
+        entities,
+      })
+      await downloadDocumento(documento.id, documento.nome)
+    } catch (err) {
+      toast({ variant: "destructive", title: getErrorMessage(err) })
     }
   }
 
@@ -74,11 +130,45 @@ export default function TemplateEditorPage() {
       ) : (
         <div className="space-y-1.5">
           <h1 className="text-2xl font-semibold tracking-tight">{template.nome}</h1>
-          <TemplateEditor
-            key={template.id}
-            initialContent={template.contenuto_json}
-            onChange={setContenutoJson}
-          />
+          <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+            <TemplateEditor
+              key={template.id}
+              initialContent={template.contenuto_json}
+              onChange={setContenutoJson}
+            />
+
+            <div className="space-y-4">
+              <EntitySelector
+                entitaRichieste={entitaRichieste}
+                value={entities}
+                onChange={setEntities}
+              />
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateDocx}
+                  disabled={!isEntitiesComplete || generateDocx.isPending}
+                >
+                  {generateDocx.isPending ? "Generazione..." : "Genera DOCX"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleGeneratePdf}
+                  disabled={!isEntitiesComplete || generatePdf.isPending}
+                >
+                  {generatePdf.isPending ? "Generazione..." : "Genera PDF"}
+                </Button>
+              </div>
+
+              <TemplatePreviewPane
+                html={previewTemplate.data?.html}
+                isLoading={previewTemplate.isPending}
+                error={previewTemplate.isError ? getErrorMessage(previewTemplate.error) : null}
+                isReady={isEntitiesComplete}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

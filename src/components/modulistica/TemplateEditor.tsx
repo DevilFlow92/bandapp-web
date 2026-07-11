@@ -1,15 +1,38 @@
 import { useEffect, useRef, type ReactNode } from "react"
 import { EditorContent, useEditor, type Editor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
+import TextAlign from "@tiptap/extension-text-align"
+import { FontFamily, Color, TextStyle } from "@tiptap/extension-text-style"
 import type { JSONContent } from "@tiptap/core"
-import { Bold, Heading1, Heading2, Heading3, Italic, Pilcrow } from "lucide-react"
+import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  Bold,
+  Heading1,
+  Heading2,
+  Heading3,
+  Italic,
+  Palette,
+  Pilcrow,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { Mergefield } from "@/components/modulistica/MergefieldNode"
 import MergefieldLibrary from "@/components/modulistica/MergefieldLibrary"
 
 const ONCHANGE_DEBOUNCE_MS = 500
+
+const ALLOWED_FONTS = ["Arial", "Times New Roman", "Calibri", "Georgia", "Verdana"] as const
 
 interface TemplateEditorProps {
   initialContent: object
@@ -90,6 +113,69 @@ function Toolbar({ editor }: { editor: Editor }) {
       >
         <Italic className="h-4 w-4" />
       </ToolbarButton>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <ToolbarButton
+        active={editor.isActive({ textAlign: "left" })}
+        onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        label="Allinea a sinistra"
+      >
+        <AlignLeft className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        active={editor.isActive({ textAlign: "center" })}
+        onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        label="Allinea al centro"
+      >
+        <AlignCenter className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        active={editor.isActive({ textAlign: "right" })}
+        onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        label="Allinea a destra"
+      >
+        <AlignRight className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        active={editor.isActive({ textAlign: "justify" })}
+        onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+        label="Giustifica"
+      >
+        <AlignJustify className="h-4 w-4" />
+      </ToolbarButton>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <div className="flex items-center gap-1">
+        <Select
+          value={(editor.getAttributes("textStyle").fontFamily as string) || ""}
+          onValueChange={(value) => editor.chain().focus().setFontFamily(value).run()}
+        >
+          <SelectTrigger className="h-8 w-[140px] text-xs">
+            <SelectValue placeholder="Font" />
+          </SelectTrigger>
+          <SelectContent>
+            {ALLOWED_FONTS.map((font) => (
+              <SelectItem key={font} value={font}>
+                {font}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="relative">
+          <input
+            type="color"
+            title="Colore testo"
+            defaultValue="#000000"
+            value={(editor.getAttributes("textStyle").color as string) || "#000000"}
+            onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
+            className="h-8 w-8 cursor-pointer rounded border border-input"
+          />
+          <Palette className="pointer-events-none absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2 opacity-40" />
+        </div>
+      </div>
     </div>
   )
 }
@@ -120,6 +206,12 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
         underline: false,
         heading: { levels: [1, 2, 3] },
       }),
+      TextAlign.configure({
+        types: ["paragraph", "heading"],
+      }),
+      TextStyle,
+      Color,
+      FontFamily,
       Mergefield,
     ],
     content: initialContent as JSONContent,

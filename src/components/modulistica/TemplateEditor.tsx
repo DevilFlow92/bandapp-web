@@ -1,8 +1,10 @@
-import { useEffect, useRef, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { EditorContent, useEditor, type Editor } from "@tiptap/react"
+import { BubbleMenu } from "@tiptap/react/menus"
 import StarterKit from "@tiptap/starter-kit"
 import TextAlign from "@tiptap/extension-text-align"
 import { FontFamily, Color, TextStyle } from "@tiptap/extension-text-style"
+import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table"
 import type { JSONContent } from "@tiptap/core"
 import {
   AlignCenter,
@@ -10,6 +12,8 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  Columns3,
+  Combine,
   Heading1,
   Heading2,
   Heading3,
@@ -20,8 +24,17 @@ import {
   Outdent,
   Palette,
   Pilcrow,
+  Rows3,
+  SplitSquareHorizontal,
+  Table as TableIcon,
+  Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Select,
   SelectContent,
@@ -69,7 +82,166 @@ function ToolbarButton({
   )
 }
 
+const TABLE_GRID_MAX = 8
+
+function TableGridPicker({ onSelect }: { onSelect: (rows: number, cols: number) => void }) {
+  const [hovered, setHovered] = useState<{ row: number; col: number } | null>(null)
+
+  return (
+    <div className="p-2">
+      <div
+        className="grid gap-0.5"
+        style={{ gridTemplateColumns: `repeat(${TABLE_GRID_MAX}, 1rem)` }}
+        onMouseLeave={() => setHovered(null)}
+      >
+        {Array.from({ length: TABLE_GRID_MAX * TABLE_GRID_MAX }).map((_, i) => {
+          const row = Math.floor(i / TABLE_GRID_MAX)
+          const col = i % TABLE_GRID_MAX
+          const active = hovered !== null && row <= hovered.row && col <= hovered.col
+          return (
+            <button
+              key={i}
+              type="button"
+              className={cn(
+                "h-4 w-4 border",
+                active ? "border-primary bg-primary/30" : "border-muted-foreground/30",
+              )}
+              onMouseEnter={() => setHovered({ row, col })}
+              onClick={() => onSelect(row + 1, col + 1)}
+            />
+          )
+        })}
+      </div>
+      <p className="mt-1 text-center text-xs text-muted-foreground">
+        {hovered ? `${hovered.row + 1} x ${hovered.col + 1}` : "Seleziona dimensioni"}
+      </p>
+    </div>
+  )
+}
+
+function TableToolbarButton({
+  onClick,
+  disabled,
+  label,
+  children,
+}: {
+  onClick: () => void
+  disabled?: boolean
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="h-8 gap-1 px-2 text-xs"
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {children}
+      {label}
+    </Button>
+  )
+}
+
+const TABLE_BUBBLE_MENU_OPTIONS = {
+  placement: "top-start",
+  offset: 8,
+} as const
+
+function tableBubbleMenuShouldShow({ editor }: { editor: Editor }) {
+  return editor.isActive("table")
+}
+
+function TableToolbar({ editor }: { editor: Editor }) {
+  const getReferencedVirtualElement = useCallback(() => {
+    const { selection } = editor.state
+    const dom = editor.view.domAtPos(selection.from).node
+    const element = dom.nodeType === Node.ELEMENT_NODE ? (dom as HTMLElement) : dom.parentElement
+    const tableEl = element?.closest("table")
+    if (!tableEl) return null
+    return {
+      getBoundingClientRect: () => tableEl.getBoundingClientRect(),
+      contextElement: tableEl,
+    }
+  }, [editor])
+
+  return (
+    <BubbleMenu
+      editor={editor}
+      pluginKey="tableBubbleMenu"
+      shouldShow={tableBubbleMenuShouldShow}
+      options={TABLE_BUBBLE_MENU_OPTIONS}
+      getReferencedVirtualElement={getReferencedVirtualElement}
+      className="flex flex-wrap items-center gap-1 rounded-md border bg-popover p-1 shadow-md"
+    >
+      <TableToolbarButton
+        label="Aggiungi riga"
+        disabled={!editor.can().addRowAfter()}
+        onClick={() => editor.chain().focus().addRowAfter().run()}
+      >
+        <Rows3 className="h-4 w-4" />
+      </TableToolbarButton>
+      <TableToolbarButton
+        label="Elimina riga"
+        disabled={!editor.can().deleteRow()}
+        onClick={() => editor.chain().focus().deleteRow().run()}
+      >
+        <Trash2 className="h-4 w-4" />
+      </TableToolbarButton>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <TableToolbarButton
+        label="Aggiungi colonna"
+        disabled={!editor.can().addColumnAfter()}
+        onClick={() => editor.chain().focus().addColumnAfter().run()}
+      >
+        <Columns3 className="h-4 w-4" />
+      </TableToolbarButton>
+      <TableToolbarButton
+        label="Elimina colonna"
+        disabled={!editor.can().deleteColumn()}
+        onClick={() => editor.chain().focus().deleteColumn().run()}
+      >
+        <Trash2 className="h-4 w-4" />
+      </TableToolbarButton>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <TableToolbarButton
+        label="Unisci celle"
+        disabled={!editor.can().mergeCells()}
+        onClick={() => editor.chain().focus().mergeCells().run()}
+      >
+        <Combine className="h-4 w-4" />
+      </TableToolbarButton>
+      <TableToolbarButton
+        label="Dividi cella"
+        disabled={!editor.can().splitCell()}
+        onClick={() => editor.chain().focus().splitCell().run()}
+      >
+        <SplitSquareHorizontal className="h-4 w-4" />
+      </TableToolbarButton>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <TableToolbarButton
+        label="Elimina tabella"
+        disabled={!editor.can().deleteTable()}
+        onClick={() => editor.chain().focus().deleteTable().run()}
+      >
+        <Trash2 className="h-4 w-4" />
+      </TableToolbarButton>
+    </BubbleMenu>
+  )
+}
+
 function Toolbar({ editor }: { editor: Editor }) {
+  const [tableMenuOpen, setTableMenuOpen] = useState(false)
+
   return (
     <div className="flex flex-wrap items-center gap-1 border-b p-2">
       <ToolbarButton
@@ -216,6 +388,30 @@ function Toolbar({ editor }: { editor: Editor }) {
           </ToolbarButton>
         </>
       )}
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <DropdownMenu open={tableMenuOpen} onOpenChange={setTableMenuOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant={editor.isActive("table") ? "secondary" : "ghost"}
+            size="sm"
+            className="h-8 px-2"
+            title="Inserisci tabella"
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <TableGridPicker
+            onSelect={(rows, cols) => {
+              editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run()
+              setTableMenuOpen(false)
+            }}
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   )
 }
@@ -248,6 +444,10 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
       TextStyle,
       Color,
       FontFamily,
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Mergefield,
     ],
     content: initialContent as JSONContent,
@@ -271,6 +471,7 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
     <div className="flex flex-col gap-4 md:flex-row">
       <div className="rounded-md border md:w-[70%]">
         <Toolbar editor={editor} />
+        <TableToolbar editor={editor} />
         <EditorContent
           editor={editor}
           className={cn(
@@ -286,6 +487,13 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
             "[&_ol_ol]:[list-style-type:lower-alpha] [&_ol_ol]:pl-10",
             "[&_ol_ol_ol]:[list-style-type:lower-roman] [&_ol_ol_ol]:pl-14",
             "[&_li]:mb-1",
+            "[&_.tableWrapper]:my-2 [&_.tableWrapper]:overflow-x-auto",
+            "[&_table]:w-full [&_table]:table-fixed [&_table]:border-collapse [&_table]:overflow-hidden",
+            "[&_td]:relative [&_td]:box-border [&_td]:min-w-[75px] [&_td]:border [&_td]:border-border [&_td]:p-2 [&_td]:align-top",
+            "[&_th]:relative [&_th]:box-border [&_th]:min-w-[75px] [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left [&_th]:align-top [&_th]:font-semibold",
+            "[&_.column-resize-handle]:pointer-events-none [&_.column-resize-handle]:absolute [&_.column-resize-handle]:bottom-0 [&_.column-resize-handle]:right-[-2px] [&_.column-resize-handle]:top-0 [&_.column-resize-handle]:z-20 [&_.column-resize-handle]:w-1 [&_.column-resize-handle]:bg-primary/50",
+            "[&_.ProseMirror.resize-cursor]:cursor-col-resize",
+            "[&_.selectedCell]:after:pointer-events-none [&_.selectedCell]:after:absolute [&_.selectedCell]:after:inset-0 [&_.selectedCell]:after:z-[2] [&_.selectedCell]:after:bg-primary/10 [&_.selectedCell]:after:content-['']",
           )}
         />
       </div>

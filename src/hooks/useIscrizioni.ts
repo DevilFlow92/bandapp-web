@@ -23,7 +23,13 @@ export type UpdateIscrizioneInput = Partial<CreateIscrizioneInput>
  * are already scoped to the selected banda, so the endpoint is not filtered by
  * banda directly. Optionally narrowed by socio and/or year.
  */
-export function useIscrizioni(page: number, pageSize: number, socioId?: number, anno?: number) {
+export function useIscrizioni(
+  page: number,
+  pageSize: number,
+  socioId?: number,
+  anno?: number,
+  enabled = true,
+) {
   return useQuery({
     queryKey: [...ISCRIZIONI_KEY, page, pageSize, socioId ?? null, anno ?? null],
     queryFn: async () => {
@@ -36,6 +42,7 @@ export function useIscrizioni(page: number, pageSize: number, socioId?: number, 
       return data
     },
     placeholderData: (previous) => previous,
+    enabled,
   })
 }
 

@@ -4,8 +4,16 @@ import { useBanda } from "@/context/BandaContext"
 import { useSoci } from "@/hooks/useSoci"
 import { useEsterni } from "@/hooks/useEsterni"
 import { useBande } from "@/hooks/useBande"
+import { usePersonaContatti, useLookupRuoliContatto } from "@/hooks/useContatti"
+import { useIscrizioni, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
+import { useServizi } from "@/hooks/useServizi"
+import { useRicevuteList } from "@/hooks/useRicevute"
 import type { Socio } from "@/types/socio"
 import type { Esterno } from "@/types/esterno"
+import type { Contatto } from "@/types/contatto"
+import type { Iscrizione } from "@/types/iscrizione"
+import type { Servizio } from "@/types/servizio"
+import type { Ricevuta } from "@/types/ricevuta"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,6 +35,44 @@ const ENTITY_LABELS: Record<string, string> = {
   socio: "Socio",
   esterno: "Esterno",
   banda: "Banda",
+  contatto: "Contatto",
+  iscrizione: "Iscrizione",
+  servizio: "Servizio",
+  ricevuta: "Ricevuta",
+}
+
+// "contatto" and "iscrizione" depend on the socio/esterno selected in the
+// same form, so they must always render after them regardless of the order
+// the backend returns in entita_richieste.
+const ENTITY_ORDER: Record<string, number> = {
+  contatto: 1,
+  iscrizione: 1,
+}
+
+function contattoLabel(contatto: Contatto, ruoloById: Map<number, string>) {
+  const primary = contatto.email ?? contatto.telefono
+  const ruolo = ruoloById.get(contatto.ruolo_contatto_codice)
+  if (!primary) return ruolo ? `Contatto #${contatto.id} — ${ruolo}` : `Contatto #${contatto.id}`
+  return ruolo ? `${primary} — ${ruolo}` : primary
+}
+
+function iscrizioneLabel(iscrizione: Iscrizione, statoById: Map<number, string>) {
+  const stato = statoById.get(iscrizione.stato_iscrizione_codice)
+  return stato ? `Anno ${iscrizione.anno} — ${stato}` : `Anno ${iscrizione.anno}`
+}
+
+function servizioLabel(servizio: Servizio) {
+  const data = new Date(servizio.data_servizio).toLocaleDateString("it-IT")
+  return `${servizio.descrizione_servizio} — ${data}`
+}
+
+function formatImporto(importo: number) {
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(importo)
+}
+
+function ricevutaLabel(ricevuta: Ricevuta) {
+  const data = new Date(ricevuta.data_ricevuta).toLocaleDateString("it-IT")
+  return `${data} — ${formatImporto(ricevuta.importo)}`
 }
 
 function personLabel(
@@ -128,6 +174,49 @@ export default function EntitySelector({ entitaRichieste, value, onChange }: Ent
     entitaRichieste.includes("esterno") && !!banda,
   )
   const bandeQuery = useBande()
+  const ruoliContattoQuery = useLookupRuoliContatto()
+  const statiIscrizioneQuery = useLookupStatiIscrizione()
+
+  const socioSelezionato = sociQuery.data?.items.find((s) => s.id === value.socio)
+  const esternoSelezionato = esterniQuery.data?.items.find((e) => e.id === value.esterno)
+  const contattoPersonaId = socioSelezionato?.persona?.id ?? esternoSelezionato?.persona?.id ?? null
+
+  const contattiQuery = usePersonaContatti(
+    contattoPersonaId ?? 0,
+    entitaRichieste.includes("contatto") && contattoPersonaId != null,
+  )
+  const ruoloById = useMemo(
+    () => new Map(ruoliContattoQuery.data?.map((r) => [r.codice, r.descrizione]) ?? []),
+    [ruoliContattoQuery.data],
+  )
+
+  const iscrizioneSocioId = entitaRichieste.includes("socio") ? (value.socio ?? null) : null
+  const iscrizioniQuery = useIscrizioni(
+    1,
+    50,
+    iscrizioneSocioId ?? undefined,
+    undefined,
+    entitaRichieste.includes("iscrizione") && iscrizioneSocioId != null,
+  )
+  const statoById = useMemo(
+    () => new Map(statiIscrizioneQuery.data?.map((s) => [s.codice, s.descrizione]) ?? []),
+    [statiIscrizioneQuery.data],
+  )
+
+  const serviziQuery = useServizi(
+    1,
+    50,
+    banda?.codice ?? 0,
+    undefined,
+    entitaRichieste.includes("servizio") && !!banda,
+  )
+
+  const ricevuteQuery = useRicevuteList(1, 50, entitaRichieste.includes("ricevuta"))
+
+  const orderedEntitaRichieste = useMemo(
+    () => [...entitaRichieste].sort((a, b) => (ENTITY_ORDER[a] ?? 0) - (ENTITY_ORDER[b] ?? 0)),
+    [entitaRichieste],
+  )
 
   function setEntity(key: string, id: number) {
     onChange({ ...value, [key]: id })
@@ -143,7 +232,7 @@ export default function EntitySelector({ entitaRichieste, value, onChange }: Ent
 
   return (
     <div className="space-y-4">
-      {entitaRichieste.map((entita) => {
+      {orderedEntitaRichieste.map((entita) => {
         const label = ENTITY_LABELS[entita] ?? entita
         return (
           <div key={entita} className="space-y-2">
@@ -191,11 +280,79 @@ export default function EntitySelector({ entitaRichieste, value, onChange }: Ent
                 </SelectContent>
               </Select>
             )}
-            {entita !== "socio" && entita !== "esterno" && entita !== "banda" && (
-              <p className="text-sm text-muted-foreground">
-                Selettore non disponibile per l&apos;entità &quot;{entita}&quot;.
-              </p>
+            {entita === "contatto" &&
+              (contattoPersonaId == null ? (
+                <p className="text-sm text-muted-foreground">
+                  Il campo contatto richiede anche Socio o Esterno nel template.
+                </p>
+              ) : (
+                <SearchPicker
+                  items={contattiQuery.data ?? []}
+                  isLoading={contattiQuery.isLoading}
+                  getId={(c: Contatto) => c.id}
+                  getLabel={(c: Contatto) => contattoLabel(c, ruoloById)}
+                  selectedId={value.contatto}
+                  onSelect={(id) => setEntity("contatto", id)}
+                  onClear={() => clearEntity("contatto")}
+                  placeholder="Cerca contatto…"
+                  emptyLabel="Nessun contatto trovato"
+                />
+              ))}
+            {entita === "iscrizione" &&
+              (iscrizioneSocioId == null ? (
+                <p className="text-sm text-muted-foreground">
+                  Il campo iscrizione richiede anche Socio nel template.
+                </p>
+              ) : (
+                <SearchPicker
+                  items={iscrizioniQuery.data?.items ?? []}
+                  isLoading={iscrizioniQuery.isLoading}
+                  getId={(i: Iscrizione) => i.id}
+                  getLabel={(i: Iscrizione) => iscrizioneLabel(i, statoById)}
+                  selectedId={value.iscrizione}
+                  onSelect={(id) => setEntity("iscrizione", id)}
+                  onClear={() => clearEntity("iscrizione")}
+                  placeholder="Cerca iscrizione…"
+                  emptyLabel="Nessuna iscrizione trovata"
+                />
+              ))}
+            {entita === "servizio" && (
+              <SearchPicker
+                items={serviziQuery.data?.items ?? []}
+                isLoading={serviziQuery.isLoading}
+                getId={(s: Servizio) => s.id}
+                getLabel={servizioLabel}
+                selectedId={value.servizio}
+                onSelect={(id) => setEntity("servizio", id)}
+                onClear={() => clearEntity("servizio")}
+                placeholder="Cerca per descrizione…"
+                emptyLabel="Nessun servizio trovato"
+              />
             )}
+            {entita === "ricevuta" && (
+              <SearchPicker
+                items={ricevuteQuery.data?.items ?? []}
+                isLoading={ricevuteQuery.isLoading}
+                getId={(r: Ricevuta) => r.id}
+                getLabel={ricevutaLabel}
+                selectedId={value.ricevuta}
+                onSelect={(id) => setEntity("ricevuta", id)}
+                onClear={() => clearEntity("ricevuta")}
+                placeholder="Cerca per data o importo…"
+                emptyLabel="Nessuna ricevuta trovata"
+              />
+            )}
+            {entita !== "socio" &&
+              entita !== "esterno" &&
+              entita !== "banda" &&
+              entita !== "contatto" &&
+              entita !== "iscrizione" &&
+              entita !== "servizio" &&
+              entita !== "ricevuta" && (
+                <p className="text-sm text-muted-foreground">
+                  Selettore non disponibile per l&apos;entità &quot;{entita}&quot;.
+                </p>
+              )}
           </div>
         )
       })}

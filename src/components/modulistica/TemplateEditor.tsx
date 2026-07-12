@@ -13,7 +13,11 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  IndentIncrease,
   Italic,
+  List,
+  ListOrdered,
+  Outdent,
   Palette,
   Pilcrow,
 } from "lucide-react"
@@ -176,6 +180,42 @@ function Toolbar({ editor }: { editor: Editor }) {
           <Palette className="pointer-events-none absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2 opacity-40" />
         </div>
       </div>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <ToolbarButton
+        active={editor.isActive("bulletList")}
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        label="Elenco puntato"
+      >
+        <List className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        active={editor.isActive("orderedList")}
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        label="Elenco numerato"
+      >
+        <ListOrdered className="h-4 w-4" />
+      </ToolbarButton>
+
+      {(editor.isActive("bulletList") || editor.isActive("orderedList")) && (
+        <>
+          <ToolbarButton
+            active={false}
+            onClick={() => editor.chain().focus().sinkListItem("listItem").run()}
+            label="Aumenta rientro"
+          >
+            <IndentIncrease className="h-4 w-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            active={false}
+            onClick={() => editor.chain().focus().liftListItem("listItem").run()}
+            label="Riduci rientro"
+          >
+            <Outdent className="h-4 w-4" />
+          </ToolbarButton>
+        </>
+      )}
     </div>
   )
 }
@@ -193,10 +233,6 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
     extensions: [
       StarterKit.configure({
         blockquote: false,
-        bulletList: false,
-        orderedList: false,
-        listItem: false,
-        listKeymap: false,
         code: false,
         codeBlock: false,
         hardBreak: false,
@@ -243,6 +279,13 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
             "[&_h2]:mb-2 [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-semibold",
             "[&_h3]:mb-1 [&_h3]:mt-2 [&_h3]:text-lg [&_h3]:font-semibold",
             "[&_p]:mb-2",
+            "[&_ul]:mb-2 [&_ul]:list-disc [&_ul]:pl-6",
+            "[&_ul_ul]:[list-style-type:circle] [&_ul_ul]:pl-10",
+            "[&_ul_ul_ul]:[list-style-type:square] [&_ul_ul_ul]:pl-14",
+            "[&_ol]:mb-2 [&_ol]:list-decimal [&_ol]:pl-6",
+            "[&_ol_ol]:[list-style-type:lower-alpha] [&_ol_ol]:pl-10",
+            "[&_ol_ol_ol]:[list-style-type:lower-roman] [&_ol_ol_ol]:pl-14",
+            "[&_li]:mb-1",
           )}
         />
       </div>

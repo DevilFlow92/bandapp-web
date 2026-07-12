@@ -27,6 +27,21 @@ export function useRicevute(servizioId: number) {
   })
 }
 
+/** Lists all ricevute with server-side pagination, unscoped by servizio. */
+export function useRicevuteList(page: number, pageSize: number, enabled = true) {
+  return useQuery({
+    queryKey: [...RICEVUTE_KEY, "list", page, pageSize],
+    queryFn: async () => {
+      const { data } = await api.get<PagedResponse<Ricevuta>>("/ricevute/", {
+        params: { page, page_size: pageSize },
+      })
+      return data
+    },
+    placeholderData: (previous) => previous,
+    enabled,
+  })
+}
+
 /** Creates a new ricevuta. */
 export function useCreateRicevuta() {
   const queryClient = useQueryClient()

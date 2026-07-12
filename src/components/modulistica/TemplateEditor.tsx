@@ -4,7 +4,7 @@ import { BubbleMenu } from "@tiptap/react/menus"
 import StarterKit from "@tiptap/starter-kit"
 import TextAlign from "@tiptap/extension-text-align"
 import { FontFamily, Color, TextStyle } from "@tiptap/extension-text-style"
-import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table"
+import { Table, TableHeader, TableCell } from "@tiptap/extension-table"
 import type { JSONContent } from "@tiptap/core"
 import {
   AlignCenter,
@@ -21,6 +21,7 @@ import {
   Italic,
   List,
   ListOrdered,
+  MoveVertical,
   Outdent,
   Palette,
   Pilcrow,
@@ -28,6 +29,7 @@ import {
   SplitSquareHorizontal,
   Table as TableIcon,
   Trash2,
+  Wand2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -46,6 +48,11 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { Mergefield } from "@/components/modulistica/MergefieldNode"
 import MergefieldLibrary from "@/components/modulistica/MergefieldLibrary"
+import {
+  ROW_MIN_HEIGHT,
+  TableRowResizing,
+  TableRowWithHeight,
+} from "@/components/modulistica/TableRowResize"
 
 const ONCHANGE_DEBOUNCE_MS = 500
 
@@ -155,6 +162,49 @@ function tableBubbleMenuShouldShow({ editor }: { editor: Editor }) {
   return editor.isActive("table")
 }
 
+function RowHeightInput({ editor }: { editor: Editor }) {
+  const height = editor.getAttributes("tableRow").height as number | null | undefined
+
+  return (
+    <div className="flex items-center gap-1 px-1" title="Altezza riga (px)">
+      <MoveVertical className="h-4 w-4 text-muted-foreground" />
+      <input
+        type="number"
+        min={ROW_MIN_HEIGHT}
+        placeholder="Auto"
+        value={height ?? ""}
+        onChange={(e) => {
+          const raw = e.target.value
+          const value = raw === "" ? null : Math.max(ROW_MIN_HEIGHT, Number(raw))
+          editor.chain().focus().setRowHeight(editor.state.selection.from, value).run()
+        }}
+        className="h-8 w-16 rounded border border-input bg-transparent px-1 text-xs"
+      />
+    </div>
+  )
+}
+
+function currentCellAttrs(editor: Editor) {
+  return editor.isActive("tableHeader")
+    ? editor.getAttributes("tableHeader")
+    : editor.getAttributes("tableCell")
+}
+
+function AutoColumnWidthToggle({ editor }: { editor: Editor }) {
+  const colwidth = currentCellAttrs(editor).colwidth as number[] | null | undefined
+  const isAuto = !colwidth
+
+  return (
+    <TableToolbarButton
+      label="Larghezza automatica"
+      disabled={isAuto}
+      onClick={() => editor.chain().focus().setCellAttribute("colwidth", null).run()}
+    >
+      <Wand2 className="h-4 w-4" />
+    </TableToolbarButton>
+  )
+}
+
 function TableToolbar({ editor }: { editor: Editor }) {
   const getReferencedVirtualElement = useCallback(() => {
     const { selection } = editor.state
@@ -191,6 +241,7 @@ function TableToolbar({ editor }: { editor: Editor }) {
       >
         <Trash2 className="h-4 w-4" />
       </TableToolbarButton>
+      <RowHeightInput editor={editor} />
 
       <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -208,6 +259,7 @@ function TableToolbar({ editor }: { editor: Editor }) {
       >
         <Trash2 className="h-4 w-4" />
       </TableToolbarButton>
+      <AutoColumnWidthToggle editor={editor} />
 
       <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -445,9 +497,10 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
       Color,
       FontFamily,
       Table.configure({ resizable: true }),
-      TableRow,
+      TableRowWithHeight,
       TableHeader,
       TableCell,
+      TableRowResizing,
       Mergefield,
     ],
     content: initialContent as JSONContent,
@@ -493,6 +546,8 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
             "[&_th]:relative [&_th]:box-border [&_th]:min-w-[75px] [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left [&_th]:align-top [&_th]:font-semibold",
             "[&_.column-resize-handle]:pointer-events-none [&_.column-resize-handle]:absolute [&_.column-resize-handle]:bottom-0 [&_.column-resize-handle]:right-[-2px] [&_.column-resize-handle]:top-0 [&_.column-resize-handle]:z-20 [&_.column-resize-handle]:w-1 [&_.column-resize-handle]:bg-primary/50",
             "[&_.ProseMirror.resize-cursor]:cursor-col-resize",
+            "[&_.row-resize-handle]:pointer-events-none [&_.row-resize-handle]:absolute [&_.row-resize-handle]:bottom-[-2px] [&_.row-resize-handle]:left-0 [&_.row-resize-handle]:right-0 [&_.row-resize-handle]:z-20 [&_.row-resize-handle]:h-1 [&_.row-resize-handle]:bg-primary/50",
+            "[&_.ProseMirror.row-resize-cursor]:cursor-row-resize",
             "[&_.selectedCell]:after:pointer-events-none [&_.selectedCell]:after:absolute [&_.selectedCell]:after:inset-0 [&_.selectedCell]:after:z-[2] [&_.selectedCell]:after:bg-primary/10 [&_.selectedCell]:after:content-['']",
           )}
         />

@@ -18,6 +18,7 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Image as ImageIcon,
   IndentIncrease,
   Italic,
   List,
@@ -48,7 +49,9 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { Mergefield } from "@/components/modulistica/MergefieldNode"
+import { Image } from "@/components/modulistica/ImageNode"
 import MergefieldLibrary from "@/components/modulistica/MergefieldLibrary"
+import { useUploadDocumento } from "@/hooks/useDocumenti"
 import {
   ROW_MIN_HEIGHT,
   TableRowResizing,
@@ -63,6 +66,15 @@ import {
 const ONCHANGE_DEBOUNCE_MS = 500
 
 const ALLOWED_FONTS = ["Arial", "Times New Roman", "Calibri", "Georgia", "Verdana"] as const
+
+const IMAGE_BUBBLE_MENU_OPTIONS = {
+  placement: "top-start",
+  offset: 8,
+} as const
+
+function imageBubbleMenuShouldShow({ editor }: { editor: Editor }) {
+  return editor.isActive("image")
+}
 
 interface TemplateEditorProps {
   initialContent: object
@@ -92,6 +104,152 @@ function ToolbarButton({
     >
       {children}
     </Button>
+  )
+}
+
+function ImageWidthInput({ editor }: { editor: Editor }) {
+  const width = editor.getAttributes("image").width as number | null | undefined
+
+  return (
+    <div className="flex items-center gap-1 px-1" title="Larghezza immagine (px)">
+      <ImageIcon className="h-4 w-4 text-muted-foreground" />
+      <input
+        type="number"
+        min={50}
+        placeholder="Auto"
+        value={width ?? ""}
+        onChange={(e) => {
+          const raw = e.target.value
+          const value = raw === "" ? null : Math.max(50, Number(raw))
+          editor.chain().focus().updateAttributes("image", { width: value }).run()
+        }}
+        className="h-8 w-16 rounded border border-input bg-transparent px-1 text-xs"
+      />
+    </div>
+  )
+}
+
+function ImageAlignButtons({ editor }: { editor: Editor }) {
+  const align = editor.getAttributes("image").align as string | null
+
+  return (
+    <>
+      <ToolbarButton
+        active={align === "left"}
+        onClick={() => editor.chain().focus().updateAttributes("image", { align: "left" }).run()}
+        label="Allinea immagine a sinistra"
+      >
+        <AlignLeft className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        active={align === "center"}
+        onClick={() => editor.chain().focus().updateAttributes("image", { align: "center" }).run()}
+        label="Allinea immagine al centro"
+      >
+        <AlignCenter className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        active={align === "right"}
+        onClick={() => editor.chain().focus().updateAttributes("image", { align: "right" }).run()}
+        label="Allinea immagine a destra"
+      >
+        <AlignRight className="h-4 w-4" />
+      </ToolbarButton>
+    </>
+  )
+}
+
+function ImageBubbleMenu({ editor }: { editor: Editor }) {
+  const getReferencedVirtualElement = useCallback(() => {
+    const { selection } = editor.state
+    const dom = editor.view.domAtPos(selection.from).node
+    const element = dom.nodeType === Node.ELEMENT_NODE ? (dom as HTMLElement) : dom.parentElement
+    const imgEl = element?.closest("img")
+    if (!imgEl) return null
+    return {
+      getBoundingClientRect: () => imgEl.getBoundingClientRect(),
+      contextElement: imgEl,
+    }
+  }, [editor])
+
+  return (
+    <BubbleMenu
+      editor={editor}
+      pluginKey="imageBubbleMenu"
+      shouldShow={imageBubbleMenuShouldShow}
+      options={IMAGE_BUBBLE_MENU_OPTIONS}
+      getReferencedVirtualElement={getReferencedVirtualElement}
+      className="flex flex-wrap items-center gap-1 rounded-md border bg-popover p-1 shadow-md"
+    >
+      <ImageAlignButtons editor={editor} />
+      <Separator orientation="vertical" className="mx-1 h-6" />
+      <ImageWidthInput editor={editor} />
+      <Separator orientation="vertical" className="mx-1 h-6" />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-8 gap-1 px-2 text-xs"
+        title="Elimina immagine"
+        onClick={() => editor.chain().focus().deleteSelection().run()}
+      >
+        <Trash2 className="h-4 w-4" />
+        Elimina
+      </Button>
+    </BubbleMenu>
+  )
+}
+
+function InsertImageButton({ editor }: { editor: Editor }) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadDocumento = useUploadDocumento()
+
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+
+      uploadDocumento.mutate(
+        { file },
+        {
+          onSuccess: (data) => {
+            editor.chain().focus().insertImage(data.id).run()
+            if (fileInputRef.current) {
+              fileInputRef.current.value = ""
+            }
+          },
+        },
+      )
+    },
+    [editor, uploadDocumento],
+  )
+
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+        aria-hidden="true"
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-8 px-2"
+        title="Inserisci immagine"
+        disabled={uploadDocumento.isPending}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        {uploadDocumento.isPending ? (
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-primary" />
+        ) : (
+          <ImageIcon className="h-4 w-4" />
+        )}
+      </Button>
+    </>
   )
 }
 
@@ -576,6 +734,10 @@ function Toolbar({ editor }: { editor: Editor }) {
           />
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <InsertImageButton editor={editor} />
     </div>
   )
 }
@@ -614,6 +776,7 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
       TableCellWithAttrs,
       TableRowResizing,
       Mergefield,
+      Image,
     ],
     content: initialContent as JSONContent,
     onUpdate: ({ editor }) => {
@@ -637,6 +800,7 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
       <div className="rounded-md border md:w-[70%]">
         <Toolbar editor={editor} />
         <TableToolbar editor={editor} />
+        <ImageBubbleMenu editor={editor} />
         <EditorContent
           editor={editor}
           className={cn(

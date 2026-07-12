@@ -4,7 +4,7 @@ import { BubbleMenu } from "@tiptap/react/menus"
 import StarterKit from "@tiptap/starter-kit"
 import TextAlign from "@tiptap/extension-text-align"
 import { FontFamily, Color, TextStyle } from "@tiptap/extension-text-style"
-import { Table, TableHeader, TableCell } from "@tiptap/extension-table"
+import { Table } from "@tiptap/extension-table"
 import type { JSONContent } from "@tiptap/core"
 import {
   AlignCenter,
@@ -14,6 +14,7 @@ import {
   Bold,
   Columns3,
   Combine,
+  Eraser,
   Heading1,
   Heading2,
   Heading3,
@@ -53,6 +54,11 @@ import {
   TableRowResizing,
   TableRowWithHeight,
 } from "@/components/modulistica/TableRowResize"
+import {
+  TableCellWithAttrs,
+  TableHeaderWithAttrs,
+  type CellTextAlign,
+} from "@/components/modulistica/TableCellAttrs"
 
 const ONCHANGE_DEBOUNCE_MS = 500
 
@@ -205,6 +211,105 @@ function AutoColumnWidthToggle({ editor }: { editor: Editor }) {
   )
 }
 
+function CellAlignButtons({ editor }: { editor: Editor }) {
+  const align = currentCellAttrs(editor).align as CellTextAlign | null
+
+  return (
+    <>
+      <ToolbarButton
+        active={align === "left"}
+        onClick={() => editor.chain().focus().setCellAttribute("align", "left").run()}
+        label="Allinea cella a sinistra"
+      >
+        <AlignLeft className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        active={align === "center"}
+        onClick={() => editor.chain().focus().setCellAttribute("align", "center").run()}
+        label="Allinea cella al centro"
+      >
+        <AlignCenter className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        active={align === "right"}
+        onClick={() => editor.chain().focus().setCellAttribute("align", "right").run()}
+        label="Allinea cella a destra"
+      >
+        <AlignRight className="h-4 w-4" />
+      </ToolbarButton>
+    </>
+  )
+}
+
+function CellBorderControls({ editor }: { editor: Editor }) {
+  const attrs = currentCellAttrs(editor)
+  const borderColor = (attrs.borderColor as string | null) || "#000000"
+  const borderWidth = attrs.borderWidth as number | null
+
+  return (
+    <div className="flex items-center gap-1 px-1">
+      <input
+        type="color"
+        title="Colore bordo cella"
+        value={borderColor}
+        onChange={(e) =>
+          editor.chain().focus().setCellAttribute("borderColor", e.target.value).run()
+        }
+        className="h-8 w-8 cursor-pointer rounded border border-input"
+      />
+      <input
+        type="number"
+        min={0}
+        title="Spessore bordo (px)"
+        placeholder="px"
+        value={borderWidth ?? ""}
+        onChange={(e) => {
+          const raw = e.target.value
+          const value = raw === "" ? null : Math.max(0, Number(raw))
+          editor.chain().focus().setCellAttribute("borderWidth", value).run()
+        }}
+        className="h-8 w-14 rounded border border-input bg-transparent px-1 text-xs"
+      />
+    </div>
+  )
+}
+
+function CellBackgroundControl({ editor }: { editor: Editor }) {
+  const backgroundColor = (currentCellAttrs(editor).backgroundColor as string | null) || "#ffffff"
+
+  return (
+    <input
+      type="color"
+      title="Colore sfondo cella"
+      value={backgroundColor}
+      onChange={(e) =>
+        editor.chain().focus().setCellAttribute("backgroundColor", e.target.value).run()
+      }
+      className="h-8 w-8 cursor-pointer rounded border border-input"
+    />
+  )
+}
+
+function ResetCellStyleButton({ editor }: { editor: Editor }) {
+  return (
+    <TableToolbarButton
+      label="Reset stile cella"
+      onClick={() =>
+        editor
+          .chain()
+          .focus()
+          .setCellAttribute("align", null)
+          .setCellAttribute("borderColor", null)
+          .setCellAttribute("borderWidth", null)
+          .setCellAttribute("backgroundColor", null)
+          .run()
+      }
+    >
+      <Eraser className="h-4 w-4" />
+    </TableToolbarButton>
+  )
+}
+
 function TableToolbar({ editor }: { editor: Editor }) {
   const getReferencedVirtualElement = useCallback(() => {
     const { selection } = editor.state
@@ -277,6 +382,13 @@ function TableToolbar({ editor }: { editor: Editor }) {
       >
         <SplitSquareHorizontal className="h-4 w-4" />
       </TableToolbarButton>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <CellAlignButtons editor={editor} />
+      <CellBorderControls editor={editor} />
+      <CellBackgroundControl editor={editor} />
+      <ResetCellStyleButton editor={editor} />
 
       <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -498,8 +610,8 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
       FontFamily,
       Table.configure({ resizable: true }),
       TableRowWithHeight,
-      TableHeader,
-      TableCell,
+      TableHeaderWithAttrs,
+      TableCellWithAttrs,
       TableRowResizing,
       Mergefield,
     ],

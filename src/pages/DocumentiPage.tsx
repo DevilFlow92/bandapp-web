@@ -20,6 +20,7 @@ import {
   useDocumenti,
   useUploadDocumento,
   useDeleteDocumento,
+  isPreviewable,
   previewDocumento,
   downloadDocumento,
 } from "@/hooks/useDocumenti"
@@ -47,11 +48,6 @@ import {
 } from "@/components/ui/table"
 
 const PAGE_SIZE = 20
-
-function isPreviewable(mimeType: string | undefined | null): boolean {
-  if (!mimeType) return false
-  return mimeType === "application/pdf" || mimeType.startsWith("image/")
-}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`

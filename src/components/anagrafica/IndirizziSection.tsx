@@ -8,18 +8,9 @@ import {
 } from "@/hooks/useIndirizzi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import ComuneSelect from "@/components/ui/ComuneSelect"
 import { useToast } from "@/hooks/use-toast"
+import IndirizzoForm from "@/components/anagrafica/IndirizzoForm"
 import type { CreateIndirizzoInput } from "@/types/indirizzo"
 
 interface IndirizziSectionProps {
@@ -139,62 +130,7 @@ export default function IndirizziSection({ personaId, canWrite }: IndirizziSecti
         {/* Inline add form */}
         {showForm && (
           <form onSubmit={handleSubmit} className="space-y-4 rounded-md border p-4">
-            <div className="space-y-2">
-              <Label htmlFor="tipo-indirizzo">Tipo indirizzo</Label>
-              <Select
-                value={form.tipo_indirizzo_codice ? String(form.tipo_indirizzo_codice) : undefined}
-                onValueChange={(v) => setForm((f) => ({ ...f, tipo_indirizzo_codice: Number(v) }))}
-              >
-                <SelectTrigger id="tipo-indirizzo">
-                  <SelectValue placeholder="Seleziona tipo…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tipi?.map((t) => (
-                    <SelectItem key={t.codice} value={String(t.codice)}>
-                      {t.descrizione}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="prima-riga">Prima riga *</Label>
-                <Input
-                  id="prima-riga"
-                  value={form.prima_riga}
-                  onChange={(e) => setForm((f) => ({ ...f, prima_riga: e.target.value }))}
-                  placeholder="Via / Piazza…"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="numero-civico">Numero civico</Label>
-                <Input
-                  id="numero-civico"
-                  value={form.numero_civico ?? ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, numero_civico: e.target.value || null }))
-                  }
-                  placeholder="es. 12/A"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cap">CAP</Label>
-                <Input
-                  id="cap"
-                  value={form.cap ?? ""}
-                  onChange={(e) => setForm((f) => ({ ...f, cap: e.target.value || null }))}
-                  placeholder="es. 00100"
-                />
-              </div>
-            </div>
-
-            <ComuneSelect
-              label="Comune"
-              value={form.comune_codice ?? null}
-              onChange={(codice) => setForm((f) => ({ ...f, comune_codice: codice }))}
-            />
+            <IndirizzoForm value={form} onChange={setForm} tipi={tipi} />
 
             {formError && <p className="text-sm text-destructive">{formError}</p>}
 

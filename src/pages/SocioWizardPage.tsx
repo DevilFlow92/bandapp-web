@@ -11,6 +11,7 @@ import {
 } from "@/hooks/useSoci"
 import { useAddPersonaIndirizzo, useLookupTipiIndirizzo } from "@/hooks/useIndirizzi"
 import { usePersonaContatti } from "@/hooks/useContatti"
+import { useCreateIscrizione, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useBanda } from "@/context/BandaContext"
@@ -30,13 +31,17 @@ import {
 import ComuneSelect from "@/components/ui/ComuneSelect"
 import IndirizzoForm from "@/components/anagrafica/IndirizzoForm"
 import ContattiSection from "@/components/anagrafica/ContattiSection"
+import IscrizioneForm, {
+  emptyIscrizioneForm,
+  todayISO,
+} from "@/components/iscrizioni/IscrizioneForm"
 import { cn } from "@/lib/utils"
 
 const NONE_VALUE = "__none__"
 
 type PersonaMode = "nuova" | "esistente"
 
-const STEPS = ["Persona", "Indirizzo", "Contatti", "Dati socio"] as const
+const STEPS = ["Persona", "Indirizzo", "Contatti", "Dati socio", "Iscrizione"] as const
 
 const emptyNuovaPersona = {
   nome: "",
@@ -182,6 +187,14 @@ export default function SocioWizardPage() {
   const allSoci = useAllSoci(banda!.codice, currentStep === 4)
   const [error4, setError4] = useState<string | null>(null)
 
+  // Step 5 — iscrizione (optional)
+  const [iscrizioneForm, setIscrizioneForm] = useState(emptyIscrizioneForm())
+  const stati = useLookupStatiIscrizione()
+  const createIscrizione = useCreateIscrizione()
+  const [iscrizioneCreated, setIscrizioneCreated] = useState(false)
+  const [iscrizioneAnno, setIscrizioneAnno] = useState<number | null>(null)
+  const [error5, setError5] = useState<string | null>(null)
+
   const suggestedCodice = useMemo(() => {
     if (!allSoci.data) return ""
     return suggestNextCodiceSocio(allSoci.data.map((s) => s.codice_socio))
@@ -212,6 +225,10 @@ export default function SocioWizardPage() {
     setDati(emptyDatiSocio)
     setCodicePrefilled(false)
     setError4(null)
+    setIscrizioneForm(emptyIscrizioneForm())
+    setIscrizioneCreated(false)
+    setIscrizioneAnno(null)
+    setError5(null)
   }
 
   const handleSelectPersona = (persona: Persona) => {
@@ -310,9 +327,41 @@ export default function SocioWizardPage() {
       setSocioId(socio.id)
       setCodiceSocio(socio.codice_socio)
       toast({ title: "Socio creato" })
+      setIscrizioneForm((f) => ({ ...f, data_iscrizione: todayISO() }))
       setCurrentStep(5)
     } catch (err) {
       setError4(getErrorMessage(err))
+    }
+  }
+
+  const handleSubmitIscrizione = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError5(null)
+
+    if (!socioId) {
+      setError5("Socio non definito.")
+      return
+    }
+    if (!iscrizioneForm.stato_iscrizione_codice) {
+      setError5("Seleziona uno stato iscrizione.")
+      return
+    }
+
+    try {
+      const iscrizione = await createIscrizione.mutateAsync({
+        socio_id: socioId,
+        anno: Number(iscrizioneForm.anno),
+        data_iscrizione: iscrizioneForm.data_iscrizione,
+        quota_partecipazione: Number(iscrizioneForm.quota_partecipazione),
+        stato_iscrizione_codice: Number(iscrizioneForm.stato_iscrizione_codice),
+        note: iscrizioneForm.note.trim() || null,
+      })
+      setIscrizioneCreated(true)
+      setIscrizioneAnno(iscrizione.anno)
+      toast({ title: "Iscrizione creata" })
+      setCurrentStep(6)
+    } catch (err) {
+      setError5(getErrorMessage(err))
     }
   }
 
@@ -604,6 +653,35 @@ export default function SocioWizardPage() {
       {currentStep === 5 && (
         <Card>
           <CardHeader>
+            <CardTitle>Iscrizione</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmitIscrizione} className="space-y-4">
+              {error5 && <ErrorBanner message={error5} />}
+
+              <IscrizioneForm
+                value={iscrizioneForm}
+                onChange={setIscrizioneForm}
+                stati={stati.data}
+              />
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setCurrentStep(6)}>
+                  Salta questo step
+                </Button>
+                <Button type="submit" disabled={createIscrizione.isPending}>
+                  {createIscrizione.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Crea iscrizione
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {currentStep === 6 && (
+        <Card>
+          <CardHeader>
             <CardTitle>Socio creato</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -627,6 +705,10 @@ export default function SocioWizardPage() {
               <div className="space-y-1">
                 <dt className="text-xs font-medium text-muted-foreground">Contatti</dt>
                 <dd>{contatti.data?.length ?? 0}</dd>
+              </div>
+              <div className="space-y-1">
+                <dt className="text-xs font-medium text-muted-foreground">Iscrizione</dt>
+                <dd>{iscrizioneCreated ? `Creata (anno ${iscrizioneAnno})` : "Non creata"}</dd>
               </div>
             </dl>
 

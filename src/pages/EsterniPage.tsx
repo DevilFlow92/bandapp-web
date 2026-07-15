@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   ChevronDown,
   ChevronLeft,
@@ -31,6 +32,7 @@ import ContattiSection from "@/components/anagrafica/ContattiSection"
 const PAGE_SIZE = 20
 
 export default function EsterniPage() {
+  const navigate = useNavigate()
   const { banda } = useBanda()
   const canWrite = usePermission("anagrafica:write")
   const [page, setPage] = useState(1)
@@ -45,11 +47,6 @@ export default function EsterniPage() {
   const totalPages = data?.meta.total_pages ?? 1
   const colCount = canWrite ? 7 : 6
 
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
   const openEdit = (esterno: Esterno) => {
     setEditing(esterno)
     setFormOpen(true)
@@ -60,7 +57,7 @@ export default function EsterniPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Esterni</h1>
         {canWrite && (
-          <Button onClick={openCreate}>
+          <Button onClick={() => navigate("/esterni/nuovo")}>
             <Plus className="mr-2 h-4 w-4" />
             Nuovo esterno
           </Button>

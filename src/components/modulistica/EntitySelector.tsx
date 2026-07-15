@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Loader2 } from "lucide-react"
 import { useBanda } from "@/context/BandaContext"
 import { useSoci } from "@/hooks/useSoci"
@@ -233,6 +233,14 @@ export default function EntitySelector({
   )
 
   const ricevuteQuery = useRicevuteList(1, 50, entitaRilevate.has("ricevuta"))
+
+  useEffect(() => {
+    if (!banda) return
+    if (!entitaRilevate.has("banda")) return
+    if (value.banda != null) return
+    onChange({ ...value, banda: banda.codice })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [banda, value.banda, entitaRilevate])
 
   const bandaSelezionata = bandeQuery.data?.find((b) => b.codice === value.banda)
   const contattoSelezionato = contattiQuery.data?.find((c) => c.id === value.contatto)

@@ -8,6 +8,7 @@ import { usePersonaContatti, useLookupRuoliContatto } from "@/hooks/useContatti"
 import { useIscrizioni, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
 import { useServizi } from "@/hooks/useServizi"
 import { useRicevuteList } from "@/hooks/useRicevute"
+import { extractEntitiesFromContent } from "@/lib/mergefields"
 import type { Socio } from "@/types/socio"
 import type { Esterno } from "@/types/esterno"
 import type { Contatto } from "@/types/contatto"
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/select"
 
 interface EntitySelectorProps {
-  entitaRichieste: string[]
+  contenutoJson: unknown
   value: Record<string, number>
   onChange: (value: Record<string, number>) => void
   /** Entities to render as read-only text (already known from the caller's context) instead of an interactive picker. */
@@ -45,10 +46,20 @@ const ENTITY_LABELS: Record<string, string> = {
 
 // "contatto" and "iscrizione" depend on the socio/esterno selected in the
 // same form, so they must always render after them regardless of the order
-// the backend returns in entita_richieste.
+// they're detected in the document.
 const ENTITY_ORDER: Record<string, number> = {
   contatto: 1,
   iscrizione: 1,
+}
+
+// When the entity a dependent field is derived from changes (or is
+// cleared), the dependent's previously selected id is stale and must be
+// dropped from `value` too — otherwise it keeps pointing at data tied to
+// the entity that's no longer selected (e.g. a contact belonging to the
+// previous socio).
+const DEPENDENT_ENTITIES: Record<string, string[]> = {
+  socio: ["contatto", "iscrizione"],
+  esterno: ["contatto"],
 }
 
 function contattoLabel(contatto: Contatto, ruoloById: Map<number, string>) {
@@ -161,24 +172,27 @@ function SearchPicker<T>({
 }
 
 /**
- * Renders one selector per entity required by a template (`entita_richieste`),
- * scoped to the currently selected banda, and reports the chosen ids as a
+ * Renders one optional selector per entity detected in the template's
+ * `contenuto_json` (by scanning for mergefield nodes), scoped to the
+ * currently selected banda, and reports the chosen ids as a
  * `{ [entita]: id }` map suitable for the preview/generate endpoints.
  */
 export default function EntitySelector({
-  entitaRichieste,
+  contenutoJson,
   value,
   onChange,
   readOnlyEntities = [],
 }: EntitySelectorProps) {
   const { banda } = useBanda()
 
-  const sociQuery = useSoci(1, 50, banda?.codice ?? 0, entitaRichieste.includes("socio") && !!banda)
+  const entitaRilevate = useMemo(() => extractEntitiesFromContent(contenutoJson), [contenutoJson])
+
+  const sociQuery = useSoci(1, 50, banda?.codice ?? 0, entitaRilevate.has("socio") && !!banda)
   const esterniQuery = useEsterni(
     1,
     50,
     banda?.codice ?? 0,
-    entitaRichieste.includes("esterno") && !!banda,
+    entitaRilevate.has("esterno") && !!banda,
   )
   const bandeQuery = useBande()
   const ruoliContattoQuery = useLookupRuoliContatto()
@@ -190,20 +204,20 @@ export default function EntitySelector({
 
   const contattiQuery = usePersonaContatti(
     contattoPersonaId ?? 0,
-    entitaRichieste.includes("contatto") && contattoPersonaId != null,
+    entitaRilevate.has("contatto") && contattoPersonaId != null,
   )
   const ruoloById = useMemo(
     () => new Map(ruoliContattoQuery.data?.map((r) => [r.codice, r.descrizione]) ?? []),
     [ruoliContattoQuery.data],
   )
 
-  const iscrizioneSocioId = entitaRichieste.includes("socio") ? (value.socio ?? null) : null
+  const iscrizioneSocioId = entitaRilevate.has("socio") ? (value.socio ?? null) : null
   const iscrizioniQuery = useIscrizioni(
     1,
     50,
     iscrizioneSocioId ?? undefined,
     undefined,
-    entitaRichieste.includes("iscrizione") && iscrizioneSocioId != null,
+    entitaRilevate.has("iscrizione") && iscrizioneSocioId != null,
   )
   const statoById = useMemo(
     () => new Map(statiIscrizioneQuery.data?.map((s) => [s.codice, s.descrizione]) ?? []),
@@ -215,10 +229,10 @@ export default function EntitySelector({
     50,
     banda?.codice ?? 0,
     undefined,
-    entitaRichieste.includes("servizio") && !!banda,
+    entitaRilevate.has("servizio") && !!banda,
   )
 
-  const ricevuteQuery = useRicevuteList(1, 50, entitaRichieste.includes("ricevuta"))
+  const ricevuteQuery = useRicevuteList(1, 50, entitaRilevate.has("ricevuta"))
 
   const bandaSelezionata = bandeQuery.data?.find((b) => b.codice === value.banda)
   const contattoSelezionato = contattiQuery.data?.find((c) => c.id === value.contatto)
@@ -251,31 +265,32 @@ export default function EntitySelector({
     }
   }
 
-  const orderedEntitaRichieste = useMemo(
-    () => [...entitaRichieste].sort((a, b) => (ENTITY_ORDER[a] ?? 0) - (ENTITY_ORDER[b] ?? 0)),
-    [entitaRichieste],
+  const orderedEntitaRilevate = useMemo(
+    () => [...entitaRilevate].sort((a, b) => (ENTITY_ORDER[a] ?? 0) - (ENTITY_ORDER[b] ?? 0)),
+    [entitaRilevate],
   )
 
   function setEntity(key: string, id: number) {
-    onChange({ ...value, [key]: id })
+    const next = { ...value, [key]: id }
+    for (const dependent of DEPENDENT_ENTITIES[key] ?? []) delete next[dependent]
+    onChange(next)
   }
 
   function clearEntity(key: string) {
     const next = { ...value }
     delete next[key]
+    for (const dependent of DEPENDENT_ENTITIES[key] ?? []) delete next[dependent]
     onChange(next)
   }
 
-  const missing = entitaRichieste.filter((entita) => value[entita] == null)
-
   return (
     <div className="space-y-4">
-      {orderedEntitaRichieste.map((entita) => {
+      {orderedEntitaRilevate.map((entita) => {
         const label = ENTITY_LABELS[entita] ?? entita
         const isReadOnly = readOnlyEntities.includes(entita)
         return (
           <div key={entita} className="space-y-2">
-            <Label>{label} *</Label>
+            <Label>{label}</Label>
             {isReadOnly ? (
               <p className="rounded-md border px-3 py-2 text-sm">{readOnlyLabel(entita)}</p>
             ) : (
@@ -326,7 +341,7 @@ export default function EntitySelector({
                 {entita === "contatto" &&
                   (contattoPersonaId == null ? (
                     <p className="text-sm text-muted-foreground">
-                      Il campo contatto richiede anche Socio o Esterno nel template.
+                      Seleziona un Socio o un Esterno per compilare questo campo.
                     </p>
                   ) : (
                     <SearchPicker
@@ -344,7 +359,7 @@ export default function EntitySelector({
                 {entita === "iscrizione" &&
                   (iscrizioneSocioId == null ? (
                     <p className="text-sm text-muted-foreground">
-                      Il campo iscrizione richiede anche Socio nel template.
+                      Seleziona un Socio per compilare questo campo.
                     </p>
                   ) : (
                     <SearchPicker
@@ -402,14 +417,8 @@ export default function EntitySelector({
         )
       })}
 
-      {entitaRichieste.length === 0 && (
-        <p className="text-sm text-muted-foreground">Questo modulo non richiede entità.</p>
-      )}
-
-      {missing.length > 0 && (
-        <p className="text-sm text-muted-foreground">
-          Seleziona tutte le entità richieste per generare l&apos;anteprima.
-        </p>
+      {entitaRilevate.size === 0 && (
+        <p className="text-sm text-muted-foreground">Nessun campo dinamico in questo modulo.</p>
       )}
     </div>
   )

@@ -44,6 +44,27 @@ export function useSoci(page: number, pageSize: number, bandaCodice: number, ena
   })
 }
 
+/** Loads every socio of a banda across all pages, for client-side derivations (e.g. codice_socio suggestion). */
+export function useAllSoci(bandaCodice: number, enabled = true) {
+  return useQuery({
+    queryKey: [...SOCI_KEY, bandaCodice, "all"],
+    queryFn: async () => {
+      const pageSize = 100
+      let items: Socio[] = []
+      let totalPages = 1
+      for (let page = 1; page <= totalPages; page += 1) {
+        const { data } = await api.get<PagedResponse<Socio>>("/soci/", {
+          params: { page, page_size: pageSize, banda_codice: bandaCodice },
+        })
+        items = items.concat(data.items)
+        totalPages = data.meta.total_pages
+      }
+      return items
+    },
+    enabled: enabled && bandaCodice > 0,
+  })
+}
+
 /** Loads a single socio by id, with nested persona, ruolo_banda and strumento. */
 export function useSocio(id: number) {
   return useQuery({

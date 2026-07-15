@@ -52,11 +52,6 @@ export default function SociPage() {
   const totalPages = data?.meta.total_pages ?? 1
   const colCount = canWrite ? 7 : 6
 
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
   const openEdit = (socio: Socio) => {
     setEditing(socio)
     setFormOpen(true)
@@ -67,7 +62,7 @@ export default function SociPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Soci</h1>
         {canWrite && (
-          <Button onClick={openCreate}>
+          <Button onClick={() => navigate("/soci/nuovo")}>
             <Plus className="mr-2 h-4 w-4" />
             Nuovo socio
           </Button>

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react"
-import { useNavigate } from "react-router-dom"
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import { Check, Loader2 } from "lucide-react"
 import {
   useAllSoci,
@@ -12,11 +12,20 @@ import {
 import { useAddPersonaIndirizzo, useLookupTipiIndirizzo } from "@/hooks/useIndirizzi"
 import { usePersonaContatti } from "@/hooks/useContatti"
 import { useCreateIscrizione, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
+import {
+  useGenerateDocx,
+  useGeneratePdf,
+  usePreviewTemplate,
+  useTemplates,
+} from "@/hooks/useModulistica"
+import { downloadDocumento, isPreviewable, previewDocumento } from "@/hooks/useDocumenti"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useBanda } from "@/context/BandaContext"
 import type { Persona } from "@/types/socio"
 import type { CreateIndirizzoInput } from "@/types/indirizzo"
+import type { Template } from "@/types/modulistica"
+import type { Documento } from "@/types/documento"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -35,13 +44,24 @@ import IscrizioneForm, {
   emptyIscrizioneForm,
   todayISO,
 } from "@/components/iscrizioni/IscrizioneForm"
+import EntitySelector from "@/components/modulistica/EntitySelector"
+import TemplatePreviewPane from "@/components/modulistica/TemplatePreviewPane"
 import { cn } from "@/lib/utils"
 
 const NONE_VALUE = "__none__"
 
 type PersonaMode = "nuova" | "esistente"
 
-const STEPS = ["Persona", "Indirizzo", "Contatti", "Dati socio", "Iscrizione"] as const
+const STEPS = [
+  "Persona",
+  "Indirizzo",
+  "Contatti",
+  "Dati socio",
+  "Iscrizione",
+  "Genera documento",
+] as const
+
+const TEMPLATES_PAGE_SIZE = 50
 
 const emptyNuovaPersona = {
   nome: "",
@@ -192,8 +212,46 @@ export default function SocioWizardPage() {
   const stati = useLookupStatiIscrizione()
   const createIscrizione = useCreateIscrizione()
   const [iscrizioneCreated, setIscrizioneCreated] = useState(false)
+  const [iscrizioneId, setIscrizioneId] = useState<number | null>(null)
   const [iscrizioneAnno, setIscrizioneAnno] = useState<number | null>(null)
   const [error5, setError5] = useState<string | null>(null)
+
+  // Step 6 — genera documento (optional)
+  const templatesQuery = useTemplates(1, TEMPLATES_PAGE_SIZE)
+  const templatesDisponibili = useMemo(
+    () => (templatesQuery.data?.items ?? []).filter((t) => !t.entita_richieste.includes("esterno")),
+    [templatesQuery.data],
+  )
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null)
+  const selectedTemplate = templatesDisponibili.find((t) => t.id === selectedTemplateId) ?? null
+  const [docEntities, setDocEntities] = useState<Record<string, number>>({})
+  const [documentoGenerato, setDocumentoGenerato] = useState<Documento | null>(null)
+  const [documentoGeneratoTemplateNome, setDocumentoGeneratoTemplateNome] = useState<string | null>(
+    null,
+  )
+  const [error6, setError6] = useState<string | null>(null)
+  const previewTemplate = usePreviewTemplate()
+  const generateDocx = useGenerateDocx()
+  const generatePdf = useGeneratePdf()
+
+  const isDocEntitiesComplete =
+    !!selectedTemplate &&
+    selectedTemplate.entita_richieste.length > 0 &&
+    selectedTemplate.entita_richieste.every((entita) => docEntities[entita] != null)
+
+  const previewMutateRef = useRef(previewTemplate.mutate)
+  useEffect(() => {
+    previewMutateRef.current = previewTemplate.mutate
+  }, [previewTemplate.mutate])
+
+  useEffect(() => {
+    if (!selectedTemplate || !isDocEntitiesComplete) return
+    previewMutateRef.current({
+      id: selectedTemplate.id,
+      contenuto_json: selectedTemplate.contenuto_json,
+      entities: docEntities,
+    })
+  }, [selectedTemplate, docEntities, isDocEntitiesComplete])
 
   const suggestedCodice = useMemo(() => {
     if (!allSoci.data) return ""
@@ -227,8 +285,14 @@ export default function SocioWizardPage() {
     setError4(null)
     setIscrizioneForm(emptyIscrizioneForm())
     setIscrizioneCreated(false)
+    setIscrizioneId(null)
     setIscrizioneAnno(null)
     setError5(null)
+    setSelectedTemplateId(null)
+    setDocEntities({})
+    setDocumentoGenerato(null)
+    setDocumentoGeneratoTemplateNome(null)
+    setError6(null)
   }
 
   const handleSelectPersona = (persona: Persona) => {
@@ -357,11 +421,48 @@ export default function SocioWizardPage() {
         note: iscrizioneForm.note.trim() || null,
       })
       setIscrizioneCreated(true)
+      setIscrizioneId(iscrizione.id)
       setIscrizioneAnno(iscrizione.anno)
       toast({ title: "Iscrizione creata" })
       setCurrentStep(6)
     } catch (err) {
       setError5(getErrorMessage(err))
+    }
+  }
+
+  function handleSelectTemplate(template: Template) {
+    const initial: Record<string, number> = {}
+    if (template.entita_richieste.includes("socio") && socioId != null) {
+      initial.socio = socioId
+    }
+    if (template.entita_richieste.includes("banda")) {
+      initial.banda = banda!.codice
+    }
+    if (template.entita_richieste.includes("iscrizione") && iscrizioneId != null) {
+      initial.iscrizione = iscrizioneId
+    }
+    setSelectedTemplateId(template.id)
+    setDocEntities(initial)
+    setDocumentoGenerato(null)
+    setDocumentoGeneratoTemplateNome(null)
+    setError6(null)
+  }
+
+  async function handleGenerateDocumento(kind: "docx" | "pdf") {
+    if (!selectedTemplate) return
+    setError6(null)
+    try {
+      const mutateAsync = kind === "docx" ? generateDocx.mutateAsync : generatePdf.mutateAsync
+      const documento = await mutateAsync({
+        id: selectedTemplate.id,
+        contenuto_json: selectedTemplate.contenuto_json,
+        entities: docEntities,
+      })
+      setDocumentoGenerato(documento)
+      setDocumentoGeneratoTemplateNome(selectedTemplate.nome)
+      toast({ title: "Documento generato" })
+    } catch (err) {
+      setError6(getErrorMessage(err))
     }
   }
 
@@ -682,6 +783,150 @@ export default function SocioWizardPage() {
       {currentStep === 6 && (
         <Card>
           <CardHeader>
+            <CardTitle>Genera documento</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {error6 && <ErrorBanner message={error6} />}
+
+            {!selectedTemplate ? (
+              templatesQuery.isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Caricamento moduli…
+                </div>
+              ) : templatesDisponibili.length === 0 ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Nessun modulo configurato per questo tipo di iscrizione.{" "}
+                    <Link to="/modulistica" className="underline">
+                      Vai a Modulistica
+                    </Link>
+                  </p>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setCurrentStep(7)}>
+                      Salta questo step
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <ul className="divide-y rounded-md border">
+                    {templatesDisponibili.map((template) => (
+                      <li key={template.id}>
+                        <button
+                          type="button"
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                          onClick={() => handleSelectTemplate(template)}
+                        >
+                          <span className="font-medium">{template.nome}</span>
+                          {template.descrizione && (
+                            <span className="block text-xs text-muted-foreground">
+                              {template.descrizione}
+                            </span>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setCurrentStep(7)}>
+                      Salta questo step
+                    </Button>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">{selectedTemplate.nome}</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedTemplateId(null)}
+                  >
+                    Cambia modulo
+                  </Button>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <EntitySelector
+                      entitaRichieste={selectedTemplate.entita_richieste}
+                      value={docEntities}
+                      onChange={setDocEntities}
+                    />
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleGenerateDocumento("docx")}
+                        disabled={!isDocEntitiesComplete || generateDocx.isPending}
+                      >
+                        {generateDocx.isPending ? "Generazione..." : "Genera DOCX"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleGenerateDocumento("pdf")}
+                        disabled={!isDocEntitiesComplete || generatePdf.isPending}
+                      >
+                        {generatePdf.isPending ? "Generazione..." : "Genera PDF"}
+                      </Button>
+                    </div>
+
+                    {documentoGenerato && (
+                      <div className="space-y-2 rounded-md border p-3 text-sm">
+                        <p className="font-medium">Documento generato: {documentoGenerato.nome}</p>
+                        <div className="flex gap-2">
+                          {isPreviewable(documentoGenerato.mime_type) && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => previewDocumento(documentoGenerato.id)}
+                            >
+                              Visualizza
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              downloadDocumento(documentoGenerato.id, documentoGenerato.nome)
+                            }
+                          >
+                            Scarica
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <TemplatePreviewPane
+                    html={previewTemplate.data?.html}
+                    isLoading={previewTemplate.isPending}
+                    error={previewTemplate.isError ? getErrorMessage(previewTemplate.error) : null}
+                    isReady={isDocEntitiesComplete}
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <Button type="button" variant="outline" onClick={() => setCurrentStep(7)}>
+                    Salta questo step
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {currentStep === 7 && (
+        <Card>
+          <CardHeader>
             <CardTitle>Socio creato</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -709,6 +954,14 @@ export default function SocioWizardPage() {
               <div className="space-y-1">
                 <dt className="text-xs font-medium text-muted-foreground">Iscrizione</dt>
                 <dd>{iscrizioneCreated ? `Creata (anno ${iscrizioneAnno})` : "Non creata"}</dd>
+              </div>
+              <div className="space-y-1">
+                <dt className="text-xs font-medium text-muted-foreground">Documento</dt>
+                <dd>
+                  {documentoGenerato
+                    ? `Generato (${documentoGeneratoTemplateNome} — ${documentoGenerato.nome})`
+                    : "Non generato"}
+                </dd>
               </div>
             </dl>
 

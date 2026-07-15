@@ -85,6 +85,12 @@ export function useDeleteDocumento() {
   })
 }
 
+/** Whether a documento's mime type can be shown inline (PDF or image) rather than only downloaded. */
+export function isPreviewable(mimeType: string | undefined | null): boolean {
+  if (!mimeType) return false
+  return mimeType === "application/pdf" || mimeType.startsWith("image/")
+}
+
 /** Opens a documento PDF inline in a new tab via the backend preview endpoint. */
 export function previewDocumento(id: number): void {
   window.open(`${API_URL}/documenti/${id}/preview`, "_blank", "noopener,noreferrer")

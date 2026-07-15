@@ -29,6 +29,8 @@ interface EntitySelectorProps {
   entitaRichieste: string[]
   value: Record<string, number>
   onChange: (value: Record<string, number>) => void
+  /** Entities to render as read-only text (already known from the caller's context) instead of an interactive picker. */
+  readOnlyEntities?: string[]
 }
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -163,7 +165,12 @@ function SearchPicker<T>({
  * scoped to the currently selected banda, and reports the chosen ids as a
  * `{ [entita]: id }` map suitable for the preview/generate endpoints.
  */
-export default function EntitySelector({ entitaRichieste, value, onChange }: EntitySelectorProps) {
+export default function EntitySelector({
+  entitaRichieste,
+  value,
+  onChange,
+  readOnlyEntities = [],
+}: EntitySelectorProps) {
   const { banda } = useBanda()
 
   const sociQuery = useSoci(1, 50, banda?.codice ?? 0, entitaRichieste.includes("socio") && !!banda)
@@ -213,6 +220,37 @@ export default function EntitySelector({ entitaRichieste, value, onChange }: Ent
 
   const ricevuteQuery = useRicevuteList(1, 50, entitaRichieste.includes("ricevuta"))
 
+  const bandaSelezionata = bandeQuery.data?.find((b) => b.codice === value.banda)
+  const contattoSelezionato = contattiQuery.data?.find((c) => c.id === value.contatto)
+  const iscrizioneSelezionata = iscrizioniQuery.data?.items.find((i) => i.id === value.iscrizione)
+  const servizioSelezionato = serviziQuery.data?.items.find((s) => s.id === value.servizio)
+  const ricevutaSelezionata = ricevuteQuery.data?.items.find((r) => r.id === value.ricevuta)
+
+  function readOnlyLabel(entita: string): string {
+    switch (entita) {
+      case "socio":
+        return socioSelezionato
+          ? personLabel(socioSelezionato.persona, socioSelezionato.codice_socio)
+          : "—"
+      case "esterno":
+        return esternoSelezionato
+          ? personLabel(esternoSelezionato.persona, esternoSelezionato.codice_esterno)
+          : "—"
+      case "banda":
+        return bandaSelezionata?.descrizione ?? "—"
+      case "contatto":
+        return contattoSelezionato ? contattoLabel(contattoSelezionato, ruoloById) : "—"
+      case "iscrizione":
+        return iscrizioneSelezionata ? iscrizioneLabel(iscrizioneSelezionata, statoById) : "—"
+      case "servizio":
+        return servizioSelezionato ? servizioLabel(servizioSelezionato) : "—"
+      case "ricevuta":
+        return ricevutaSelezionata ? ricevutaLabel(ricevutaSelezionata) : "—"
+      default:
+        return value[entita] != null ? String(value[entita]) : "—"
+    }
+  }
+
   const orderedEntitaRichieste = useMemo(
     () => [...entitaRichieste].sort((a, b) => (ENTITY_ORDER[a] ?? 0) - (ENTITY_ORDER[b] ?? 0)),
     [entitaRichieste],
@@ -234,125 +272,132 @@ export default function EntitySelector({ entitaRichieste, value, onChange }: Ent
     <div className="space-y-4">
       {orderedEntitaRichieste.map((entita) => {
         const label = ENTITY_LABELS[entita] ?? entita
+        const isReadOnly = readOnlyEntities.includes(entita)
         return (
           <div key={entita} className="space-y-2">
             <Label>{label} *</Label>
-            {entita === "socio" && (
-              <SearchPicker
-                items={sociQuery.data?.items ?? []}
-                isLoading={sociQuery.isLoading}
-                getId={(s: Socio) => s.id}
-                getLabel={(s: Socio) => personLabel(s.persona, s.codice_socio)}
-                selectedId={value.socio}
-                onSelect={(id) => setEntity("socio", id)}
-                onClear={() => clearEntity("socio")}
-                placeholder="Cerca per nome o cognome…"
-                emptyLabel="Nessun socio trovato"
-              />
-            )}
-            {entita === "esterno" && (
-              <SearchPicker
-                items={esterniQuery.data?.items ?? []}
-                isLoading={esterniQuery.isLoading}
-                getId={(e: Esterno) => e.id}
-                getLabel={(e: Esterno) => personLabel(e.persona, e.codice_esterno)}
-                selectedId={value.esterno}
-                onSelect={(id) => setEntity("esterno", id)}
-                onClear={() => clearEntity("esterno")}
-                placeholder="Cerca per nome, cognome o codice…"
-                emptyLabel="Nessun esterno trovato"
-              />
-            )}
-            {entita === "banda" && (
-              <Select
-                value={value.banda != null ? String(value.banda) : undefined}
-                onValueChange={(v) => setEntity("banda", Number(v))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona banda…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {bandeQuery.data?.map((b) => (
-                    <SelectItem key={b.codice} value={String(b.codice)}>
-                      {b.descrizione}
-                    </SelectItem>
+            {isReadOnly ? (
+              <p className="rounded-md border px-3 py-2 text-sm">{readOnlyLabel(entita)}</p>
+            ) : (
+              <>
+                {entita === "socio" && (
+                  <SearchPicker
+                    items={sociQuery.data?.items ?? []}
+                    isLoading={sociQuery.isLoading}
+                    getId={(s: Socio) => s.id}
+                    getLabel={(s: Socio) => personLabel(s.persona, s.codice_socio)}
+                    selectedId={value.socio}
+                    onSelect={(id) => setEntity("socio", id)}
+                    onClear={() => clearEntity("socio")}
+                    placeholder="Cerca per nome o cognome…"
+                    emptyLabel="Nessun socio trovato"
+                  />
+                )}
+                {entita === "esterno" && (
+                  <SearchPicker
+                    items={esterniQuery.data?.items ?? []}
+                    isLoading={esterniQuery.isLoading}
+                    getId={(e: Esterno) => e.id}
+                    getLabel={(e: Esterno) => personLabel(e.persona, e.codice_esterno)}
+                    selectedId={value.esterno}
+                    onSelect={(id) => setEntity("esterno", id)}
+                    onClear={() => clearEntity("esterno")}
+                    placeholder="Cerca per nome, cognome o codice…"
+                    emptyLabel="Nessun esterno trovato"
+                  />
+                )}
+                {entita === "banda" && (
+                  <Select
+                    value={value.banda != null ? String(value.banda) : undefined}
+                    onValueChange={(v) => setEntity("banda", Number(v))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona banda…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bandeQuery.data?.map((b) => (
+                        <SelectItem key={b.codice} value={String(b.codice)}>
+                          {b.descrizione}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {entita === "contatto" &&
+                  (contattoPersonaId == null ? (
+                    <p className="text-sm text-muted-foreground">
+                      Il campo contatto richiede anche Socio o Esterno nel template.
+                    </p>
+                  ) : (
+                    <SearchPicker
+                      items={contattiQuery.data ?? []}
+                      isLoading={contattiQuery.isLoading}
+                      getId={(c: Contatto) => c.id}
+                      getLabel={(c: Contatto) => contattoLabel(c, ruoloById)}
+                      selectedId={value.contatto}
+                      onSelect={(id) => setEntity("contatto", id)}
+                      onClear={() => clearEntity("contatto")}
+                      placeholder="Cerca contatto…"
+                      emptyLabel="Nessun contatto trovato"
+                    />
                   ))}
-                </SelectContent>
-              </Select>
+                {entita === "iscrizione" &&
+                  (iscrizioneSocioId == null ? (
+                    <p className="text-sm text-muted-foreground">
+                      Il campo iscrizione richiede anche Socio nel template.
+                    </p>
+                  ) : (
+                    <SearchPicker
+                      items={iscrizioniQuery.data?.items ?? []}
+                      isLoading={iscrizioniQuery.isLoading}
+                      getId={(i: Iscrizione) => i.id}
+                      getLabel={(i: Iscrizione) => iscrizioneLabel(i, statoById)}
+                      selectedId={value.iscrizione}
+                      onSelect={(id) => setEntity("iscrizione", id)}
+                      onClear={() => clearEntity("iscrizione")}
+                      placeholder="Cerca iscrizione…"
+                      emptyLabel="Nessuna iscrizione trovata"
+                    />
+                  ))}
+                {entita === "servizio" && (
+                  <SearchPicker
+                    items={serviziQuery.data?.items ?? []}
+                    isLoading={serviziQuery.isLoading}
+                    getId={(s: Servizio) => s.id}
+                    getLabel={servizioLabel}
+                    selectedId={value.servizio}
+                    onSelect={(id) => setEntity("servizio", id)}
+                    onClear={() => clearEntity("servizio")}
+                    placeholder="Cerca per descrizione…"
+                    emptyLabel="Nessun servizio trovato"
+                  />
+                )}
+                {entita === "ricevuta" && (
+                  <SearchPicker
+                    items={ricevuteQuery.data?.items ?? []}
+                    isLoading={ricevuteQuery.isLoading}
+                    getId={(r: Ricevuta) => r.id}
+                    getLabel={ricevutaLabel}
+                    selectedId={value.ricevuta}
+                    onSelect={(id) => setEntity("ricevuta", id)}
+                    onClear={() => clearEntity("ricevuta")}
+                    placeholder="Cerca per data o importo…"
+                    emptyLabel="Nessuna ricevuta trovata"
+                  />
+                )}
+                {entita !== "socio" &&
+                  entita !== "esterno" &&
+                  entita !== "banda" &&
+                  entita !== "contatto" &&
+                  entita !== "iscrizione" &&
+                  entita !== "servizio" &&
+                  entita !== "ricevuta" && (
+                    <p className="text-sm text-muted-foreground">
+                      Selettore non disponibile per l&apos;entità &quot;{entita}&quot;.
+                    </p>
+                  )}
+              </>
             )}
-            {entita === "contatto" &&
-              (contattoPersonaId == null ? (
-                <p className="text-sm text-muted-foreground">
-                  Il campo contatto richiede anche Socio o Esterno nel template.
-                </p>
-              ) : (
-                <SearchPicker
-                  items={contattiQuery.data ?? []}
-                  isLoading={contattiQuery.isLoading}
-                  getId={(c: Contatto) => c.id}
-                  getLabel={(c: Contatto) => contattoLabel(c, ruoloById)}
-                  selectedId={value.contatto}
-                  onSelect={(id) => setEntity("contatto", id)}
-                  onClear={() => clearEntity("contatto")}
-                  placeholder="Cerca contatto…"
-                  emptyLabel="Nessun contatto trovato"
-                />
-              ))}
-            {entita === "iscrizione" &&
-              (iscrizioneSocioId == null ? (
-                <p className="text-sm text-muted-foreground">
-                  Il campo iscrizione richiede anche Socio nel template.
-                </p>
-              ) : (
-                <SearchPicker
-                  items={iscrizioniQuery.data?.items ?? []}
-                  isLoading={iscrizioniQuery.isLoading}
-                  getId={(i: Iscrizione) => i.id}
-                  getLabel={(i: Iscrizione) => iscrizioneLabel(i, statoById)}
-                  selectedId={value.iscrizione}
-                  onSelect={(id) => setEntity("iscrizione", id)}
-                  onClear={() => clearEntity("iscrizione")}
-                  placeholder="Cerca iscrizione…"
-                  emptyLabel="Nessuna iscrizione trovata"
-                />
-              ))}
-            {entita === "servizio" && (
-              <SearchPicker
-                items={serviziQuery.data?.items ?? []}
-                isLoading={serviziQuery.isLoading}
-                getId={(s: Servizio) => s.id}
-                getLabel={servizioLabel}
-                selectedId={value.servizio}
-                onSelect={(id) => setEntity("servizio", id)}
-                onClear={() => clearEntity("servizio")}
-                placeholder="Cerca per descrizione…"
-                emptyLabel="Nessun servizio trovato"
-              />
-            )}
-            {entita === "ricevuta" && (
-              <SearchPicker
-                items={ricevuteQuery.data?.items ?? []}
-                isLoading={ricevuteQuery.isLoading}
-                getId={(r: Ricevuta) => r.id}
-                getLabel={ricevutaLabel}
-                selectedId={value.ricevuta}
-                onSelect={(id) => setEntity("ricevuta", id)}
-                onClear={() => clearEntity("ricevuta")}
-                placeholder="Cerca per data o importo…"
-                emptyLabel="Nessuna ricevuta trovata"
-              />
-            )}
-            {entita !== "socio" &&
-              entita !== "esterno" &&
-              entita !== "banda" &&
-              entita !== "contatto" &&
-              entita !== "iscrizione" &&
-              entita !== "servizio" &&
-              entita !== "ricevuta" && (
-                <p className="text-sm text-muted-foreground">
-                  Selettore non disponibile per l&apos;entità &quot;{entita}&quot;.
-                </p>
-              )}
           </div>
         )
       })}

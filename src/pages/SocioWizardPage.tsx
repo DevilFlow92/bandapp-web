@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Check, Loader2 } from "lucide-react"
+import { ArrowLeft, Check, Loader2 } from "lucide-react"
 import {
   useAllSoci,
   useCreatePersona,
@@ -62,6 +62,7 @@ const STEPS = [
 ] as const
 
 const TEMPLATES_PAGE_SIZE = 50
+const DEFAULT_TEMPLATE_NOME = "Modulo Iscrizione Associazione"
 
 const emptyNuovaPersona = {
   nome: "",
@@ -223,6 +224,7 @@ export default function SocioWizardPage() {
     [templatesQuery.data],
   )
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null)
+  const [defaultTemplateApplied, setDefaultTemplateApplied] = useState(false)
   const selectedTemplate = templatesDisponibili.find((t) => t.id === selectedTemplateId) ?? null
   const [docEntities, setDocEntities] = useState<Record<string, number>>({})
   const [documentoGenerato, setDocumentoGenerato] = useState<Documento | null>(null)
@@ -252,6 +254,47 @@ export default function SocioWizardPage() {
       entities: docEntities,
     })
   }, [selectedTemplate, docEntities, isDocEntitiesComplete])
+
+  // Keeps docEntities in sync with the wizard's own context (socio/banda/iscrizione),
+  // which may still be null when the template gets auto-selected at step 1 (before the
+  // socio/iscrizione exist) — this backfills them as soon as they become available,
+  // without touching entities the user picks manually (e.g. contatto, servizio).
+  useEffect(() => {
+    if (!selectedTemplate) return
+    setDocEntities((prev) => {
+      const next = { ...prev }
+      let changed = false
+      if (
+        selectedTemplate.entita_richieste.includes("socio") &&
+        socioId != null &&
+        next.socio !== socioId
+      ) {
+        next.socio = socioId
+        changed = true
+      }
+      if (selectedTemplate.entita_richieste.includes("banda") && next.banda !== banda!.codice) {
+        next.banda = banda!.codice
+        changed = true
+      }
+      if (
+        selectedTemplate.entita_richieste.includes("iscrizione") &&
+        iscrizioneId != null &&
+        next.iscrizione !== iscrizioneId
+      ) {
+        next.iscrizione = iscrizioneId
+        changed = true
+      }
+      return changed ? next : prev
+    })
+  }, [selectedTemplate, socioId, iscrizioneId, banda])
+
+  useEffect(() => {
+    if (defaultTemplateApplied || templatesQuery.isLoading || selectedTemplateId != null) return
+    setDefaultTemplateApplied(true)
+    const defaultTemplate = templatesDisponibili.find((t) => t.nome === DEFAULT_TEMPLATE_NOME)
+    if (defaultTemplate) handleSelectTemplate(defaultTemplate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templatesDisponibili, defaultTemplateApplied, templatesQuery.isLoading, selectedTemplateId])
 
   const suggestedCodice = useMemo(() => {
     if (!allSoci.data) return ""
@@ -289,6 +332,7 @@ export default function SocioWizardPage() {
     setIscrizioneAnno(null)
     setError5(null)
     setSelectedTemplateId(null)
+    setDefaultTemplateApplied(false)
     setDocEntities({})
     setDocumentoGenerato(null)
     setDocumentoGeneratoTemplateNome(null)
@@ -468,6 +512,16 @@ export default function SocioWizardPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-2 w-fit text-muted-foreground"
+        onClick={() => navigate("/soci")}
+      >
+        <ArrowLeft className="mr-1 h-4 w-4" />
+        Soci
+      </Button>
+
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Nuovo socio</h1>
         <p className="text-sm text-muted-foreground">
@@ -810,24 +864,27 @@ export default function SocioWizardPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <ul className="divide-y rounded-md border">
-                    {templatesDisponibili.map((template) => (
-                      <li key={template.id}>
-                        <button
-                          type="button"
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
-                          onClick={() => handleSelectTemplate(template)}
-                        >
-                          <span className="font-medium">{template.nome}</span>
-                          {template.descrizione && (
-                            <span className="block text-xs text-muted-foreground">
-                              {template.descrizione}
-                            </span>
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-2">
+                    <Label>Modulo</Label>
+                    <Select
+                      value={selectedTemplateId != null ? String(selectedTemplateId) : undefined}
+                      onValueChange={(value) => {
+                        const template = templatesDisponibili.find((t) => t.id === Number(value))
+                        if (template) handleSelectTemplate(template)
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleziona un modulo…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templatesDisponibili.map((template) => (
+                          <SelectItem key={template.id} value={String(template.id)}>
+                            {template.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={() => setCurrentStep(7)}>
                       Salta questo step
@@ -843,7 +900,12 @@ export default function SocioWizardPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setSelectedTemplateId(null)}
+                    onClick={() => {
+                      setSelectedTemplateId(null)
+                      setDocumentoGenerato(null)
+                      setDocumentoGeneratoTemplateNome(null)
+                      setError6(null)
+                    }}
                   >
                     Cambia modulo
                   </Button>
@@ -855,6 +917,7 @@ export default function SocioWizardPage() {
                       entitaRichieste={selectedTemplate.entita_richieste}
                       value={docEntities}
                       onChange={setDocEntities}
+                      readOnlyEntities={["socio", "banda"]}
                     />
 
                     <div className="flex flex-wrap gap-2">
@@ -913,9 +976,16 @@ export default function SocioWizardPage() {
                   />
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setCurrentStep(7)}>
                     Salta questo step
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setCurrentStep(7)}
+                    disabled={!documentoGenerato}
+                  >
+                    Avanti
                   </Button>
                 </div>
               </div>

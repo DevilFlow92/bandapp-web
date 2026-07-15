@@ -29,6 +29,27 @@ export function useEsterni(page: number, pageSize: number, bandaCodice: number, 
   })
 }
 
+/** Loads every esterno of a banda across all pages, for client-side derivations (e.g. codice_esterno suggestion). */
+export function useAllEsterni(bandaCodice: number, enabled = true) {
+  return useQuery({
+    queryKey: [...ESTERNI_KEY, bandaCodice, "all"],
+    queryFn: async () => {
+      const pageSize = 100
+      let items: Esterno[] = []
+      let totalPages = 1
+      for (let page = 1; page <= totalPages; page += 1) {
+        const { data } = await api.get<PagedResponse<Esterno>>("/esterni/", {
+          params: { page, page_size: pageSize, banda_codice: bandaCodice },
+        })
+        items = items.concat(data.items)
+        totalPages = data.meta.total_pages
+      }
+      return items
+    },
+    enabled: enabled && bandaCodice > 0,
+  })
+}
+
 /** Creates a new esterno. */
 export function useCreateEsterno() {
   const queryClient = useQueryClient()

@@ -14,6 +14,7 @@ import SociPage from "@/pages/SociPage"
 import SocioWizardPage from "@/pages/SocioWizardPage"
 import SocioDetailPage from "@/pages/SocioDetailPage"
 import EsterniPage from "@/pages/EsterniPage"
+import EsternoWizardPage from "@/pages/EsternoWizardPage"
 import ServiziPage from "@/pages/ServiziPage"
 import SpartitiPage from "@/pages/SpartitiPage"
 import IscrizioniPage from "@/pages/IscrizioniPage"
@@ -59,6 +60,9 @@ export default function App() {
                   </Route>
                   <Route path="soci/:id" element={<SocioDetailPage />} />
                   <Route path="esterni" element={<EsterniPage />} />
+                  <Route element={<PermissionGuard permission="anagrafica:write" />}>
+                    <Route path="esterni/nuovo" element={<EsternoWizardPage />} />
+                  </Route>
                   <Route path="servizi" element={<ServiziPage />} />
                   <Route element={<PermissionGuard permission="iscrizioni:read" />}>
                     <Route path="iscrizioni" element={<IscrizioniPage />} />

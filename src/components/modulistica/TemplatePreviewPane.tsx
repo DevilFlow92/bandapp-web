@@ -4,7 +4,7 @@ interface TemplatePreviewPaneProps {
   html?: string
   isLoading: boolean
   error?: string | null
-  /** Whether the required entities/content are selected and a preview can be requested. */
+  /** Whether the template is loaded and has content to preview. */
   isReady: boolean
 }
 
@@ -17,7 +17,7 @@ export default function TemplatePreviewPane({
   if (!isReady) {
     return (
       <div className="flex min-h-[500px] items-center justify-center rounded-md border p-4 text-center text-sm text-muted-foreground">
-        Seleziona le entità richieste per visualizzare l&apos;anteprima.
+        Caricamento del modulo…
       </div>
     )
   }

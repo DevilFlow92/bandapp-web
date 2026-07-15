@@ -65,7 +65,8 @@ const emptyDatiSocio: DatiSocioState = {
   codice_socio: "",
   data_ingresso: "",
   strumento_codice: NONE_VALUE,
-  ruolo_banda_codice: NONE_VALUE,
+  // No "Nessuno" option in creation: the backend requires ruolo_banda_codice on POST /soci/.
+  ruolo_banda_codice: "",
 }
 
 /**
@@ -289,10 +290,14 @@ export default function SocioWizardPage() {
       return
     }
 
+    if (!dati.ruolo_banda_codice) {
+      setError4("Seleziona un ruolo in banda prima di continuare.")
+      return
+    }
+
     const strumento_codice =
       dati.strumento_codice === NONE_VALUE ? null : Number(dati.strumento_codice)
-    const ruolo_banda_codice =
-      dati.ruolo_banda_codice === NONE_VALUE ? null : Number(dati.ruolo_banda_codice)
+    const ruolo_banda_codice = Number(dati.ruolo_banda_codice)
 
     try {
       const socio = await createSocio.mutateAsync({
@@ -566,7 +571,7 @@ export default function SocioWizardPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ruolo">Ruolo in banda</Label>
+                  <Label htmlFor="ruolo">Ruolo in banda *</Label>
                   <Select
                     value={dati.ruolo_banda_codice}
                     onValueChange={(value) => setDati((d) => ({ ...d, ruolo_banda_codice: value }))}
@@ -575,7 +580,6 @@ export default function SocioWizardPage() {
                       <SelectValue placeholder="Seleziona…" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE_VALUE}>Nessuno</SelectItem>
                       {ruoli.data?.map((r) => (
                         <SelectItem key={r.codice} value={String(r.codice)}>
                           {r.descrizione}

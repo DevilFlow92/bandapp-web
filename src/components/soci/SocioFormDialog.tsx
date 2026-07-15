@@ -54,7 +54,8 @@ const emptyDatiSocio: DatiSocioState = {
   codice_socio: "",
   data_ingresso: "",
   strumento_codice: NONE_VALUE,
-  ruolo_banda_codice: NONE_VALUE,
+  // No "Nessuno" option in creation: the backend requires ruolo_banda_codice on POST /soci/.
+  ruolo_banda_codice: "",
 }
 
 const emptyNuovaPersona = {
@@ -115,6 +116,11 @@ export default function SocioFormDialog({ open, onOpenChange, socio }: SocioForm
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
+
+    if (!isEdit && !dati.ruolo_banda_codice) {
+      setError("Seleziona un ruolo in banda prima di continuare.")
+      return
+    }
 
     const strumento_codice =
       dati.strumento_codice === NONE_VALUE ? null : Number(dati.strumento_codice)
@@ -395,7 +401,7 @@ export default function SocioFormDialog({ open, onOpenChange, socio }: SocioForm
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ruolo">Ruolo in banda</Label>
+                <Label htmlFor="ruolo">Ruolo in banda{!isEdit && " *"}</Label>
                 <Select
                   value={dati.ruolo_banda_codice}
                   onValueChange={(value) => setDati((d) => ({ ...d, ruolo_banda_codice: value }))}
@@ -404,7 +410,8 @@ export default function SocioFormDialog({ open, onOpenChange, socio }: SocioForm
                     <SelectValue placeholder="Seleziona…" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NONE_VALUE}>Nessuno</SelectItem>
+                    {/* "Nessuno" only makes sense in edit mode, to clear an existing socio's ruolo. */}
+                    {isEdit && <SelectItem value={NONE_VALUE}>Nessuno</SelectItem>}
                     {ruoli.data?.map((r) => (
                       <SelectItem key={r.codice} value={String(r.codice)}>
                         {r.descrizione}

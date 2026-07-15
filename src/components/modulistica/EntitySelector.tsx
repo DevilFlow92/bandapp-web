@@ -236,11 +236,11 @@ export default function EntitySelector({
 
   useEffect(() => {
     if (!banda) return
-    if (!entitaRichieste.includes("banda")) return
+    if (!entitaRilevate.has("banda")) return
     if (value.banda != null) return
     onChange({ ...value, banda: banda.codice })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [banda, value.banda, entitaRichieste])
+  }, [banda, value.banda, entitaRilevate])
 
   const bandaSelezionata = bandeQuery.data?.find((b) => b.codice === value.banda)
   const contattoSelezionato = contattiQuery.data?.find((c) => c.id === value.contatto)

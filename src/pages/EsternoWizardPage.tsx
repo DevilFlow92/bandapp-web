@@ -775,7 +775,7 @@ export default function EsternoWizardPage() {
                 <div className="grid gap-6 lg:grid-cols-2">
                   <div className="space-y-4">
                     <EntitySelector
-                      entitaRichieste={selectedTemplate.entita_richieste}
+                      contenutoJson={selectedTemplate.contenuto_json}
                       value={docEntities}
                       onChange={setDocEntities}
                       readOnlyEntities={["esterno", "banda"]}

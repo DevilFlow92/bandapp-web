@@ -17,7 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import TemplateEditor from "@/components/modulistica/TemplateEditor"
 import EntitySelector from "@/components/modulistica/EntitySelector"
 import TemplatePreviewPane from "@/components/modulistica/TemplatePreviewPane"
-import EntitaRequiredPicker from "@/components/modulistica/EntitaRequiredPicker"
 
 export default function TemplateEditorPage() {
   const navigate = useNavigate()
@@ -33,10 +32,7 @@ export default function TemplateEditorPage() {
 
   const [contenutoJson, setContenutoJson] = useState<object | null>(null)
   const [entities, setEntities] = useState<Record<string, number>>({})
-  const [entitaRichieste, setEntitaRichieste] = useState<string[]>([])
 
-  const isEntitiesComplete =
-    entitaRichieste.length > 0 && entitaRichieste.every((entita) => entities[entita] != null)
   const effectiveContent = contenutoJson ?? template?.contenuto_json ?? null
 
   const previewMutateRef = useRef(previewTemplate.mutate)
@@ -45,15 +41,9 @@ export default function TemplateEditorPage() {
   }, [previewTemplate.mutate])
 
   useEffect(() => {
-    if (template) {
-      setEntitaRichieste(template.entita_richieste)
-    }
-  }, [template])
-
-  useEffect(() => {
-    if (!template || !effectiveContent || !isEntitiesComplete) return
+    if (!template || !effectiveContent) return
     previewMutateRef.current({ id: template.id, contenuto_json: effectiveContent, entities })
-  }, [template, effectiveContent, entities, isEntitiesComplete])
+  }, [template, effectiveContent, entities])
 
   const backButton = (
     <Button
@@ -72,7 +62,6 @@ export default function TemplateEditorPage() {
     try {
       const input: Record<string, unknown> = {}
       if (contenutoJson) input.contenuto_json = contenutoJson
-      if (entitaRichieste.length > 0) input.entita_richieste = entitaRichieste
       await updateTemplate.mutateAsync({
         id: templateId,
         input,
@@ -149,10 +138,8 @@ export default function TemplateEditorPage() {
             />
 
             <div className="space-y-4">
-              <EntitaRequiredPicker value={entitaRichieste} onChange={setEntitaRichieste} />
-
               <EntitySelector
-                entitaRichieste={entitaRichieste}
+                contenutoJson={effectiveContent}
                 value={entities}
                 onChange={setEntities}
               />
@@ -161,14 +148,14 @@ export default function TemplateEditorPage() {
                 <Button
                   variant="outline"
                   onClick={handleGenerateDocx}
-                  disabled={!isEntitiesComplete || generateDocx.isPending}
+                  disabled={generateDocx.isPending}
                 >
                   {generateDocx.isPending ? "Generazione..." : "Genera DOCX"}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleGeneratePdf}
-                  disabled={!isEntitiesComplete || generatePdf.isPending}
+                  disabled={generatePdf.isPending}
                 >
                   {generatePdf.isPending ? "Generazione..." : "Genera PDF"}
                 </Button>
@@ -178,7 +165,7 @@ export default function TemplateEditorPage() {
                 html={previewTemplate.data?.html}
                 isLoading={previewTemplate.isPending}
                 error={previewTemplate.isError ? getErrorMessage(previewTemplate.error) : null}
-                isReady={isEntitiesComplete}
+                isReady={effectiveContent != null}
               />
             </div>
           </div>

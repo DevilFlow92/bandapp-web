@@ -22,15 +22,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-
-const CURRENT_YEAR = new Date().getFullYear()
+import IscrizioneForm, {
+  emptyIscrizioneForm,
+  todayISO,
+  type IscrizioneFormState,
+} from "@/components/iscrizioni/IscrizioneForm"
 
 interface IscrizioneFormDialogProps {
   open: boolean
@@ -44,26 +40,6 @@ interface IscrizioneFormDialogProps {
    * to it. Used by the socio detail page.
    */
   presetSocio?: Socio | null
-}
-
-interface FormState {
-  anno: string
-  data_iscrizione: string
-  quota_partecipazione: string
-  stato_iscrizione_codice: string
-  note: string
-}
-
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
-const emptyForm: FormState = {
-  anno: String(CURRENT_YEAR),
-  data_iscrizione: "",
-  quota_partecipazione: "",
-  stato_iscrizione_codice: "",
-  note: "",
 }
 
 function socioLabel(socio: Socio): string {
@@ -94,7 +70,7 @@ export default function IscrizioneFormDialog({
   const [search, setSearch] = useState("")
   const [selectedSocio, setSelectedSocio] = useState<Socio | null>(null)
 
-  const [form, setForm] = useState<FormState>(emptyForm)
+  const [form, setForm] = useState<IscrizioneFormState>(emptyIscrizioneForm())
   const [error, setError] = useState<string | null>(null)
 
   const filteredSoci = useMemo(() => {
@@ -122,7 +98,7 @@ export default function IscrizioneFormDialog({
         note: iscrizione.note ?? "",
       })
     } else {
-      setForm({ ...emptyForm, data_iscrizione: todayISO() })
+      setForm({ ...emptyIscrizioneForm(), data_iscrizione: todayISO() })
     }
   }, [open, iscrizione, presetSocio])
 
@@ -251,75 +227,7 @@ export default function IscrizioneFormDialog({
             )}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="anno">Anno *</Label>
-              <Input
-                id="anno"
-                type="number"
-                required
-                value={form.anno}
-                onChange={(e) => setForm((f) => ({ ...f, anno: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="data_iscrizione">Data iscrizione *</Label>
-              <Input
-                id="data_iscrizione"
-                type="date"
-                required
-                value={form.data_iscrizione}
-                onChange={(e) => setForm((f) => ({ ...f, data_iscrizione: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="quota">Quota partecipazione *</Label>
-              <Input
-                id="quota"
-                type="number"
-                step="0.01"
-                required
-                value={form.quota_partecipazione}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    quota_partecipazione: e.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="stato">Stato iscrizione *</Label>
-              <Select
-                value={form.stato_iscrizione_codice}
-                onValueChange={(value) =>
-                  setForm((f) => ({ ...f, stato_iscrizione_codice: value }))
-                }
-              >
-                <SelectTrigger id="stato">
-                  <SelectValue placeholder="Seleziona…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {stati.data?.map((s) => (
-                    <SelectItem key={s.codice} value={String(s.codice)}>
-                      {s.descrizione}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="note">Note</Label>
-            <textarea
-              id="note"
-              rows={3}
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              value={form.note}
-              onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-            />
-          </div>
+          <IscrizioneForm value={form} onChange={setForm} stati={stati.data} />
 
           <DialogFooter>
             <Button

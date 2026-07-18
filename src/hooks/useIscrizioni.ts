@@ -46,6 +46,18 @@ export function useIscrizioni(
   })
 }
 
+/** Fetches a single iscrizione by id. */
+export function useIscrizione(id: number, enabled = true) {
+  return useQuery({
+    queryKey: [...ISCRIZIONI_KEY, id],
+    queryFn: async () => {
+      const { data } = await api.get<Iscrizione>(`/iscrizioni/${id}`)
+      return data
+    },
+    enabled: enabled && id > 0,
+  })
+}
+
 /** Creates a new iscrizione. */
 export function useCreateIscrizione() {
   const queryClient = useQueryClient()

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import {
-  downloadDocumento,
   useGenerateDocx,
   useGeneratePdf,
   usePreviewTemplate,
@@ -11,8 +10,12 @@ import {
 } from "@/hooks/useModulistica"
 import { useSocio } from "@/hooks/useSoci"
 import { useEsterno } from "@/hooks/useEsterni"
+import { useIscrizione } from "@/hooks/useIscrizioni"
+import { downloadDocumento, isPreviewable, previewDocumento } from "@/hooks/useDocumenti"
+import { useCollegaDocumentoAIscrizione } from "@/hooks/useCollegaDocumentoAIscrizione"
 import { useToast } from "@/hooks/use-toast"
 import { getErrorMessage } from "@/lib/api"
+import type { Documento } from "@/types/documento"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -55,9 +58,16 @@ export default function TemplateEditorPage() {
   const [entities, setEntities] = useState<Record<string, number>>({})
   const [sottoCartellaId, setSottoCartellaId] = useState<number | null | undefined>(undefined)
   const [generateFormato, setGenerateFormato] = useState<"docx" | "pdf" | null>(null)
+  const [documentoGenerato, setDocumentoGenerato] = useState<Documento | null>(null)
+  const [collegaAIscrizione, setCollegaAIscrizione] = useState(false)
 
   const { data: socioSelezionato } = useSocio(entities.socio ?? 0)
   const { data: esternoSelezionato } = useEsterno(entities.esterno ?? 0)
+  const { data: iscrizioneSelezionata } = useIscrizione(
+    entities.iscrizione ?? 0,
+    entities.iscrizione != null,
+  )
+  const { collega } = useCollegaDocumentoAIscrizione()
 
   const effectiveContent = contenutoJson ?? template?.contenuto_json ?? null
   const effectiveSottoCartellaId =
@@ -72,6 +82,14 @@ export default function TemplateEditorPage() {
     if (!template || !effectiveContent) return
     previewMutateRef.current({ id: template.id, contenuto_json: effectiveContent, entities })
   }, [template, effectiveContent, entities])
+
+  useEffect(() => {
+    setDocumentoGenerato(null)
+  }, [template?.id, entities])
+
+  useEffect(() => {
+    setCollegaAIscrizione(false)
+  }, [entities.iscrizione])
 
   const backButton = (
     <Button
@@ -121,7 +139,14 @@ export default function TemplateEditorPage() {
         nome_file: nomeFile || undefined,
       })
       setGenerateFormato(null)
-      await downloadDocumento(documento.id, documento.nome)
+      setDocumentoGenerato(documento)
+      if (collegaAIscrizione && entities.iscrizione != null) {
+        await collega({
+          iscrizioneId: entities.iscrizione,
+          documentoId: documento.id,
+          documentoAttuale: iscrizioneSelezionata?.documento,
+        })
+      }
     } catch (err) {
       toast({ variant: "destructive", title: getErrorMessage(err) })
     }
@@ -177,6 +202,18 @@ export default function TemplateEditorPage() {
                 onChange={setEntities}
               />
 
+              {template.entita_richieste.includes("iscrizione") && entities.iscrizione != null && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-input"
+                    checked={collegaAIscrizione}
+                    onChange={(e) => setCollegaAIscrizione(e.target.checked)}
+                  />
+                  Collega questo documento all'iscrizione selezionata
+                </label>
+              )}
+
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
@@ -193,6 +230,34 @@ export default function TemplateEditorPage() {
                   {generatePdf.isPending ? "Generazione..." : "Genera PDF"}
                 </Button>
               </div>
+
+              {documentoGenerato && (
+                <div className="space-y-2 rounded-md border p-3 text-sm">
+                  <p className="font-medium">Documento generato: {documentoGenerato.nome}</p>
+                  <div className="flex gap-2">
+                    {isPreviewable(documentoGenerato.mime_type) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => previewDocumento(documentoGenerato.id)}
+                      >
+                        Visualizza
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        downloadDocumento(documentoGenerato.id, documentoGenerato.nome)
+                      }
+                    >
+                      Scarica
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <TemplatePreviewPane
                 html={previewTemplate.data?.html}

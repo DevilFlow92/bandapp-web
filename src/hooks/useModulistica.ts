@@ -13,6 +13,7 @@ export interface CreateTemplateInput {
   descrizione?: string | null
   contenuto_json: object
   entita_richieste: string[]
+  sotto_cartella_id?: number | null
 }
 
 export interface UpdateTemplateInput {
@@ -20,6 +21,7 @@ export interface UpdateTemplateInput {
   descrizione?: string | null
   contenuto_json?: object
   entita_richieste?: string[]
+  sotto_cartella_id?: number | null
 }
 
 export interface GenerateTemplateInput {
@@ -71,6 +73,7 @@ export function useCreateTemplate() {
         descrizione: input.descrizione ?? null,
         contenuto_json: input.contenuto_json,
         entita_richieste: input.entita_richieste,
+        sotto_cartella_id: input.sotto_cartella_id ?? null,
       })
       return data
     },

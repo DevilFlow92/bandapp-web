@@ -18,7 +18,6 @@ import EsterniPage from "@/pages/EsterniPage"
 import EsternoWizardPage from "@/pages/EsternoWizardPage"
 import ServiziPage from "@/pages/ServiziPage"
 import SpartitiPage from "@/pages/SpartitiPage"
-import IscrizioniPage from "@/pages/IscrizioniPage"
 import DocumentiPage from "@/pages/DocumentiPage"
 import ModulisticaPage from "@/pages/ModulisticaPage"
 import TemplateEditorPage from "@/pages/TemplateEditorPage"
@@ -66,9 +65,6 @@ export default function App() {
                       <Route path="esterni/nuovo" element={<EsternoWizardPage />} />
                     </Route>
                     <Route path="servizi" element={<ServiziPage />} />
-                    <Route element={<PermissionGuard permission="iscrizioni:read" />}>
-                      <Route path="iscrizioni" element={<IscrizioniPage />} />
-                    </Route>
                     <Route path="spartiti" element={<SpartitiPage />} />
                     <Route path="documenti" element={<DocumentiPage />} />
                     <Route path="modulistica" element={<ModulisticaPage />} />

@@ -20,10 +20,7 @@ const navGroups: NavGroup[] = [
   },
   {
     label: "Attività",
-    items: [
-      { to: "/servizi", label: "Servizi" },
-      { to: "/iscrizioni", label: "Iscrizioni" },
-    ],
+    items: [{ to: "/servizi", label: "Servizi" }],
   },
   {
     label: "Archivio",
@@ -128,18 +125,9 @@ export default function AppLayout() {
   const canContabilita = usePermission("contabilita:read")
   const canUtenti = usePermission("utenti:read")
   const canRuoli = usePermission("ruoli:read")
-  const canIscrizioni = usePermission("iscrizioni:read")
   const canAdmin = user?.superuser === true || canUtenti || canRuoli
   const groups = [
-    ...navGroups
-      .map((g) => {
-        if (g.label !== "Attività") return g
-        return {
-          ...g,
-          items: g.items.filter((item) => item.to !== "/iscrizioni" || canIscrizioni),
-        }
-      })
-      .filter((g) => g.label !== "Contabilità" || canContabilita),
+    ...navGroups.filter((g) => g.label !== "Contabilità" || canContabilita),
     ...(canAdmin ? [adminGroup] : []),
   ]
 

@@ -11,7 +11,11 @@ import {
 } from "@/hooks/useSoci"
 import { useAddPersonaIndirizzo, useLookupTipiIndirizzo } from "@/hooks/useIndirizzi"
 import { usePersonaContatti } from "@/hooks/useContatti"
-import { useCreateIscrizione, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
+import {
+  useCreateIscrizione,
+  useLookupStatiIscrizione,
+  useUpdateIscrizione,
+} from "@/hooks/useIscrizioni"
 import {
   useGenerateDocx,
   useGeneratePdf,
@@ -212,6 +216,7 @@ export default function SocioWizardPage() {
   const [iscrizioneForm, setIscrizioneForm] = useState(emptyIscrizioneForm())
   const stati = useLookupStatiIscrizione()
   const createIscrizione = useCreateIscrizione()
+  const updateIscrizione = useUpdateIscrizione()
   const [iscrizioneCreated, setIscrizioneCreated] = useState(false)
   const [iscrizioneId, setIscrizioneId] = useState<number | null>(null)
   const [iscrizioneAnno, setIscrizioneAnno] = useState<number | null>(null)
@@ -505,6 +510,19 @@ export default function SocioWizardPage() {
       setDocumentoGenerato(documento)
       setDocumentoGeneratoTemplateNome(selectedTemplate.nome)
       toast({ title: "Documento generato" })
+      if (iscrizioneId != null) {
+        try {
+          await updateIscrizione.mutateAsync({
+            id: iscrizioneId,
+            input: { documento_id: documento.id },
+          })
+        } catch {
+          toast({
+            variant: "destructive",
+            title: "Documento generato ma non collegato all'iscrizione",
+          })
+        }
+      }
     } catch (err) {
       setError6(getErrorMessage(err))
     }

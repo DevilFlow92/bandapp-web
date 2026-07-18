@@ -3,7 +3,7 @@ import { EditorContent, useEditor, type Editor } from "@tiptap/react"
 import { BubbleMenu } from "@tiptap/react/menus"
 import StarterKit from "@tiptap/starter-kit"
 import TextAlign from "@tiptap/extension-text-align"
-import { FontFamily, Color, TextStyle } from "@tiptap/extension-text-style"
+import { FontFamily, Color, TextStyle, FontSize } from "@tiptap/extension-text-style"
 import { Table } from "@tiptap/extension-table"
 import type { JSONContent } from "@tiptap/core"
 import {
@@ -23,10 +23,14 @@ import {
   Italic,
   List,
   ListOrdered,
+  Minus,
   MoveVertical,
   Outdent,
+  Paintbrush,
   Palette,
   Pilcrow,
+  Plus,
+  RemoveFormatting,
   Rows3,
   SplitSquareHorizontal,
   Table as TableIcon,
@@ -67,6 +71,16 @@ const ONCHANGE_DEBOUNCE_MS = 500
 
 const ALLOWED_FONTS = ["Arial", "Times New Roman", "Calibri", "Georgia", "Verdana"] as const
 
+const DEFAULT_FONT_SIZE_PT = 11
+const MIN_FONT_SIZE_PT = 1
+const FONT_SIZE_STEP_PT = 1
+
+function parseFontSizePt(fontSize: string | null | undefined): number {
+  if (!fontSize) return DEFAULT_FONT_SIZE_PT
+  const match = /^([\d.]+)pt$/.exec(fontSize)
+  return match ? parseFloat(match[1]) : DEFAULT_FONT_SIZE_PT
+}
+
 const IMAGE_BUBBLE_MENU_OPTIONS = {
   placement: "top-start",
   offset: 8,
@@ -85,11 +99,13 @@ function ToolbarButton({
   active,
   onClick,
   label,
+  disabled,
   children,
 }: {
   active: boolean
   onClick: () => void
   label: string
+  disabled?: boolean
   children: ReactNode
 }) {
   return (
@@ -100,6 +116,7 @@ function ToolbarButton({
       className="h-8 px-2"
       aria-pressed={active}
       title={label}
+      disabled={disabled}
       onClick={onClick}
     >
       {children}
@@ -561,6 +578,125 @@ function TableToolbar({ editor }: { editor: Editor }) {
   )
 }
 
+function FontSizeControls({ editor }: { editor: Editor }) {
+  const currentPt = parseFontSizePt(editor.getAttributes("textStyle").fontSize as string | null)
+
+  const applyFontSize = (pt: number) => {
+    const clamped = Math.max(MIN_FONT_SIZE_PT, pt)
+    editor.chain().focus().setFontSize(`${clamped}pt`).run()
+  }
+
+  return (
+    <div className="flex items-center gap-1 px-1" title="Dimensione testo (pt)">
+      <ToolbarButton
+        active={false}
+        onClick={() => applyFontSize(currentPt - FONT_SIZE_STEP_PT)}
+        label="Riduci dimensione testo"
+      >
+        <Minus className="h-4 w-4" />
+      </ToolbarButton>
+      <input
+        type="number"
+        min={MIN_FONT_SIZE_PT}
+        value={currentPt}
+        onChange={(e) => {
+          const raw = Number(e.target.value)
+          if (Number.isNaN(raw)) return
+          applyFontSize(raw)
+        }}
+        className="h-8 w-14 rounded border border-input bg-transparent px-1 text-xs"
+      />
+      <ToolbarButton
+        active={false}
+        onClick={() => applyFontSize(currentPt + FONT_SIZE_STEP_PT)}
+        label="Aumenta dimensione testo"
+      >
+        <Plus className="h-4 w-4" />
+      </ToolbarButton>
+    </div>
+  )
+}
+
+interface CopiedFormat {
+  bold: boolean
+  italic: boolean
+  color: string | null
+  fontFamily: string | null
+  fontSize: string | null
+}
+
+function captureFormat(editor: Editor): CopiedFormat {
+  const attrs = editor.getAttributes("textStyle")
+  return {
+    bold: editor.isActive("bold"),
+    italic: editor.isActive("italic"),
+    color: (attrs.color as string | null) ?? null,
+    fontFamily: (attrs.fontFamily as string | null) ?? null,
+    fontSize: (attrs.fontSize as string | null) ?? null,
+  }
+}
+
+function applyFormat(editor: Editor, format: CopiedFormat) {
+  let chain = editor.chain().focus()
+  chain = format.bold ? chain.setBold() : chain.unsetBold()
+  chain = format.italic ? chain.setItalic() : chain.unsetItalic()
+  chain = format.color ? chain.setColor(format.color) : chain.unsetColor()
+  chain = format.fontFamily ? chain.setFontFamily(format.fontFamily) : chain.unsetFontFamily()
+  chain = format.fontSize ? chain.setFontSize(format.fontSize) : chain.unsetFontSize()
+  chain.run()
+}
+
+function useFormatPainter(editor: Editor) {
+  const [formatoCopiato, setFormatoCopiato] = useState<CopiedFormat | null>(null)
+
+  useEffect(() => {
+    if (!formatoCopiato) return
+
+    let applied = false
+    const handleSelectionUpdate = () => {
+      if (applied) return
+      const { from, to } = editor.state.selection
+      if (from === to) return
+      applied = true
+      applyFormat(editor, formatoCopiato)
+      setFormatoCopiato(null)
+    }
+
+    editor.on("selectionUpdate", handleSelectionUpdate)
+    return () => {
+      editor.off("selectionUpdate", handleSelectionUpdate)
+    }
+  }, [editor, formatoCopiato])
+
+  return [formatoCopiato, setFormatoCopiato] as const
+}
+
+function FormatPainterButton({ editor }: { editor: Editor }) {
+  const [formatoCopiato, setFormatoCopiato] = useFormatPainter(editor)
+  const isActive = formatoCopiato !== null
+  const noSelection = editor.state.selection.empty
+
+  return (
+    <ToolbarButton
+      active={isActive}
+      disabled={!isActive && noSelection}
+      onClick={() => {
+        if (isActive) {
+          setFormatoCopiato(null)
+          return
+        }
+        if (noSelection) return
+        setFormatoCopiato(captureFormat(editor))
+      }}
+      label={
+        isActive ? "Pennello attivo: seleziona il testo di destinazione" : "Copia formattazione"
+      }
+    >
+      <Paintbrush className="h-4 w-4" />
+    </ToolbarButton>
+  )
+}
+
 function Toolbar({ editor }: { editor: Editor }) {
   const [tableMenuOpen, setTableMenuOpen] = useState(false)
 
@@ -673,7 +809,20 @@ function Toolbar({ editor }: { editor: Editor }) {
           />
           <Palette className="pointer-events-none absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2 opacity-40" />
         </div>
+
+        <FontSizeControls editor={editor} />
       </div>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      <ToolbarButton
+        active={false}
+        onClick={() => editor.chain().focus().unsetAllMarks().run()}
+        label="Cancella formattazione"
+      >
+        <RemoveFormatting className="h-4 w-4" />
+      </ToolbarButton>
+      <FormatPainterButton editor={editor} />
 
       <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -770,6 +919,7 @@ export default function TemplateEditor({ initialContent, onChange }: TemplateEdi
       TextStyle,
       Color,
       FontFamily,
+      FontSize,
       Table.configure({ resizable: true }),
       TableRowWithHeight,
       TableHeaderWithAttrs,

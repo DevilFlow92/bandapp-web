@@ -13,6 +13,7 @@ import {
 import { useLookupStrumenti } from "@/hooks/useSoci"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { useConfirm } from "@/hooks/useConfirm"
 import { useBanda } from "@/context/BandaContext"
 import type { NomeParte } from "@/types/spartito"
 import { Button } from "@/components/ui/button"
@@ -170,6 +171,7 @@ interface ModificaDialogProps extends ComposizioneDialogProps {
 
 export function ModificaComposizioneDialog({ nomeParte, open, onOpenChange }: ModificaDialogProps) {
   const { toast } = useToast()
+  const confirm = useConfirm()
   const update = useUpdateNomeParte()
   const uploadAudio = useUploadAudioNomeParte()
   const deleteAudio = useDeleteAudioNomeParte()
@@ -264,7 +266,16 @@ export function ModificaComposizioneDialog({ nomeParte, open, onOpenChange }: Mo
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 shrink-0 p-0 text-destructive"
-                  onClick={() => deleteAudio.mutate(nomeParte.id)}
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "Eliminare il file audio?",
+                      description:
+                        "Il file audio verrà rimosso definitivamente, l'operazione non è reversibile.",
+                      variant: "destructive",
+                    })
+                    if (!ok) return
+                    deleteAudio.mutate(nomeParte.id)
+                  }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
+import { useConfirm } from "@/hooks/useConfirm"
 
 interface ContattiSectionProps {
   personaId: number
@@ -39,6 +40,7 @@ const emptyForm: FormState = {
 
 export default function ContattiSection({ personaId, canWrite }: ContattiSectionProps) {
   const { toast } = useToast()
+  const confirm = useConfirm()
 
   const { data: contatti, isLoading } = usePersonaContatti(personaId)
   const { data: ruoli } = useLookupRuoliContatto()
@@ -80,6 +82,12 @@ export default function ContattiSection({ personaId, canWrite }: ContattiSection
   }
 
   const handleDelete = async (contattoId: number) => {
+    const ok = await confirm({
+      title: "Eliminare questo contatto?",
+      description: "Il contatto verrà rimosso definitivamente, l'operazione non è reversibile.",
+      variant: "destructive",
+    })
+    if (!ok) return
     try {
       await deleteMutation.mutateAsync(contattoId)
       toast({ title: "Contatto rimosso" })

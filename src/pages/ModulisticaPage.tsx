@@ -9,6 +9,7 @@ import {
 } from "@/hooks/useModulistica"
 import type { Template } from "@/types/modulistica"
 import { useToast } from "@/hooks/use-toast"
+import { useConfirm } from "@/hooks/useConfirm"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -169,6 +170,7 @@ function ModificaModuloDialog({
 
 export default function ModulisticaPage() {
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const [page, setPage] = useState(1)
   const [nuovaOpen, setNuovaOpen] = useState(false)
   const [modificaTarget, setModificaTarget] = useState<Template | null>(null)
@@ -243,7 +245,16 @@ export default function ModulisticaPage() {
                   variant="outline"
                   size="sm"
                   className="text-destructive hover:text-destructive"
-                  onClick={() => deleteTemplate.mutate(template.id)}
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "Eliminare questo modulo?",
+                      description:
+                        "Il modulo verrà eliminato definitivamente, l'operazione non è reversibile.",
+                      variant: "destructive",
+                    })
+                    if (!ok) return
+                    deleteTemplate.mutate(template.id)
+                  }}
                 >
                   <Trash2 className="mr-1 h-3.5 w-3.5" /> Elimina
                 </Button>

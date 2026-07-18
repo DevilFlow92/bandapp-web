@@ -21,6 +21,7 @@ import {
   downloadDocumento,
 } from "@/hooks/useSpartiti"
 import { API_URL } from "@/lib/api"
+import { useConfirm } from "@/hooks/useConfirm"
 import { useBanda } from "@/context/BandaContext"
 import type { NomeParte } from "@/types/spartito"
 import {
@@ -258,6 +259,7 @@ function NomeParteDetail({ nomeParte, onBack }: { nomeParte: NomeParte; onBack: 
 
 export default function SpartitiPage() {
   const { banda } = useBanda()
+  const confirm = useConfirm()
   const [selectedNomeParte, setSelectedNomeParte] = useState<NomeParte | null>(null)
   const [page, setPage] = useState(1)
   const [tipoFilter, setTipoFilter] = useState<number | undefined>(undefined)
@@ -418,7 +420,16 @@ export default function SpartitiPage() {
                   variant="outline"
                   size="sm"
                   className="text-destructive hover:text-destructive"
-                  onClick={() => deleteNomeParte.mutate(item.id)}
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "Eliminare questo brano?",
+                      description:
+                        "Il brano e i relativi file collegati verranno eliminati definitivamente. L'operazione non è reversibile.",
+                      variant: "destructive",
+                    })
+                    if (!ok) return
+                    deleteNomeParte.mutate(item.id)
+                  }}
                 >
                   <Trash2 className="mr-1 h-3.5 w-3.5" /> Elimina
                 </Button>

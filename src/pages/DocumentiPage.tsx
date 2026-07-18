@@ -26,6 +26,7 @@ import {
 } from "@/hooks/useDocumenti"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { useConfirm } from "@/hooks/useConfirm"
 import { cn } from "@/lib/utils"
 import type { MacroSezione, SottoCartella } from "@/types/archivio"
 import { Button } from "@/components/ui/button"
@@ -60,6 +61,7 @@ function formatDate(iso: string): string {
 
 export default function DocumentiPage() {
   const { data: user } = useCurrentUser()
+  const confirm = useConfirm()
   const hasPermission = (codice: string) =>
     user?.superuser === true || user?.permessi?.includes(codice) === true
 
@@ -187,8 +189,15 @@ export default function DocumentiPage() {
                                   type="button"
                                   className="rounded p-1 hover:bg-muted-foreground/10"
                                   aria-label="Elimina cartella"
-                                  onClick={(e) => {
+                                  onClick={async (e) => {
                                     e.stopPropagation()
+                                    const ok = await confirm({
+                                      title: "Eliminare questa cartella?",
+                                      description:
+                                        "La cartella e tutti i documenti al suo interno verranno eliminati definitivamente. L'operazione non è reversibile.",
+                                      variant: "destructive",
+                                    })
+                                    if (!ok) return
                                     if (selectedSottoCartella?.id === sc.id) {
                                       setSelectedSottoCartella(null)
                                     }
@@ -325,7 +334,16 @@ export default function DocumentiPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => deleteDocumento.mutate(doc.id)}
+                                  onClick={async () => {
+                                    const ok = await confirm({
+                                      title: "Eliminare questo documento?",
+                                      description:
+                                        "Il file verrà rimosso definitivamente, l'operazione non è reversibile.",
+                                      variant: "destructive",
+                                    })
+                                    if (!ok) return
+                                    deleteDocumento.mutate(doc.id)
+                                  }}
                                   aria-label="Elimina"
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />

@@ -1,8 +1,9 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, Download, Eye, Pencil, Plus, Trash2 } from "lucide-react"
 import { useSocio } from "@/hooks/useSoci"
 import { useIscrizioni, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
+import { downloadDocumento, isPreviewable, previewDocumento } from "@/hooks/useDocumenti"
 import { usePermission } from "@/hooks/useAuth"
 import type { Iscrizione } from "@/types/iscrizione"
 import { Button } from "@/components/ui/button"
@@ -177,6 +178,7 @@ export default function SocioDetailPage() {
                     <TableHead>Quota</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead>Note</TableHead>
+                    <TableHead>Documento</TableHead>
                     {canWriteIscrizioni && <TableHead className="text-right">Azioni</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -184,7 +186,7 @@ export default function SocioDetailPage() {
                   {iscrizioniLoading ? (
                     Array.from({ length: 3 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: canWriteIscrizioni ? 6 : 5 }).map((__, j) => (
+                        {Array.from({ length: canWriteIscrizioni ? 7 : 6 }).map((__, j) => (
                           <TableCell key={j}>
                             <Skeleton className="h-5 w-full" />
                           </TableCell>
@@ -194,7 +196,7 @@ export default function SocioDetailPage() {
                   ) : iscrizioni.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={canWriteIscrizioni ? 6 : 5}
+                        colSpan={canWriteIscrizioni ? 7 : 6}
                         className="py-12 text-center text-muted-foreground"
                       >
                         Nessuna iscrizione registrata
@@ -218,6 +220,37 @@ export default function SocioDetailPage() {
                             )}
                           </TableCell>
                           <TableCell>{iscrizione.note || "—"}</TableCell>
+                          <TableCell>
+                            {iscrizione.documento ? (
+                              <div className="flex justify-start gap-1">
+                                {isPreviewable(iscrizione.documento.mime_type) && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => previewDocumento(iscrizione.documento!.id)}
+                                    aria-label="Anteprima"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    downloadDocumento(
+                                      iscrizione.documento!.id,
+                                      iscrizione.documento!.nome,
+                                    )
+                                  }
+                                  aria-label="Scarica"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              "—"
+                            )}
+                          </TableCell>
                           {canWriteIscrizioni && (
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">

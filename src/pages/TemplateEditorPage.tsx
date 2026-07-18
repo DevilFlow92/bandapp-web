@@ -9,6 +9,8 @@ import {
   useTemplate,
   useUpdateTemplate,
 } from "@/hooks/useModulistica"
+import { useSocio } from "@/hooks/useSoci"
+import { useEsterno } from "@/hooks/useEsterni"
 import { useToast } from "@/hooks/use-toast"
 import { getErrorMessage } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -18,6 +20,24 @@ import TemplateEditor from "@/components/modulistica/TemplateEditor"
 import EntitySelector from "@/components/modulistica/EntitySelector"
 import TemplatePreviewPane from "@/components/modulistica/TemplatePreviewPane"
 import CartellaOutputSelector from "@/components/modulistica/CartellaOutputSelector"
+import GenerateFileDialog from "@/components/modulistica/GenerateFileDialog"
+
+function sanitizeFileName(name: string): string {
+  return name.replace(/[/\\:*?"<>|]/g, "_")
+}
+
+function pad(n: number): string {
+  return String(n).padStart(2, "0")
+}
+
+function formatDateForFileName(date: Date): string {
+  const y = date.getFullYear()
+  const m = pad(date.getMonth() + 1)
+  const d = pad(date.getDate())
+  const h = pad(date.getHours())
+  const min = pad(date.getMinutes())
+  return `${y}${m}${d}_${h}${min}`
+}
 
 export default function TemplateEditorPage() {
   const navigate = useNavigate()
@@ -34,6 +54,10 @@ export default function TemplateEditorPage() {
   const [contenutoJson, setContenutoJson] = useState<object | null>(null)
   const [entities, setEntities] = useState<Record<string, number>>({})
   const [sottoCartellaId, setSottoCartellaId] = useState<number | null | undefined>(undefined)
+  const [generateFormato, setGenerateFormato] = useState<"docx" | "pdf" | null>(null)
+
+  const { data: socioSelezionato } = useSocio(entities.socio ?? 0)
+  const { data: esternoSelezionato } = useEsterno(entities.esterno ?? 0)
 
   const effectiveContent = contenutoJson ?? template?.contenuto_json ?? null
   const effectiveSottoCartellaId =
@@ -76,28 +100,27 @@ export default function TemplateEditorPage() {
     }
   }
 
-  async function handleGenerateDocx() {
-    if (!template || !effectiveContent) return
-    try {
-      const documento = await generateDocx.mutateAsync({
-        id: template.id,
-        contenuto_json: effectiveContent,
-        entities,
-      })
-      await downloadDocumento(documento.id, documento.nome)
-    } catch (err) {
-      toast({ variant: "destructive", title: getErrorMessage(err) })
-    }
+  function computeNomeProposto() {
+    if (!template) return ""
+    const persona = socioSelezionato?.persona ?? esternoSelezionato?.persona
+    const identificativo = persona ? `${persona.cognome}_${persona.nome}` : null
+    const parti = [template.nome, identificativo, formatDateForFileName(new Date())].filter(
+      (parte): parte is string => !!parte,
+    )
+    return sanitizeFileName(parti.join("_"))
   }
 
-  async function handleGeneratePdf() {
-    if (!template || !effectiveContent) return
+  async function handleConfirmGenerate(nomeFile: string) {
+    if (!template || !effectiveContent || !generateFormato) return
+    const mutation = generateFormato === "docx" ? generateDocx : generatePdf
     try {
-      const documento = await generatePdf.mutateAsync({
+      const documento = await mutation.mutateAsync({
         id: template.id,
         contenuto_json: effectiveContent,
         entities,
+        nome_file: nomeFile || undefined,
       })
+      setGenerateFormato(null)
       await downloadDocumento(documento.id, documento.nome)
     } catch (err) {
       toast({ variant: "destructive", title: getErrorMessage(err) })
@@ -157,15 +180,15 @@ export default function TemplateEditorPage() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
-                  onClick={handleGenerateDocx}
-                  disabled={generateDocx.isPending}
+                  onClick={() => setGenerateFormato("docx")}
+                  disabled={!effectiveContent || generateDocx.isPending}
                 >
                   {generateDocx.isPending ? "Generazione..." : "Genera DOCX"}
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={handleGeneratePdf}
-                  disabled={generatePdf.isPending}
+                  onClick={() => setGenerateFormato("pdf")}
+                  disabled={!effectiveContent || generatePdf.isPending}
                 >
                   {generatePdf.isPending ? "Generazione..." : "Genera PDF"}
                 </Button>
@@ -180,6 +203,16 @@ export default function TemplateEditorPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {generateFormato && (
+        <GenerateFileDialog
+          open
+          onOpenChange={(open) => !open && setGenerateFormato(null)}
+          formato={generateFormato}
+          nomeProposto={computeNomeProposto()}
+          onConfirm={handleConfirmGenerate}
+        />
       )}
     </div>
   )

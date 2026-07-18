@@ -50,6 +50,18 @@ export function useAllEsterni(bandaCodice: number, enabled = true) {
   })
 }
 
+/** Loads a single esterno by id, with nested persona and strumento. */
+export function useEsterno(id: number) {
+  return useQuery({
+    queryKey: [...ESTERNI_KEY, id],
+    queryFn: async () => {
+      const { data } = await api.get<Esterno>(`/esterni/${id}`)
+      return data
+    },
+    enabled: id > 0,
+  })
+}
+
 /** Creates a new esterno. */
 export function useCreateEsterno() {
   const queryClient = useQueryClient()

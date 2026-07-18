@@ -28,6 +28,7 @@ export interface GenerateTemplateInput {
   id: number
   contenuto_json: object
   entities: Record<string, number>
+  nome_file?: string
 }
 
 export interface PreviewTemplateInput {
@@ -110,10 +111,11 @@ export function useDeleteTemplate() {
 
 export function useGenerateDocx() {
   return useMutation({
-    mutationFn: async ({ id, contenuto_json, entities }: GenerateTemplateInput) => {
+    mutationFn: async ({ id, contenuto_json, entities, nome_file }: GenerateTemplateInput) => {
       const { data } = await api.post<Documento>(`/templates/${id}/generate/docx`, {
         contenuto_json,
         entities,
+        ...(nome_file ? { nome_file } : {}),
       })
       return data
     },
@@ -122,10 +124,11 @@ export function useGenerateDocx() {
 
 export function useGeneratePdf() {
   return useMutation({
-    mutationFn: async ({ id, contenuto_json, entities }: GenerateTemplateInput) => {
+    mutationFn: async ({ id, contenuto_json, entities, nome_file }: GenerateTemplateInput) => {
       const { data } = await api.post<Documento>(`/templates/${id}/generate/pdf`, {
         contenuto_json,
         entities,
+        ...(nome_file ? { nome_file } : {}),
       })
       return data
     },

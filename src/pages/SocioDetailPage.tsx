@@ -1,9 +1,10 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Plus } from "lucide-react"
+import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react"
 import { useSocio } from "@/hooks/useSoci"
 import { useIscrizioni, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
 import { usePermission } from "@/hooks/useAuth"
+import type { Iscrizione } from "@/types/iscrizione"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -17,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import IscrizioneFormDialog from "@/components/iscrizioni/IscrizioneFormDialog"
+import DeleteIscrizioneDialog from "@/components/iscrizioni/DeleteIscrizioneDialog"
 import IndirizziSection from "@/components/anagrafica/IndirizziSection"
 import ContattiSection from "@/components/anagrafica/ContattiSection"
 
@@ -79,10 +81,18 @@ export default function SocioDetailPage() {
   }, [iscrizioniData])
 
   const canWrite = usePermission("anagrafica:write")
+  const canWriteIscrizioni = usePermission("iscrizioni:write")
   const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<Iscrizione | null>(null)
+  const [deleting, setDeleting] = useState<Iscrizione | null>(null)
 
   const persona = socio?.persona
   const fullName = persona ? `${persona.nome} ${persona.cognome}`.trim() : ""
+
+  const openEdit = (iscrizione: Iscrizione) => {
+    setEditing(iscrizione)
+    setFormOpen(true)
+  }
 
   const backButton = (
     <Button
@@ -167,13 +177,14 @@ export default function SocioDetailPage() {
                     <TableHead>Quota</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead>Note</TableHead>
+                    {canWriteIscrizioni && <TableHead className="text-right">Azioni</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {iscrizioniLoading ? (
                     Array.from({ length: 3 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: 5 }).map((__, j) => (
+                        {Array.from({ length: canWriteIscrizioni ? 6 : 5 }).map((__, j) => (
                           <TableCell key={j}>
                             <Skeleton className="h-5 w-full" />
                           </TableCell>
@@ -182,7 +193,10 @@ export default function SocioDetailPage() {
                     ))
                   ) : iscrizioni.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                      <TableCell
+                        colSpan={canWriteIscrizioni ? 6 : 5}
+                        className="py-12 text-center text-muted-foreground"
+                      >
                         Nessuna iscrizione registrata
                       </TableCell>
                     </TableRow>
@@ -204,6 +218,28 @@ export default function SocioDetailPage() {
                             )}
                           </TableCell>
                           <TableCell>{iscrizione.note || "—"}</TableCell>
+                          {canWriteIscrizioni && (
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openEdit(iscrizione)}
+                                  aria-label="Modifica"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDeleting(iscrizione)}
+                                  aria-label="Elimina"
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       )
                     })
@@ -227,8 +263,21 @@ export default function SocioDetailPage() {
 
       <IscrizioneFormDialog
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open)
+          if (!open) setEditing(null)
+        }}
+        iscrizione={editing}
+        socioName={fullName}
         presetSocio={socio ?? null}
+      />
+      <DeleteIscrizioneDialog
+        open={deleting !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(null)
+        }}
+        iscrizione={deleting}
+        socioName={fullName}
       />
     </div>
   )

@@ -15,6 +15,7 @@ import {
   Columns3,
   Combine,
   Eraser,
+  FolderOpen,
   Heading1,
   Heading2,
   Heading3,
@@ -35,12 +36,14 @@ import {
   SplitSquareHorizontal,
   Table as TableIcon,
   Trash2,
+  Upload,
   Wand2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -55,7 +58,9 @@ import { cn } from "@/lib/utils"
 import { Mergefield } from "@/components/modulistica/MergefieldNode"
 import { Image } from "@/components/modulistica/ImageNode"
 import MergefieldLibrary from "@/components/modulistica/MergefieldLibrary"
+import ImagePickerDialog from "@/components/modulistica/ImagePickerDialog"
 import { useUploadDocumento } from "@/hooks/useDocumenti"
+import { useTemplateImagesCartella } from "@/hooks/useArchivio"
 import {
   ROW_MIN_HEIGHT,
   TableRowResizing,
@@ -220,6 +225,8 @@ function ImageBubbleMenu({ editor }: { editor: Editor }) {
 function InsertImageButton({ editor }: { editor: Editor }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadDocumento = useUploadDocumento()
+  const templateImagesCartella = useTemplateImagesCartella()
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,7 +234,7 @@ function InsertImageButton({ editor }: { editor: Editor }) {
       if (!file) return
 
       uploadDocumento.mutate(
-        { file },
+        { file, sotto_cartella_id: templateImagesCartella?.id },
         {
           onSuccess: (data) => {
             editor.chain().focus().insertImage(data.id).run()
@@ -238,7 +245,14 @@ function InsertImageButton({ editor }: { editor: Editor }) {
         },
       )
     },
-    [editor, uploadDocumento],
+    [editor, uploadDocumento, templateImagesCartella],
+  )
+
+  const handleSelectFromArchivio = useCallback(
+    (documentoId: number) => {
+      editor.chain().focus().insertImage(documentoId).run()
+    },
+    [editor],
   )
 
   return (
@@ -251,21 +265,39 @@ function InsertImageButton({ editor }: { editor: Editor }) {
         className="hidden"
         aria-hidden="true"
       />
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-8 px-2"
-        title="Inserisci immagine"
-        disabled={uploadDocumento.isPending}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        {uploadDocumento.isPending ? (
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-primary" />
-        ) : (
-          <ImageIcon className="h-4 w-4" />
-        )}
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            title="Inserisci immagine"
+            disabled={uploadDocumento.isPending}
+          >
+            {uploadDocumento.isPending ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-primary" />
+            ) : (
+              <ImageIcon className="h-4 w-4" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}>
+            <Upload className="h-4 w-4" />
+            Carica nuova
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setPickerOpen(true)}>
+            <FolderOpen className="h-4 w-4" />
+            Scegli da archivio
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ImagePickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={handleSelectFromArchivio}
+      />
     </>
   )
 }

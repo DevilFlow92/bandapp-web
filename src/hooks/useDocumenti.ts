@@ -111,6 +111,27 @@ export async function downloadDocumento(id: number, nome: string): Promise<void>
   URL.revokeObjectURL(url)
 }
 
+const IMMAGINI_PAGE_SIZE = 100
+
+/**
+ * Lists documenti immagine (mime_type image/*) in archivio, per il selettore
+ * "Scegli da archivio" dell'editor di modulistica. L'endpoint /documenti/ non
+ * supporta un filtro per mime_type, quindi filtriamo lato client: i volumi di
+ * immagini in archivio sono contenuti. page_size limitato a 100 dal backend.
+ */
+export function useImmaginiArchivio(enabled: boolean) {
+  return useQuery({
+    queryKey: [...DOCUMENTI_KEY, "immagini"],
+    queryFn: async () => {
+      const { data } = await api.get<PagedResponse<Documento>>("/documenti/", {
+        params: { page: 1, page_size: IMMAGINI_PAGE_SIZE },
+      })
+      return data.items.filter((d) => d.mime_type.startsWith("image/"))
+    },
+    enabled,
+  })
+}
+
 /** Loads the tipi-documento lookup. */
 export function useLookupTipiDocumento() {
   return useQuery({

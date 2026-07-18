@@ -43,6 +43,24 @@ export function useSottoCartelle(macroSezioneCodice: number | null) {
   })
 }
 
+const TEMPLATE_IMAGES_MACRO_NOME = "Template Images"
+const TEMPLATE_IMAGES_CARTELLA_NOME = "Immagini modulistica"
+
+/**
+ * Trova la sotto-cartella "Immagini modulistica" dentro la macro-sezione
+ * "Template Images" (CR#17), dove finiscono di default le immagini caricate
+ * dall'editor di modulistica. Cerca per nome anziché per id fisso perché
+ * l'id può variare tra ambienti/seed; ritorna undefined se non trovata (es.
+ * macro-sezione non ancora presente), nel qual caso l'upload procede senza
+ * cartella come già avveniva prima.
+ */
+export function useTemplateImagesCartella(): SottoCartella | undefined {
+  const { data: macroSezioni } = useMacroSezioni()
+  const macro = macroSezioni?.find((ms) => ms.nome === TEMPLATE_IMAGES_MACRO_NOME)
+  const { data: sottoCartelle } = useSottoCartelle(macro?.codice ?? null)
+  return sottoCartelle?.find((sc) => sc.nome === TEMPLATE_IMAGES_CARTELLA_NOME)
+}
+
 export interface CreateSottoCartellaInput {
   nome: string
   macro_sezione_codice: number

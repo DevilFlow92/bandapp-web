@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import TemplateEditor from "@/components/modulistica/TemplateEditor"
 import EntitySelector from "@/components/modulistica/EntitySelector"
 import TemplatePreviewPane from "@/components/modulistica/TemplatePreviewPane"
+import CartellaOutputSelector from "@/components/modulistica/CartellaOutputSelector"
 
 export default function TemplateEditorPage() {
   const navigate = useNavigate()
@@ -32,8 +33,11 @@ export default function TemplateEditorPage() {
 
   const [contenutoJson, setContenutoJson] = useState<object | null>(null)
   const [entities, setEntities] = useState<Record<string, number>>({})
+  const [sottoCartellaId, setSottoCartellaId] = useState<number | null | undefined>(undefined)
 
   const effectiveContent = contenutoJson ?? template?.contenuto_json ?? null
+  const effectiveSottoCartellaId =
+    sottoCartellaId !== undefined ? sottoCartellaId : (template?.sotto_cartella_id ?? null)
 
   const previewMutateRef = useRef(previewTemplate.mutate)
   useEffect(() => {
@@ -60,7 +64,7 @@ export default function TemplateEditorPage() {
   async function handleSave() {
     if (!template) return
     try {
-      const input: Record<string, unknown> = {}
+      const input: Record<string, unknown> = { sotto_cartella_id: effectiveSottoCartellaId }
       if (contenutoJson) input.contenuto_json = contenutoJson
       await updateTemplate.mutateAsync({
         id: templateId,
@@ -128,8 +132,14 @@ export default function TemplateEditorPage() {
           <Skeleton className="h-96 w-full" />
         </div>
       ) : (
-        <div className="space-y-1.5">
+        <div className="space-y-4">
           <h1 className="text-2xl font-semibold tracking-tight">{template.nome}</h1>
+          <div className="max-w-sm">
+            <CartellaOutputSelector
+              value={effectiveSottoCartellaId}
+              onChange={setSottoCartellaId}
+            />
+          </div>
           <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
             <TemplateEditor
               key={template.id}

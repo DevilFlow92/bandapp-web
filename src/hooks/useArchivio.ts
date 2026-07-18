@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { UseQueryOptions } from "@tanstack/react-query"
 import api from "@/lib/api"
 import type { MacroSezione, SottoCartella } from "@/types/archivio"
 
@@ -19,9 +20,11 @@ export function useMacroSezioni() {
   })
 }
 
-/** Lists sotto-cartelle for a macro-sezione. Disabled until a macro-sezione is selected. */
-export function useSottoCartelle(macroSezioneCodice: number | null) {
-  return useQuery({
+/** Query options for the sotto-cartelle of a macro-sezione, reusable with useQuery or useQueries. */
+export function sottoCartelleQueryOptions(
+  macroSezioneCodice: number,
+): UseQueryOptions<SottoCartella[]> {
+  return {
     queryKey: [...SOTTO_CARTELLE_KEY, macroSezioneCodice],
     queryFn: async () => {
       const { data } = await api.get<SottoCartella[]>("/sotto-cartelle/", {
@@ -29,6 +32,13 @@ export function useSottoCartelle(macroSezioneCodice: number | null) {
       })
       return data
     },
+  }
+}
+
+/** Lists sotto-cartelle for a macro-sezione. Disabled until a macro-sezione is selected. */
+export function useSottoCartelle(macroSezioneCodice: number | null) {
+  return useQuery({
+    ...sottoCartelleQueryOptions(macroSezioneCodice ?? 0),
     enabled: macroSezioneCodice !== null,
   })
 }

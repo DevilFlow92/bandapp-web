@@ -4,6 +4,7 @@ export interface Template {
   descrizione: string | null
   contenuto_json: object
   entita_richieste: string[]
+  sotto_cartella_id: number | null
   creato_il: string
   aggiornato_il: string
 }

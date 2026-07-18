@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useConfirm } from "@/hooks/useConfirm"
 import { cn } from "@/lib/utils"
 import type { MacroSezione, SottoCartella } from "@/types/archivio"
+import type { Documento } from "@/types/documento"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -84,6 +85,14 @@ export default function DocumentiPage() {
   const canWriteSelected = selectedMacroSezione
     ? hasPermission(`${selectedMacroSezione.permesso_prefisso}:write`)
     : false
+
+  // Il backend consente sempre la cancellazione dei documenti senza sotto_cartella
+  // (categoria "—"); per gli altri serve il permesso :write sulla macro-sezione del documento.
+  const canDeleteDocumento = (doc: Documento) => {
+    if (!doc.sotto_cartella) return true
+    const ms = macroSezioni?.find((m) => m.codice === doc.sotto_cartella?.macro_sezione_codice)
+    return ms ? hasPermission(`${ms.permesso_prefisso}:write`) : false
+  }
 
   const { data, isLoading } = useDocumenti(page, PAGE_SIZE, undefined, selectedSottoCartella?.id)
   const totalPages = data?.meta.total_pages ?? 1
@@ -330,7 +339,7 @@ export default function DocumentiPage() {
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-                              {canWriteHere && (
+                              {canDeleteDocumento(doc) && (
                                 <Button
                                   variant="ghost"
                                   size="icon"

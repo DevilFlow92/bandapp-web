@@ -1,10 +1,11 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Download, Eye, Pencil, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, Download, Eye, FileText, Pencil, Plus, Trash2 } from "lucide-react"
 import { useSocio } from "@/hooks/useSoci"
 import { useIscrizioni, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
 import { downloadDocumento, isPreviewable, previewDocumento } from "@/hooks/useDocumenti"
 import { usePermission } from "@/hooks/useAuth"
+import { useBanda } from "@/context/BandaContext"
 import type { Iscrizione } from "@/types/iscrizione"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,8 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import IscrizioneFormDialog from "@/components/iscrizioni/IscrizioneFormDialog"
 import DeleteIscrizioneDialog from "@/components/iscrizioni/DeleteIscrizioneDialog"
+import GeneraDocumentoIscrizione from "@/components/iscrizioni/GeneraDocumentoIscrizione"
 import IndirizziSection from "@/components/anagrafica/IndirizziSection"
 import ContattiSection from "@/components/anagrafica/ContattiSection"
 
@@ -64,6 +67,7 @@ export default function SocioDetailPage() {
   const socioId = Number(id)
 
   const { data: socio, isLoading, isError } = useSocio(socioId)
+  const { banda } = useBanda()
 
   const { data: iscrizioniData, isLoading: iscrizioniLoading } = useIscrizioni(1, 50, socioId)
 
@@ -86,6 +90,9 @@ export default function SocioDetailPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Iscrizione | null>(null)
   const [deleting, setDeleting] = useState<Iscrizione | null>(null)
+  const [generaDocumentoIscrizione, setGeneraDocumentoIscrizione] = useState<Iscrizione | null>(
+    null,
+  )
 
   const persona = socio?.persona
   const fullName = persona ? `${persona.nome} ${persona.cognome}`.trim() : ""
@@ -221,35 +228,54 @@ export default function SocioDetailPage() {
                           </TableCell>
                           <TableCell>{iscrizione.note || "—"}</TableCell>
                           <TableCell>
-                            {iscrizione.documento ? (
-                              <div className="flex justify-start gap-1">
-                                {isPreviewable(iscrizione.documento.mime_type) && (
+                            <div className="flex items-center justify-start gap-1">
+                              {iscrizione.documento && (
+                                <>
+                                  <span
+                                    className="min-w-0 flex-1 truncate text-sm"
+                                    title={iscrizione.documento.nome}
+                                  >
+                                    {iscrizione.documento.nome}
+                                  </span>
+                                  {isPreviewable(iscrizione.documento.mime_type) && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => previewDocumento(iscrizione.documento!.id)}
+                                      aria-label="Anteprima"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => previewDocumento(iscrizione.documento!.id)}
-                                    aria-label="Anteprima"
+                                    onClick={() =>
+                                      downloadDocumento(
+                                        iscrizione.documento!.id,
+                                        iscrizione.documento!.nome,
+                                      )
+                                    }
+                                    aria-label="Scarica"
                                   >
-                                    <Eye className="h-4 w-4" />
+                                    <Download className="h-4 w-4" />
                                   </Button>
-                                )}
+                                </>
+                              )}
+                              {canWriteIscrizioni && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() =>
-                                    downloadDocumento(
-                                      iscrizione.documento!.id,
-                                      iscrizione.documento!.nome,
-                                    )
+                                  onClick={() => setGeneraDocumentoIscrizione(iscrizione)}
+                                  aria-label={
+                                    iscrizione.documento ? "Rigenera documento" : "Genera documento"
                                   }
-                                  aria-label="Scarica"
                                 >
-                                  <Download className="h-4 w-4" />
+                                  <FileText className="h-4 w-4" />
                                 </Button>
-                              </div>
-                            ) : (
-                              "—"
-                            )}
+                              )}
+                              {!iscrizione.documento && !canWriteIscrizioni && "—"}
+                            </div>
                           </TableCell>
                           {canWriteIscrizioni && (
                             <TableCell className="text-right">
@@ -312,6 +338,29 @@ export default function SocioDetailPage() {
         iscrizione={deleting}
         socioName={fullName}
       />
+      <Dialog
+        open={generaDocumentoIscrizione !== null}
+        onOpenChange={(open) => {
+          if (!open) setGeneraDocumentoIscrizione(null)
+        }}
+      >
+        <DialogContent className="w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {generaDocumentoIscrizione?.documento ? "Rigenera documento" : "Genera documento"}
+            </DialogTitle>
+          </DialogHeader>
+          {generaDocumentoIscrizione && socio && banda && (
+            <GeneraDocumentoIscrizione
+              socioId={socio.id}
+              iscrizioneId={generaDocumentoIscrizione.id}
+              bandaCodice={banda.codice}
+              documentoAttuale={generaDocumentoIscrizione.documento}
+              onDocumentoCollegato={() => setGeneraDocumentoIscrizione(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

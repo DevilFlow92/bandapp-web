@@ -1,3 +1,5 @@
+import type { Documento } from "@/types/documento"
+
 export interface Iscrizione {
   id: number
   socio_id: number
@@ -8,4 +10,5 @@ export interface Iscrizione {
   documento_id: number | null
   ricevuta_id: number | null
   note: string | null
+  documento: Pick<Documento, "id" | "nome" | "mime_type"> | null
 }

@@ -2,13 +2,17 @@ import { Fragment, useState } from "react"
 import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useServizi } from "@/hooks/useServizi"
 import { useRicevute } from "@/hooks/useRicevute"
+import { useOrganicoServizio, useUpdatePresenza } from "@/hooks/usePresenze"
 import { usePermission } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import type { Servizio } from "@/types/servizio"
 import type { Ricevuta } from "@/types/ricevuta"
+import type { Presenza, StatoPresenza } from "@/types/presenza"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -30,6 +34,8 @@ import ServizioFormDialog, {
 import DeleteServizioDialog from "@/components/servizi/DeleteServizioDialog"
 import RicevutaFormDialog from "@/components/ricevute/RicevutaFormDialog"
 import DeleteRicevutaDialog from "@/components/ricevute/DeleteRicevutaDialog"
+import AddPersonaOrganicoDialog from "@/components/servizi/AddPersonaOrganicoDialog"
+import DeletePresenzaDialog from "@/components/servizi/DeletePresenzaDialog"
 
 const PAGE_SIZE = 20
 const ALL_YEARS = "all"
@@ -173,6 +179,214 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
             if (!open) setDeleting(null)
           }}
           ricevuta={deleting}
+        />
+      </TableCell>
+    </TableRow>
+  )
+}
+
+const STATO_LABELS: Record<string, string> = {
+  NONE: "Da registrare",
+  PRESENTE: "Presente",
+  ASSENTE: "Assente",
+  GIUSTIFICATO: "Giustificato",
+}
+
+/** Tailwind classes for the stato badge, mirroring the statoBadgeClass pattern used for Iscrizione. */
+function statoPresenzaBadgeClass(stato: StatoPresenza | null): string {
+  switch (stato) {
+    case "PRESENTE":
+      return "border-transparent bg-green-100 text-green-800"
+    case "ASSENTE":
+      return "border-transparent bg-red-100 text-red-800"
+    case "GIUSTIFICATO":
+      return "border-transparent bg-yellow-100 text-yellow-800"
+    default:
+      return "border-transparent bg-gray-100 text-gray-700"
+  }
+}
+
+function personaInPresenzaLabel(presenza: Presenza): string {
+  const { nome, cognome, ragione_sociale } = presenza.persona ?? {}
+  return ragione_sociale || `${nome ?? ""} ${cognome ?? ""}`.trim() || "—"
+}
+
+/** Inline sub-row listing the organico (presenze) of a single servizio. */
+function ServizioOrganicoPanel({ servizioId, colSpan }: { servizioId: number; colSpan: number }) {
+  const { data, isLoading, isError } = useOrganicoServizio(servizioId)
+  const canWrite = usePermission("servizi:write")
+  const updatePresenza = useUpdatePresenza()
+  const [addTipo, setAddTipo] = useState<"socio" | "esterno" | null>(null)
+  const [deleting, setDeleting] = useState<Presenza | null>(null)
+
+  const organico = data?.items ?? []
+  const organicoColCount = canWrite ? 4 : 3
+  const existingPersonaIds = organico.map((p) => p.persona_id)
+
+  const presentiCount = organico.filter((p) => p.stato === "PRESENTE").length
+  const assentiCount = organico.filter((p) => p.stato === "ASSENTE").length
+  const giustificatiCount = organico.filter((p) => p.stato === "GIUSTIFICATO").length
+  const daRegistrareCount = organico.length - presentiCount - assentiCount - giustificatiCount
+
+  const handleStatoChange = (presenza: Presenza, value: string) => {
+    const stato = value === "NONE" ? null : (value as StatoPresenza)
+    if (stato === presenza.stato) return
+    updatePresenza.mutate({ id: presenza.id, input: { stato } })
+  }
+
+  const handleNoteBlur = (presenza: Presenza, value: string) => {
+    const note = value.trim() || null
+    if (note === presenza.note) return
+    updatePresenza.mutate({ id: presenza.id, input: { note } })
+  }
+
+  return (
+    <TableRow className="hover:bg-transparent">
+      <TableCell colSpan={colSpan} className="bg-muted/30 p-4">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-medium">Organico</h3>
+              {!isLoading && !isError && (
+                <p className="text-xs text-muted-foreground">
+                  {organico.length === 0
+                    ? "Nessuna persona in organico"
+                    : `${presentiCount} presenti, ${assentiCount} assenti, ${giustificatiCount} giustificati, ${daRegistrareCount} da registrare su ${organico.length} totali`}
+                </p>
+              )}
+            </div>
+            {canWrite && (
+              <div className="flex shrink-0 gap-2">
+                <Button size="sm" variant="outline" onClick={() => setAddTipo("socio")}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Aggiungi socio
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setAddTipo("esterno")}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Aggiungi esterno
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="overflow-x-auto">
+            <div className="rounded-md border bg-background">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Persona</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead>Note</TableHead>
+                    {canWrite && <TableHead className="text-right">Azioni</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    Array.from({ length: 2 }).map((_, i) => (
+                      <TableRow key={i}>
+                        {Array.from({ length: organicoColCount }).map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-5 w-full" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : isError ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={organicoColCount}
+                        className="py-8 text-center text-muted-foreground"
+                      >
+                        Errore nel caricamento dell'organico.
+                      </TableCell>
+                    </TableRow>
+                  ) : organico.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={organicoColCount}
+                        className="py-8 text-center text-muted-foreground"
+                      >
+                        Nessuna persona in organico
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    organico.map((presenza) => (
+                      <TableRow key={presenza.id}>
+                        <TableCell>{personaInPresenzaLabel(presenza)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={statoPresenzaBadgeClass(presenza.stato)}
+                            >
+                              {STATO_LABELS[presenza.stato ?? "NONE"]}
+                            </Badge>
+                            {canWrite && (
+                              <Select
+                                value={presenza.stato ?? "NONE"}
+                                onValueChange={(value) => handleStatoChange(presenza, value)}
+                              >
+                                <SelectTrigger className="h-8 w-36">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="NONE">Da registrare</SelectItem>
+                                  <SelectItem value="PRESENTE">Presente</SelectItem>
+                                  <SelectItem value="ASSENTE">Assente</SelectItem>
+                                  <SelectItem value="GIUSTIFICATO">Giustificato</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {canWrite ? (
+                            <Input
+                              key={`${presenza.id}-${presenza.note ?? ""}`}
+                              className="h-8 w-40"
+                              defaultValue={presenza.note ?? ""}
+                              onBlur={(e) => handleNoteBlur(presenza, e.target.value)}
+                            />
+                          ) : (
+                            formatNote(presenza.note)
+                          )}
+                        </TableCell>
+                        {canWrite && (
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleting(presenza)}
+                              aria-label="Rimuovi"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+
+        <AddPersonaOrganicoDialog
+          servizioId={servizioId}
+          tipo={addTipo ?? "socio"}
+          open={addTipo !== null}
+          onOpenChange={(open) => {
+            if (!open) setAddTipo(null)
+          }}
+          existingPersonaIds={existingPersonaIds}
+        />
+        <DeletePresenzaDialog
+          open={deleting !== null}
+          onOpenChange={(open) => {
+            if (!open) setDeleting(null)
+          }}
+          presenza={deleting}
         />
       </TableCell>
     </TableRow>
@@ -336,7 +550,10 @@ export default function ServiziPage() {
                         )}
                       </TableRow>
                       {expanded && (
-                        <ServizioRicevutePanel servizioId={servizio.id} colSpan={colCount} />
+                        <>
+                          <ServizioRicevutePanel servizioId={servizio.id} colSpan={colCount} />
+                          <ServizioOrganicoPanel servizioId={servizio.id} colSpan={colCount} />
+                        </>
                       )}
                     </Fragment>
                   )

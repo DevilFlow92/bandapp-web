@@ -197,7 +197,7 @@ export default function ServiziPage() {
 
   const servizi = data?.items ?? []
   const totalPages = data?.meta.total_pages ?? 1
-  const colCount = canWrite ? 7 : 6
+  const colCount = canWrite ? 8 : 7
 
   const openCreate = () => {
     setEditing(null)
@@ -255,6 +255,7 @@ export default function ServiziPage() {
                 <TableHead>Anno</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Indirizzo</TableHead>
+                <TableHead>Committente</TableHead>
                 <TableHead>Note</TableHead>
                 {canWrite && <TableHead className="text-right">Azioni</TableHead>}
               </TableRow>
@@ -309,6 +310,7 @@ export default function ServiziPage() {
                         <TableCell>{servizio.anno}</TableCell>
                         <TableCell>{formatDataServizio(servizio.data_servizio)}</TableCell>
                         <TableCell>{formatIndirizzoServizio(servizio.indirizzo)}</TableCell>
+                        <TableCell>{servizio.committente?.denominazione ?? "—"}</TableCell>
                         <TableCell>{formatNote(servizio.note)}</TableCell>
                         {canWrite && (
                           <TableCell className="text-right">

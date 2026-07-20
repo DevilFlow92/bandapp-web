@@ -1,5 +1,11 @@
 export type { PagedResponse, PageMeta } from "@/types/socio"
 
+export interface CommittenteInServizio {
+  id: number
+  denominazione: string
+  codice_fiscale_piva: string | null
+}
+
 export interface Servizio {
   id: number
   banda_codice: number
@@ -9,6 +15,10 @@ export interface Servizio {
   indirizzo_id: number
   note: string | null
   indirizzo?: IndirizzoInServizio | null
+  committente_id: number | null
+  referente: string | null
+  compenso_pattuito: number | null
+  committente?: CommittenteInServizio | null
 }
 
 export interface ProvinciaInServizio {

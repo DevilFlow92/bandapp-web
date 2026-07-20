@@ -20,7 +20,10 @@ const navGroups: NavGroup[] = [
   },
   {
     label: "Attività",
-    items: [{ to: "/servizi", label: "Servizi" }],
+    items: [
+      { to: "/servizi", label: "Servizi" },
+      { to: "/committenti", label: "Committenti" },
+    ],
   },
   {
     label: "Archivio",

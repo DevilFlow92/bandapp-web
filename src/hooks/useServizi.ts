@@ -12,6 +12,9 @@ export interface CreateServizioInput {
   data_servizio: string
   indirizzo_id?: number | null
   note?: string | null
+  committente_id?: number | null
+  referente?: string | null
+  compenso_pattuito?: number | null
 }
 
 export type UpdateServizioInput = Partial<CreateServizioInput>

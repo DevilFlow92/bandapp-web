@@ -10,6 +10,7 @@ import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useBanda } from "@/context/BandaContext"
 import type { IndirizzoInServizio, Servizio } from "@/types/servizio"
+import CommittentePicker from "@/components/committenti/CommittentePicker"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -58,6 +59,9 @@ interface ServizioFormState {
   anno: string
   data_servizio: string
   note: string
+  committente_id: number | null
+  referente: string
+  compenso_pattuito: string
 }
 
 const emptyForm: ServizioFormState = {
@@ -65,6 +69,9 @@ const emptyForm: ServizioFormState = {
   anno: String(CURRENT_YEAR),
   data_servizio: "",
   note: "",
+  committente_id: null,
+  referente: "",
+  compenso_pattuito: "",
 }
 
 interface IndirizzoFormState {
@@ -112,6 +119,10 @@ export default function ServizioFormDialog({
         // datetime-local expects "YYYY-MM-DDTHH:MM".
         data_servizio: servizio.data_servizio?.slice(0, 16) ?? "",
         note: servizio.note ?? "",
+        committente_id: servizio.committente_id,
+        referente: servizio.referente ?? "",
+        compenso_pattuito:
+          servizio.compenso_pattuito != null ? String(servizio.compenso_pattuito) : "",
       })
     } else {
       setForm(emptyForm)
@@ -131,6 +142,13 @@ export default function ServizioFormDialog({
       return
     }
 
+    const compensoPattuito =
+      form.compenso_pattuito.trim() === "" ? null : Number(form.compenso_pattuito)
+    if (compensoPattuito !== null && Number.isNaN(compensoPattuito)) {
+      setError("Il compenso pattuito deve essere un numero valido.")
+      return
+    }
+
     try {
       if (isEdit && servizio) {
         // Edit mode keeps the existing indirizzo; it is not re-created here.
@@ -141,6 +159,9 @@ export default function ServizioFormDialog({
             descrizione_servizio: form.descrizione_servizio.trim(),
             data_servizio: form.data_servizio,
             note: form.note.trim() || null,
+            committente_id: form.committente_id,
+            referente: form.referente.trim() || null,
+            compenso_pattuito: compensoPattuito,
           },
         })
         toast({ title: "Servizio aggiornato" })
@@ -177,6 +198,9 @@ export default function ServizioFormDialog({
           data_servizio: form.data_servizio,
           indirizzo_id,
           note: form.note.trim() || null,
+          committente_id: form.committente_id,
+          referente: form.referente.trim() || null,
+          compenso_pattuito: compensoPattuito,
         })
         toast({ title: "Servizio creato" })
       }
@@ -331,6 +355,36 @@ export default function ServizioFormDialog({
               </>
             )}
           </fieldset>
+
+          <div className="space-y-2">
+            <Label>Committente</Label>
+            <CommittentePicker
+              bandaCodice={banda!.codice}
+              value={form.committente_id}
+              onChange={(id) => setForm((f) => ({ ...f, committente_id: id }))}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="referente">Referente</Label>
+              <Input
+                id="referente"
+                value={form.referente}
+                onChange={(e) => setForm((f) => ({ ...f, referente: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="compenso_pattuito">Compenso pattuito (€)</Label>
+              <Input
+                id="compenso_pattuito"
+                type="number"
+                step="0.01"
+                value={form.compenso_pattuito}
+                onChange={(e) => setForm((f) => ({ ...f, compenso_pattuito: e.target.value }))}
+              />
+            </div>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="note">Note</Label>

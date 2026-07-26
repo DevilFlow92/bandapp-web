@@ -3,7 +3,7 @@ import { Loader2 } from "lucide-react"
 import { useBanda } from "@/context/BandaContext"
 import { useSoci } from "@/hooks/useSoci"
 import { useEsterni } from "@/hooks/useEsterni"
-import { useCreatePresenza } from "@/hooks/usePresenze"
+import { useCreatePresenza, type OrganicoContainer } from "@/hooks/usePresenze"
 import { useToast } from "@/hooks/use-toast"
 import { getErrorMessage } from "@/lib/api"
 import { Input } from "@/components/ui/input"
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog"
 
 interface AddPersonaOrganicoDialogProps {
-  servizioId: number
+  container: OrganicoContainer
   /** Which roster to search. Soci and esterni stay separate entities in the UI. */
   tipo: "socio" | "esterno"
   open: boolean
@@ -35,13 +35,14 @@ function personaLabel(
 }
 
 /**
- * Search/select control to add a socio or esterno to a servizio's organico.
- * Follows the same search-and-pick pattern as CommittentePicker and the
- * esterno picker in RicevutaFormDialog. Soci and esterni have no text-search
- * endpoint, so the banda's roster is fetched once and filtered client-side.
+ * Search/select control to add a socio or esterno to a servizio's or prova's
+ * organico. Follows the same search-and-pick pattern as CommittentePicker and
+ * the esterno picker in RicevutaFormDialog. Soci and esterni have no
+ * text-search endpoint, so the banda's roster is fetched once and filtered
+ * client-side.
  */
 export default function AddPersonaOrganicoDialog({
-  servizioId,
+  container,
   tipo,
   open,
   onOpenChange,
@@ -78,7 +79,11 @@ export default function AddPersonaOrganicoDialog({
 
   const handleSelect = async (personaId: number) => {
     try {
-      await createPresenza.mutateAsync({ servizio_id: servizioId, persona_id: personaId })
+      await createPresenza.mutateAsync({
+        servizio_id: container.servizioId ?? null,
+        prova_id: container.provaId ?? null,
+        persona_id: personaId,
+      })
       toast({
         title: tipo === "socio" ? "Socio aggiunto all'organico" : "Esterno aggiunto all'organico",
       })
@@ -96,7 +101,7 @@ export default function AddPersonaOrganicoDialog({
           <DialogTitle>{tipo === "socio" ? "Aggiungi socio" : "Aggiungi esterno"}</DialogTitle>
           <DialogDescription>
             Cerca e seleziona {tipo === "socio" ? "un socio" : "un esterno"} da aggiungere
-            all'organico del servizio.
+            all'organico.
           </DialogDescription>
         </DialogHeader>
 

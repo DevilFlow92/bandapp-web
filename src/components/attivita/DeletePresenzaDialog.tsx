@@ -1,8 +1,8 @@
 import { Loader2 } from "lucide-react"
-import { useDeleteRepertorioItem } from "@/hooks/useRepertorio"
+import { useDeletePresenza } from "@/hooks/usePresenze"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
-import type { RepertorioItem } from "@/types/repertorio"
+import type { Presenza } from "@/types/presenza"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,25 +13,31 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-interface DeleteRepertorioItemDialogProps {
+interface DeletePresenzaDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  item: RepertorioItem | null
+  presenza: Presenza | null
 }
 
-export default function DeleteRepertorioItemDialog({
+function presenzaPersonaLabel(presenza: Presenza | null): string {
+  if (!presenza?.persona) return "questa persona"
+  const { nome, cognome, ragione_sociale } = presenza.persona
+  return ragione_sociale ?? `${nome ?? ""} ${cognome ?? ""}`.trim() ?? "questa persona"
+}
+
+export default function DeletePresenzaDialog({
   open,
   onOpenChange,
-  item,
-}: DeleteRepertorioItemDialogProps) {
+  presenza,
+}: DeletePresenzaDialogProps) {
   const { toast } = useToast()
-  const deleteRepertorioItem = useDeleteRepertorioItem()
+  const deletePresenza = useDeletePresenza()
 
   const handleDelete = () => {
-    if (!item) return
-    deleteRepertorioItem.mutate(item.id, {
+    if (!presenza) return
+    deletePresenza.mutate(presenza.id, {
       onSuccess: () => {
-        toast({ title: "Brano rimosso dal repertorio" })
+        toast({ title: "Persona rimossa dall'organico" })
         onOpenChange(false)
       },
       onError: (err) => {
@@ -44,10 +50,10 @@ export default function DeleteRepertorioItemDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Rimuovi dal repertorio</DialogTitle>
+          <DialogTitle>Rimuovi dall'organico</DialogTitle>
           <DialogDescription>
-            {item
-              ? `Sei sicuro di voler rimuovere "${item.nome_parte?.nome ?? "questo brano"}" dal repertorio di questo servizio?`
+            {presenza
+              ? `Sei sicuro di voler rimuovere ${presenzaPersonaLabel(presenza)} dall'organico?`
               : ""}
           </DialogDescription>
         </DialogHeader>
@@ -56,7 +62,7 @@ export default function DeleteRepertorioItemDialog({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={deleteRepertorioItem.isPending}
+            disabled={deletePresenza.isPending}
           >
             Annulla
           </Button>
@@ -64,9 +70,9 @@ export default function DeleteRepertorioItemDialog({
             type="button"
             variant="destructive"
             onClick={handleDelete}
-            disabled={deleteRepertorioItem.isPending}
+            disabled={deletePresenza.isPending}
           >
-            {deleteRepertorioItem.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {deletePresenza.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Rimuovi
           </Button>
         </DialogFooter>

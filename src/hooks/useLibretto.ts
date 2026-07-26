@@ -51,18 +51,29 @@ export interface LibrettoPersonaResult {
   braniMancanti: string[]
 }
 
+/** Discriminates the libretto's parent: a servizio or a prova, mutually exclusive. */
+export type LibrettoContainer =
+  { servizioId: number; provaId?: never } | { servizioId?: never; provaId: number }
+
+function librettoUrl(container: LibrettoContainer): string {
+  return container.servizioId != null
+    ? `/servizi/${container.servizioId}/libretto`
+    : `/prove/${container.provaId}/libretto`
+}
+
 /**
  * Downloads the libretto PDF of a single persona in the organico. Throws with
- * a backend-provided message (via getLibrettoErrorMessage) on 404: servizio
- * senza organico/repertorio, persona non in organico, o persona senza spartiti.
+ * a backend-provided message (via getLibrettoErrorMessage) on 404: servizio o
+ * prova senza organico/repertorio, persona non in organico, o persona senza
+ * spartiti.
  */
 export async function downloadLibrettoPersona(
-  servizioId: number,
+  container: LibrettoContainer,
   personaId: number,
   filename: string,
 ): Promise<LibrettoPersonaResult> {
   try {
-    const response = await api.get<Blob>(`/servizi/${servizioId}/libretto`, {
+    const response = await api.get<Blob>(librettoUrl(container), {
       params: { persona_id: personaId },
       responseType: "blob",
     })
@@ -82,16 +93,16 @@ export async function downloadLibrettoPersona(
 }
 
 /**
- * Downloads the ZIP libretto of the whole organico for a servizio (one PDF per
- * persona + report.json). Throws with a backend-provided message on 404:
- * servizio senza organico o senza repertorio.
+ * Downloads the ZIP libretto of the whole organico for a servizio or prova
+ * (one PDF per persona + report.json). Throws with a backend-provided message
+ * on 404: servizio/prova senza organico o senza repertorio.
  */
-export async function downloadLibrettoServizio(
-  servizioId: number,
+export async function downloadLibretto(
+  container: LibrettoContainer,
   filename: string,
 ): Promise<void> {
   try {
-    const response = await api.get<Blob>(`/servizi/${servizioId}/libretto`, {
+    const response = await api.get<Blob>(librettoUrl(container), {
       responseType: "blob",
     })
     triggerDownload(response.data, filename)

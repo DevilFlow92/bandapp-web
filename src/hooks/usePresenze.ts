@@ -20,6 +20,12 @@ export interface UpdatePresenzaInput {
   note?: string | null
 }
 
+export interface BulkUpdatePresenzeItem {
+  presenza_id: number
+  stato?: StatoPresenza | null
+  note?: string | null
+}
+
 /**
  * Lists the organico (presenze) of a single servizio or prova, persona
  * expanded. The endpoint caps page_size at 100; a servizio/prova's organico is
@@ -62,6 +68,25 @@ export function useUpdatePresenza() {
   return useMutation({
     mutationFn: async ({ id, input }: { id: number; input: UpdatePresenzaInput }) => {
       const { data } = await api.patch<Presenza>(`/presenze/${id}`, input)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PRESENZE_KEY })
+    },
+  })
+}
+
+/**
+ * Updates stato/note for several presenze in one request. All-or-nothing on
+ * the backend: if any presenza_id is unknown or the presenze span more than
+ * one servizio/prova, the whole batch is rejected (404/422) and nothing is
+ * applied.
+ */
+export function useBulkUpdatePresenze() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (items: BulkUpdatePresenzeItem[]) => {
+      const { data } = await api.patch<{ items: Presenza[] }>("/presenze/bulk", { items })
       return data
     },
     onSuccess: () => {

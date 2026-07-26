@@ -1,6 +1,11 @@
 import { useState } from "react"
 import { Download, Loader2, Plus, Trash2 } from "lucide-react"
-import { useOrganico, useUpdatePresenza, type OrganicoContainer } from "@/hooks/usePresenze"
+import {
+  useOrganico,
+  useUpdatePresenza,
+  useBulkUpdatePresenze,
+  type OrganicoContainer,
+} from "@/hooks/usePresenze"
 import { useRepertorio } from "@/hooks/useRepertorio"
 import { downloadLibretto, downloadLibrettoPersona, nomeFilePersona } from "@/hooks/useLibretto"
 import { usePermission } from "@/hooks/useAuth"
@@ -11,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select,
   SelectContent,
@@ -75,15 +81,50 @@ export default function OrganicoPanel({ container, colSpan }: OrganicoPanelProps
   const canWrite = usePermission("servizi:write")
   const { toast } = useToast()
   const updatePresenza = useUpdatePresenza()
+  const bulkUpdatePresenze = useBulkUpdatePresenze()
   const [addTipo, setAddTipo] = useState<"socio" | "esterno" | null>(null)
   const [deleting, setDeleting] = useState<Presenza | null>(null)
   const [downloadingZip, setDownloadingZip] = useState(false)
   const [downloadingPersonaId, setDownloadingPersonaId] = useState<number | null>(null)
+  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [bulkStato, setBulkStato] = useState<string>("PRESENTE")
 
   const organico = data?.items ?? []
-  const organicoColCount = 4
+  const organicoColCount = canWrite ? 5 : 4
   const existingPersonaIds = organico.map((p) => p.persona_id)
   const repertorioCount = repertorioData?.items.length ?? 0
+
+  const allSelected = organico.length > 0 && organico.every((p) => selected.has(p.id))
+  const someSelected = !allSelected && organico.some((p) => selected.has(p.id))
+
+  const toggleSelectAll = (checked: boolean) => {
+    setSelected(checked ? new Set(organico.map((p) => p.id)) : new Set())
+  }
+
+  const toggleSelectRow = (id: number, checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+
+  const handleBulkApply = () => {
+    const stato = bulkStato === "NONE" ? null : (bulkStato as StatoPresenza)
+    bulkUpdatePresenze.mutate(
+      Array.from(selected).map((presenza_id) => ({ presenza_id, stato })),
+      {
+        onSuccess: () => {
+          toast({ title: "Stato aggiornato per i selezionati" })
+          setSelected(new Set())
+        },
+        onError: (err) => {
+          toast({ variant: "destructive", title: "Errore", description: getErrorMessage(err) })
+        },
+      },
+    )
+  }
 
   const presentiCount = organico.filter((p) => p.stato === "PRESENTE").length
   const assentiCount = organico.filter((p) => p.stato === "ASSENTE").length
@@ -193,11 +234,42 @@ export default function OrganicoPanel({ container, colSpan }: OrganicoPanelProps
             </div>
           </div>
 
+          {canWrite && selected.size > 0 && (
+            <div className="flex items-center gap-3 rounded-md border bg-background p-2">
+              <span className="text-sm text-muted-foreground">{selected.size} selezionati</span>
+              <Select value={bulkStato} onValueChange={setBulkStato}>
+                <SelectTrigger className="h-8 w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">Da registrare</SelectItem>
+                  <SelectItem value="PRESENTE">Presente</SelectItem>
+                  <SelectItem value="ASSENTE">Assente</SelectItem>
+                  <SelectItem value="GIUSTIFICATO">Giustificato</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" onClick={handleBulkApply} disabled={bulkUpdatePresenze.isPending}>
+                {bulkUpdatePresenze.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Imposta stato per i selezionati
+              </Button>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <div className="rounded-md border bg-background">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {canWrite && (
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={someSelected ? "indeterminate" : allSelected}
+                          onCheckedChange={toggleSelectAll}
+                          disabled={organico.length === 0}
+                          aria-label="Seleziona tutti"
+                        />
+                      </TableHead>
+                    )}
                     <TableHead>Persona</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead>Note</TableHead>
@@ -236,6 +308,15 @@ export default function OrganicoPanel({ container, colSpan }: OrganicoPanelProps
                   ) : (
                     organico.map((presenza) => (
                       <TableRow key={presenza.id}>
+                        {canWrite && (
+                          <TableCell>
+                            <Checkbox
+                              checked={selected.has(presenza.id)}
+                              onCheckedChange={(checked) => toggleSelectRow(presenza.id, checked)}
+                              aria-label={`Seleziona ${personaInPresenzaLabel(presenza)}`}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell>{personaInPresenzaLabel(presenza)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">

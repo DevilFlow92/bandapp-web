@@ -221,14 +221,13 @@ export default function ServizioFormDialog({
           </div>
 
           <fieldset className="space-y-4">
-            <legend className="text-sm font-semibold">Indirizzo</legend>
-
             <IndirizzoField
               existingIndirizzoId={servizio?.indirizzo_id}
               existingIndirizzo={servizio?.indirizzo}
               value={indirizzo}
               onChange={setIndirizzo}
               tipiIndirizzo={tipiIndirizzo.data}
+              required
             />
           </fieldset>
 

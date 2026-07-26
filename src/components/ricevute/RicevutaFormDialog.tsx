@@ -26,10 +26,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+export interface RicevutaPersonaOption {
+  personaId: number
+  label: string
+}
+
 interface RicevutaFormDialogProps {
   servizioId: number
   open: boolean
   onOpenChange: (open: boolean) => void
+  /**
+   * When provided, the persona picker is restricted to these people instead of
+   * searching the whole anagrafica (used by the Servizio wizard, where a
+   * ricevuta may only target someone already in the organico). The
+   * socio/esterno toggle is hidden, since the list already mixes both.
+   */
+  personeCandidate?: RicevutaPersonaOption[]
 }
 
 interface FormState {
@@ -75,6 +87,7 @@ export default function RicevutaFormDialog({
   servizioId,
   open,
   onOpenChange,
+  personeCandidate,
 }: RicevutaFormDialogProps) {
   const { toast } = useToast()
   const { banda } = useBanda()
@@ -85,18 +98,35 @@ export default function RicevutaFormDialog({
   // esterno, both identified by persona_id. Soci and esterni have no text
   // search endpoint, so we fetch the banda's roster once and filter client-side,
   // mirroring the pattern used by AddPersonaOrganicoDialog for l'organico.
+  // When personeCandidate is given the roster isn't fetched at all.
+  const isRestricted = personeCandidate != null
   const [tipo, setTipo] = useState<"socio" | "esterno">("socio")
-  const sociQuery = useSoci(1, 100, banda?.codice ?? 0, open && tipo === "socio" && !!banda)
-  const esterniQuery = useEsterni(1, 100, banda?.codice ?? 0, open && tipo === "esterno" && !!banda)
+  const sociQuery = useSoci(
+    1,
+    100,
+    banda?.codice ?? 0,
+    open && !isRestricted && tipo === "socio" && !!banda,
+  )
+  const esterniQuery = useEsterni(
+    1,
+    100,
+    banda?.codice ?? 0,
+    open && !isRestricted && tipo === "esterno" && !!banda,
+  )
   const [search, setSearch] = useState("")
   const [selectedPersona, setSelectedPersona] = useState<SelectedPersona | null>(null)
 
   const [form, setForm] = useState<FormState>(emptyForm)
   const [error, setError] = useState<string | null>(null)
 
-  const isLoadingRoster = tipo === "socio" ? sociQuery.isLoading : esterniQuery.isLoading
+  const isLoadingRoster = isRestricted
+    ? false
+    : tipo === "socio"
+      ? sociQuery.isLoading
+      : esterniQuery.isLoading
 
   const options = useMemo(() => {
+    if (personeCandidate) return personeCandidate
     if (tipo === "socio") {
       return (sociQuery.data?.items ?? []).map((s) => ({
         personaId: s.persona_id,
@@ -107,7 +137,7 @@ export default function RicevutaFormDialog({
       personaId: e.persona_id,
       label: personaLabel(e.persona, e.codice_esterno),
     }))
-  }, [tipo, sociQuery.data, esterniQuery.data])
+  }, [personeCandidate, tipo, sociQuery.data, esterniQuery.data])
 
   const trimmedSearch = search.trim()
   const filteredOptions = useMemo(() => {
@@ -185,30 +215,36 @@ export default function RicevutaFormDialog({
               </div>
             ) : (
               <>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={tipo === "socio" ? "default" : "outline"}
-                    onClick={() => {
-                      setTipo("socio")
-                      setSearch("")
-                    }}
-                  >
-                    Socio
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={tipo === "esterno" ? "default" : "outline"}
-                    onClick={() => {
-                      setTipo("esterno")
-                      setSearch("")
-                    }}
-                  >
-                    Esterno
-                  </Button>
-                </div>
+                {isRestricted ? (
+                  <p className="text-xs text-muted-foreground">
+                    Solo le persone già presenti nell'organico di questo servizio.
+                  </p>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={tipo === "socio" ? "default" : "outline"}
+                      onClick={() => {
+                        setTipo("socio")
+                        setSearch("")
+                      }}
+                    >
+                      Socio
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={tipo === "esterno" ? "default" : "outline"}
+                      onClick={() => {
+                        setTipo("esterno")
+                        setSearch("")
+                      }}
+                    >
+                      Esterno
+                    </Button>
+                  </div>
+                )}
                 <Input
                   placeholder="Cerca per nome, cognome o codice…"
                   value={search}
@@ -239,7 +275,11 @@ export default function RicevutaFormDialog({
                     </ul>
                   ) : (
                     <div className="px-3 py-2 text-sm text-muted-foreground">
-                      {tipo === "socio" ? "Nessun socio trovato" : "Nessun esterno trovato"}
+                      {isRestricted
+                        ? "Nessuna persona in organico"
+                        : tipo === "socio"
+                          ? "Nessun socio trovato"
+                          : "Nessun esterno trovato"}
                     </div>
                   )}
                 </div>

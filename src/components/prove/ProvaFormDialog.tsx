@@ -161,8 +161,6 @@ export default function ProvaFormDialog({ open, onOpenChange, prova }: ProvaForm
           </div>
 
           <fieldset className="space-y-4">
-            <legend className="text-sm font-semibold">Indirizzo</legend>
-
             <IndirizzoField
               existingIndirizzoId={prova?.indirizzo_id}
               existingIndirizzo={prova?.indirizzo}

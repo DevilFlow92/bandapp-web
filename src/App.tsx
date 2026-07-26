@@ -17,6 +17,7 @@ import SocioDetailPage from "@/pages/SocioDetailPage"
 import EsterniPage from "@/pages/EsterniPage"
 import EsternoWizardPage from "@/pages/EsternoWizardPage"
 import ServiziPage from "@/pages/ServiziPage"
+import ServizioWizardPage from "@/pages/ServizioWizardPage"
 import ProvePage from "@/pages/ProvePage"
 import CommittentiPage from "@/pages/CommittentiPage"
 import SpartitiPage from "@/pages/SpartitiPage"
@@ -67,6 +68,9 @@ export default function App() {
                       <Route path="esterni/nuovo" element={<EsternoWizardPage />} />
                     </Route>
                     <Route path="servizi" element={<ServiziPage />} />
+                    <Route element={<PermissionGuard permission="servizi:write" />}>
+                      <Route path="servizi/nuovo" element={<ServizioWizardPage />} />
+                    </Route>
                     <Route path="prove" element={<ProvePage />} />
                     <Route path="committenti" element={<CommittentiPage />} />
                     <Route path="spartiti" element={<SpartitiPage />} />

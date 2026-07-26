@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatIndirizzoServizio } from "@/components/servizi/ServizioFormDialog"
+import { formatIndirizzoServizio } from "@/components/indirizzi/IndirizzoField"
 import ProvaFormDialog from "@/components/prove/ProvaFormDialog"
 import DeleteProvaDialog from "@/components/prove/DeleteProvaDialog"
 import OrganicoPanel from "@/components/attivita/OrganicoPanel"

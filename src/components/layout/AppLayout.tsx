@@ -16,6 +16,7 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/soci", label: "Soci" },
       { to: "/esterni", label: "Esterni" },
+      { to: "/committenti", label: "Committenti" },
     ],
   },
   {
@@ -23,7 +24,6 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/servizi", label: "Servizi" },
       { to: "/prove", label: "Prove" },
-      { to: "/committenti", label: "Committenti" },
     ],
   },
   {

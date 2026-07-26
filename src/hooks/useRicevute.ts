@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type { PagedResponse, Ricevuta } from "@/types/ricevuta"
+import type { PagedResponse, Ricevuta, TipoRicevuta } from "@/types/ricevuta"
 
 export const RICEVUTE_KEY = ["ricevute"] as const
 
 export interface CreateRicevutaInput {
   servizio_id: number
-  esterno_id?: number | null
+  persona_id?: number | null
+  tipo_ricevuta?: TipoRicevuta | null
   importo: number
   data_ricevuta: string // ISO datetime
   note_in_stampa?: string | null

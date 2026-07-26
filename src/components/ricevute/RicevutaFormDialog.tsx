@@ -1,14 +1,22 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import { Loader2 } from "lucide-react"
 import { useCreateRicevuta } from "@/hooks/useRicevute"
+import { useSoci } from "@/hooks/useSoci"
 import { useEsterni } from "@/hooks/useEsterni"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useBanda } from "@/context/BandaContext"
-import type { Esterno } from "@/types/esterno"
+import type { TipoRicevuta } from "@/types/ricevuta"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -27,8 +35,14 @@ interface RicevutaFormDialogProps {
 interface FormState {
   importo: string
   data_ricevuta: string
+  tipo_ricevuta: TipoRicevuta | "NONE"
   note_in_stampa: string
   note_fuori_stampa: string
+}
+
+interface SelectedPersona {
+  personaId: number
+  label: string
 }
 
 /** Current local time formatted for a datetime-local input ("YYYY-MM-DDTHH:MM"). */
@@ -43,14 +57,18 @@ function nowLocal(): string {
 const emptyForm: FormState = {
   importo: "",
   data_ricevuta: "",
+  tipo_ricevuta: "NONE",
   note_in_stampa: "",
   note_fuori_stampa: "",
 }
 
-function esternoLabel(esterno: Esterno): string {
-  const nome = esterno.persona?.nome ?? ""
-  const cognome = esterno.persona?.cognome ?? ""
-  return `${nome} ${cognome} — ${esterno.codice_esterno}`.trim()
+function personaLabel(
+  persona: { nome: string; cognome: string } | null | undefined,
+  codice: string,
+): string {
+  const nome = persona?.nome ?? ""
+  const cognome = persona?.cognome ?? ""
+  return `${nome} ${cognome} — ${codice}`.trim()
 }
 
 export default function RicevutaFormDialog({
@@ -63,33 +81,48 @@ export default function RicevutaFormDialog({
 
   const createRicevuta = useCreateRicevuta()
 
-  // Esterno selection (optional). The esterni endpoint has no text search, so we
-  // fetch the banda's esterni once and filter them client-side.
-  const esterniQuery = useEsterni(1, 50, banda?.codice ?? 0, open && !!banda)
+  // Persona selection (optional): a ricevuta can be tied to a socio or an
+  // esterno, both identified by persona_id. Soci and esterni have no text
+  // search endpoint, so we fetch the banda's roster once and filter client-side,
+  // mirroring the pattern used by AddPersonaOrganicoDialog for l'organico.
+  const [tipo, setTipo] = useState<"socio" | "esterno">("socio")
+  const sociQuery = useSoci(1, 100, banda?.codice ?? 0, open && tipo === "socio" && !!banda)
+  const esterniQuery = useEsterni(1, 100, banda?.codice ?? 0, open && tipo === "esterno" && !!banda)
   const [search, setSearch] = useState("")
-  const [selectedEsterno, setSelectedEsterno] = useState<Esterno | null>(null)
+  const [selectedPersona, setSelectedPersona] = useState<SelectedPersona | null>(null)
 
   const [form, setForm] = useState<FormState>(emptyForm)
   const [error, setError] = useState<string | null>(null)
 
-  const filteredEsterni = useMemo(() => {
-    const items = esterniQuery.data?.items ?? []
-    const q = search.trim().toLowerCase()
-    if (!q) return items
-    return items.filter((e) => {
-      const full = `${e.persona?.nome ?? ""} ${e.persona?.cognome ?? ""} ${e.codice_esterno}`
-        .trim()
-        .toLowerCase()
-      return full.includes(q)
-    })
-  }, [esterniQuery.data, search])
+  const isLoadingRoster = tipo === "socio" ? sociQuery.isLoading : esterniQuery.isLoading
+
+  const options = useMemo(() => {
+    if (tipo === "socio") {
+      return (sociQuery.data?.items ?? []).map((s) => ({
+        personaId: s.persona_id,
+        label: personaLabel(s.persona, s.codice_socio),
+      }))
+    }
+    return (esterniQuery.data?.items ?? []).map((e) => ({
+      personaId: e.persona_id,
+      label: personaLabel(e.persona, e.codice_esterno),
+    }))
+  }, [tipo, sociQuery.data, esterniQuery.data])
+
+  const trimmedSearch = search.trim()
+  const filteredOptions = useMemo(() => {
+    const q = trimmedSearch.toLowerCase()
+    if (!q) return options
+    return options.filter((o) => o.label.toLowerCase().includes(q))
+  }, [options, trimmedSearch])
 
   // Reset the form whenever the dialog opens.
   useEffect(() => {
     if (!open) return
     setError(null)
+    setTipo("socio")
     setSearch("")
-    setSelectedEsterno(null)
+    setSelectedPersona(null)
     setForm({ ...emptyForm, data_ricevuta: nowLocal() })
   }, [open])
 
@@ -102,7 +135,8 @@ export default function RicevutaFormDialog({
     try {
       await createRicevuta.mutateAsync({
         servizio_id: servizioId,
-        esterno_id: selectedEsterno?.id ?? null,
+        persona_id: selectedPersona?.personaId ?? null,
+        tipo_ricevuta: form.tipo_ricevuta === "NONE" ? null : form.tipo_ricevuta,
         importo: Number(form.importo),
         data_ricevuta: new Date(form.data_ricevuta).toISOString(),
         note_in_stampa: form.note_in_stampa.trim() || null,
@@ -136,53 +170,76 @@ export default function RicevutaFormDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="esterno">Esterno</Label>
-            {selectedEsterno ? (
+            <Label>Persona</Label>
+            {selectedPersona ? (
               <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                <span>{esternoLabel(selectedEsterno)}</span>
+                <span>{selectedPersona.label}</span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setSelectedEsterno(null)}
+                  onClick={() => setSelectedPersona(null)}
                 >
                   Rimuovi
                 </Button>
               </div>
             ) : (
               <>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={tipo === "socio" ? "default" : "outline"}
+                    onClick={() => {
+                      setTipo("socio")
+                      setSearch("")
+                    }}
+                  >
+                    Socio
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={tipo === "esterno" ? "default" : "outline"}
+                    onClick={() => {
+                      setTipo("esterno")
+                      setSearch("")
+                    }}
+                  >
+                    Esterno
+                  </Button>
+                </div>
                 <Input
-                  id="esterno"
                   placeholder="Cerca per nome, cognome o codice…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
                 <div className="max-h-48 overflow-y-auto rounded-md border">
-                  {esterniQuery.isLoading ? (
+                  {isLoadingRoster ? (
                     <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Caricamento…
                     </div>
-                  ) : filteredEsterni.length > 0 ? (
+                  ) : filteredOptions.length > 0 ? (
                     <ul className="divide-y">
-                      {filteredEsterni.map((esterno) => (
-                        <li key={esterno.id}>
+                      {filteredOptions.map((option) => (
+                        <li key={option.personaId}>
                           <button
                             type="button"
                             className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
                             onClick={() => {
-                              setSelectedEsterno(esterno)
+                              setSelectedPersona(option)
                               setSearch("")
                             }}
                           >
-                            {esternoLabel(esterno)}
+                            {option.label}
                           </button>
                         </li>
                       ))}
                     </ul>
                   ) : (
                     <div className="px-3 py-2 text-sm text-muted-foreground">
-                      Nessun esterno trovato
+                      {tipo === "socio" ? "Nessun socio trovato" : "Nessun esterno trovato"}
                     </div>
                   )}
                 </div>
@@ -212,6 +269,25 @@ export default function RicevutaFormDialog({
                 onChange={(e) => setForm((f) => ({ ...f, data_ricevuta: e.target.value }))}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tipo_ricevuta">Tipo ricevuta</Label>
+            <Select
+              value={form.tipo_ricevuta}
+              onValueChange={(value) =>
+                setForm((f) => ({ ...f, tipo_ricevuta: value as TipoRicevuta | "NONE" }))
+              }
+            >
+              <SelectTrigger id="tipo_ricevuta">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NONE">Non specificato</SelectItem>
+                <SelectItem value="PAGAMENTO">Pagamento</SelectItem>
+                <SelectItem value="RISCOSSIONE">Riscossione</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

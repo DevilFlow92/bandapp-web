@@ -4,6 +4,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Download,
+  Loader2,
   Pencil,
   Plus,
   Trash2,
@@ -16,6 +18,11 @@ import {
   useRepertorioServizio,
   useUpdateRepertorioItem,
 } from "@/hooks/useRepertorio"
+import {
+  downloadLibrettoPersona,
+  downloadLibrettoServizio,
+  nomeFilePersona,
+} from "@/hooks/useLibretto"
 import { usePermission } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import { useToast } from "@/hooks/use-toast"
@@ -93,6 +100,11 @@ function formatImporto(importo: number): string {
   return `€ ${importo.toFixed(2)}`
 }
 
+const TIPO_RICEVUTA_LABELS: Record<string, string> = {
+  PAGAMENTO: "Pagamento",
+  RISCOSSIONE: "Riscossione",
+}
+
 /** Inline sub-row listing the ricevute of a single servizio. */
 function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; colSpan: number }) {
   const { data, isLoading, isError } = useRicevute(servizioId)
@@ -101,7 +113,7 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
   const [deleting, setDeleting] = useState<Ricevuta | null>(null)
 
   const ricevute = data?.items ?? []
-  const ricevuteColCount = canWrite ? 5 : 4
+  const ricevuteColCount = canWrite ? 6 : 5
 
   return (
     <TableRow className="hover:bg-transparent">
@@ -122,7 +134,8 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Esterno</TableHead>
+                    <TableHead>Persona</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Importo</TableHead>
                     <TableHead>Note in stampa</TableHead>
@@ -162,9 +175,14 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
                     ricevute.map((ricevuta) => (
                       <TableRow key={ricevuta.id}>
                         <TableCell>
-                          {ricevuta.esterno
-                            ? `${ricevuta.esterno.persona?.nome ?? ""} ${ricevuta.esterno.persona?.cognome ?? ""}`.trim() ||
-                              ricevuta.esterno.codice_esterno
+                          {ricevuta.persona
+                            ? `${ricevuta.persona.nome ?? ""} ${ricevuta.persona.cognome ?? ""}`.trim() ||
+                              "—"
+                            : "—"}
+                        </TableCell>
+                        <TableCell>
+                          {ricevuta.tipo_ricevuta
+                            ? TIPO_RICEVUTA_LABELS[ricevuta.tipo_ricevuta]
                             : "—"}
                         </TableCell>
                         <TableCell>{formatData(ricevuta.data_ricevuta)}</TableCell>
@@ -233,19 +251,34 @@ function personaInPresenzaLabel(presenza: Presenza): string {
 /** Inline sub-row listing the organico (presenze) of a single servizio. */
 function ServizioOrganicoPanel({ servizioId, colSpan }: { servizioId: number; colSpan: number }) {
   const { data, isLoading, isError } = useOrganicoServizio(servizioId)
+  // Shares the servizio-scoped queryKey with ServizioRepertorioPanel (mounted
+  // alongside it), so this doesn't add a second request — only lets us know
+  // whether the libretto can be generated (needs both organico and repertorio).
+  const { data: repertorioData } = useRepertorioServizio(servizioId)
   const canWrite = usePermission("servizi:write")
+  const { toast } = useToast()
   const updatePresenza = useUpdatePresenza()
   const [addTipo, setAddTipo] = useState<"socio" | "esterno" | null>(null)
   const [deleting, setDeleting] = useState<Presenza | null>(null)
+  const [downloadingZip, setDownloadingZip] = useState(false)
+  const [downloadingPersonaId, setDownloadingPersonaId] = useState<number | null>(null)
 
   const organico = data?.items ?? []
-  const organicoColCount = canWrite ? 4 : 3
+  const organicoColCount = 4
   const existingPersonaIds = organico.map((p) => p.persona_id)
+  const repertorioCount = repertorioData?.items.length ?? 0
 
   const presentiCount = organico.filter((p) => p.stato === "PRESENTE").length
   const assentiCount = organico.filter((p) => p.stato === "ASSENTE").length
   const giustificatiCount = organico.filter((p) => p.stato === "GIUSTIFICATO").length
   const daRegistrareCount = organico.length - presentiCount - assentiCount - giustificatiCount
+
+  const libretteDisabledReason =
+    organico.length === 0
+      ? "Nessuna persona in organico"
+      : repertorioCount === 0
+        ? "Nessun brano nel repertorio"
+        : null
 
   const handleStatoChange = (presenza: Presenza, value: string) => {
     const stato = value === "NONE" ? null : (value as StatoPresenza)
@@ -257,6 +290,42 @@ function ServizioOrganicoPanel({ servizioId, colSpan }: { servizioId: number; co
     const note = value.trim() || null
     if (note === presenza.note) return
     updatePresenza.mutate({ id: presenza.id, input: { note } })
+  }
+
+  const handleDownloadZip = async () => {
+    setDownloadingZip(true)
+    try {
+      await downloadLibrettoServizio(servizioId, `libretto_servizio_${servizioId}.zip`)
+      toast({ title: "Libretto scaricato" })
+    } catch (err) {
+      toast({ variant: "destructive", title: "Errore", description: getErrorMessage(err) })
+    } finally {
+      setDownloadingZip(false)
+    }
+  }
+
+  const handleDownloadPersona = async (presenza: Presenza) => {
+    setDownloadingPersonaId(presenza.id)
+    try {
+      const filename = `libretto_${nomeFilePersona(presenza.persona, presenza.persona_id)}.pdf`
+      const { braniMancanti } = await downloadLibrettoPersona(
+        servizioId,
+        presenza.persona_id,
+        filename,
+      )
+      if (braniMancanti.length > 0) {
+        toast({
+          title: "Libretto scaricato con brani mancanti",
+          description: braniMancanti.join(", "),
+        })
+      } else {
+        toast({ title: "Libretto scaricato" })
+      }
+    } catch (err) {
+      toast({ variant: "destructive", title: "Errore", description: getErrorMessage(err) })
+    } finally {
+      setDownloadingPersonaId(null)
+    }
   }
 
   return (
@@ -274,18 +343,34 @@ function ServizioOrganicoPanel({ servizioId, colSpan }: { servizioId: number; co
                 </p>
               )}
             </div>
-            {canWrite && (
-              <div className="flex shrink-0 gap-2">
-                <Button size="sm" variant="outline" onClick={() => setAddTipo("socio")}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Aggiungi socio
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setAddTipo("esterno")}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Aggiungi esterno
-                </Button>
-              </div>
-            )}
+            <div className="flex shrink-0 gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadZip}
+                disabled={downloadingZip || libretteDisabledReason !== null}
+                title={libretteDisabledReason ?? "Scarica un PDF per persona in uno ZIP"}
+              >
+                {downloadingZip ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" />
+                )}
+                Scarica libretto
+              </Button>
+              {canWrite && (
+                <>
+                  <Button size="sm" variant="outline" onClick={() => setAddTipo("socio")}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Aggiungi socio
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setAddTipo("esterno")}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Aggiungi esterno
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -296,7 +381,7 @@ function ServizioOrganicoPanel({ servizioId, colSpan }: { servizioId: number; co
                     <TableHead>Persona</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead>Note</TableHead>
-                    {canWrite && <TableHead className="text-right">Azioni</TableHead>}
+                    <TableHead className="text-right">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -370,18 +455,40 @@ function ServizioOrganicoPanel({ servizioId, colSpan }: { servizioId: number; co
                             formatNote(presenza.note)
                           )}
                         </TableCell>
-                        {canWrite && (
-                          <TableCell className="text-right">
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setDeleting(presenza)}
-                              aria-label="Rimuovi"
+                              onClick={() => handleDownloadPersona(presenza)}
+                              disabled={
+                                downloadingPersonaId === presenza.id || repertorioCount === 0
+                              }
+                              title={
+                                repertorioCount === 0
+                                  ? "Nessun brano nel repertorio"
+                                  : "Scarica libretto"
+                              }
+                              aria-label="Scarica libretto"
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              {downloadingPersonaId === presenza.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Download className="h-4 w-4" />
+                              )}
                             </Button>
-                          </TableCell>
-                        )}
+                            {canWrite && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleting(presenza)}
+                                aria-label="Rimuovi"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}

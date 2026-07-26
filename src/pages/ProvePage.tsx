@@ -1,4 +1,5 @@
 import { Fragment, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useProve } from "@/hooks/useProve"
 import { usePermission } from "@/hooks/useAuth"
@@ -37,12 +38,14 @@ function formatNote(note: string | null): string {
 }
 
 export default function ProvePage() {
+  const navigate = useNavigate()
   const { banda } = useBanda()
   const canWrite = usePermission("servizi:write")
   const [page, setPage] = useState(1)
   const { data, isLoading, isError } = useProve(page, PAGE_SIZE, banda!.codice, undefined, !!banda)
 
-  const [formOpen, setFormOpen] = useState(false)
+  // ProvaFormDialog is now used for editing only: creation goes through the
+  // multi-step wizard at /prove/nuovo.
   const [editing, setEditing] = useState<Prova | null>(null)
   const [deleting, setDeleting] = useState<Prova | null>(null)
   // Only one prova's panels are expanded at a time.
@@ -54,14 +57,8 @@ export default function ProvePage() {
   const totalPages = data?.meta.total_pages ?? 1
   const colCount = canWrite ? 6 : 5
 
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
   const openEdit = (prova: Prova) => {
     setEditing(prova)
-    setFormOpen(true)
   }
 
   return (
@@ -69,7 +66,7 @@ export default function ProvePage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Prove</h1>
         {canWrite && (
-          <Button onClick={openCreate}>
+          <Button onClick={() => navigate("/prove/nuovo")}>
             <Plus className="mr-2 h-4 w-4" />
             Nuova prova
           </Button>
@@ -203,7 +200,13 @@ export default function ProvePage() {
         </div>
       </div>
 
-      <ProvaFormDialog open={formOpen} onOpenChange={setFormOpen} prova={editing} />
+      <ProvaFormDialog
+        open={editing !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditing(null)
+        }}
+        prova={editing}
+      />
       <DeleteProvaDialog
         open={deleting !== null}
         onOpenChange={(open) => {

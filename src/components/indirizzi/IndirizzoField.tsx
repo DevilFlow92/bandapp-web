@@ -83,6 +83,14 @@ interface IndirizzoFieldProps {
   value: IndirizzoFormState
   onChange: (value: IndirizzoFormState) => void
   tipiIndirizzo: Lookup[] | undefined
+  /**
+   * Whether the entity requires an indirizzo (e.g. Servizio, where
+   * indirizzo_id is NOT NULL on the backend) as opposed to it being true
+   * optional enrichment (e.g. Prova). Only changes the label/hint copy — no
+   * client-side validation is added here, the backend already rejects a
+   * missing indirizzo with a 422 surfaced via getErrorMessage.
+   */
+  required?: boolean
 }
 
 /**
@@ -97,23 +105,32 @@ export default function IndirizzoField({
   value,
   onChange,
   tipiIndirizzo,
+  required = false,
 }: IndirizzoFieldProps) {
+  const legend = <legend className="text-sm font-semibold">Indirizzo{required && " *"}</legend>
+
   if (existingIndirizzoId != null) {
     return (
-      <div className="space-y-1 rounded-md border px-3 py-2 text-sm">
-        <p>{formatIndirizzoServizio(existingIndirizzo)}</p>
-        <p className="text-xs text-muted-foreground">
-          Indirizzo già associato (ID: {existingIndirizzoId}). Per modificare l'indirizzo, gestirlo
-          separatamente.
-        </p>
-      </div>
+      <>
+        {legend}
+        <div className="space-y-1 rounded-md border px-3 py-2 text-sm">
+          <p>{formatIndirizzoServizio(existingIndirizzo)}</p>
+          <p className="text-xs text-muted-foreground">
+            Indirizzo già associato (ID: {existingIndirizzoId}). Per modificare l'indirizzo,
+            gestirlo separatamente.
+          </p>
+        </div>
+      </>
     )
   }
 
   return (
     <>
+      {legend}
       <p className="text-xs text-muted-foreground">
-        Facoltativo. Compila la via per creare e associare un nuovo indirizzo.
+        {required
+          ? "Compila la via per creare e associare un nuovo indirizzo."
+          : "Facoltativo. Compila la via per creare e associare un nuovo indirizzo."}
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">

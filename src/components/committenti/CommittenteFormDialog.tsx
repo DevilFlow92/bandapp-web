@@ -75,6 +75,11 @@ export default function CommittenteFormDialog({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    // Dialog content renders through a React portal, so this form is outside
+    // any ancestor <form> in the DOM but still inside it in the React tree —
+    // React bubbles the submit event along that tree, which would otherwise
+    // also trigger an ancestor form's onSubmit (e.g. the Servizio wizard's).
+    event.stopPropagation()
     setError(null)
 
     try {

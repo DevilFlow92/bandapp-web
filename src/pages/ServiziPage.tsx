@@ -1,4 +1,5 @@
 import { Fragment, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react"
 import { useServizi } from "@/hooks/useServizi"
 import { useRicevute } from "@/hooks/useRicevute"
@@ -192,6 +193,7 @@ function ServizioRicevutePanel({ servizioId, colSpan }: { servizioId: number; co
 }
 
 export default function ServiziPage() {
+  const navigate = useNavigate()
   const { banda } = useBanda()
   const canWrite = usePermission("servizi:write")
   const [page, setPage] = useState(1)
@@ -199,7 +201,8 @@ export default function ServiziPage() {
   const anno = yearFilter === ALL_YEARS ? undefined : Number(yearFilter)
   const { data, isLoading, isError } = useServizi(page, PAGE_SIZE, banda!.codice, anno, !!banda)
 
-  const [formOpen, setFormOpen] = useState(false)
+  // ServizioFormDialog is now used for editing only: creation goes through the
+  // multi-step wizard at /servizi/nuovo.
   const [editing, setEditing] = useState<Servizio | null>(null)
   const [deleting, setDeleting] = useState<Servizio | null>(null)
   // Only one servizio's ricevute panel is expanded at a time.
@@ -211,14 +214,8 @@ export default function ServiziPage() {
   const totalPages = data?.meta.total_pages ?? 1
   const colCount = canWrite ? 8 : 7
 
-  const openCreate = () => {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
   const openEdit = (servizio: Servizio) => {
     setEditing(servizio)
-    setFormOpen(true)
   }
 
   const handleYearChange = (value: string) => {
@@ -231,7 +228,7 @@ export default function ServiziPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Servizi</h1>
         {canWrite && (
-          <Button onClick={openCreate}>
+          <Button onClick={() => navigate("/servizi/nuovo")}>
             <Plus className="mr-2 h-4 w-4" />
             Nuovo servizio
           </Button>
@@ -395,7 +392,13 @@ export default function ServiziPage() {
         </div>
       </div>
 
-      <ServizioFormDialog open={formOpen} onOpenChange={setFormOpen} servizio={editing} />
+      <ServizioFormDialog
+        open={editing !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditing(null)
+        }}
+        servizio={editing}
+      />
       <DeleteServizioDialog
         open={deleting !== null}
         onOpenChange={(open) => {

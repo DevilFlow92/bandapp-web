@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Loader2 } from "lucide-react"
 import { useBanda } from "@/context/BandaContext"
 import { useNomeParti } from "@/hooks/useSpartiti"
-import { useCreateRepertorioItem } from "@/hooks/useRepertorio"
+import { useCreateRepertorioItem, type RepertorioContainer } from "@/hooks/useRepertorio"
 import { useToast } from "@/hooks/use-toast"
 import { getErrorMessage } from "@/lib/api"
 import { Input } from "@/components/ui/input"
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog"
 
 interface AddBranoRepertorioDialogProps {
-  servizioId: number
+  container: RepertorioContainer
   /** Suggested position for the new item; defaults to the end of the program. */
   nextOrdine: number
   open: boolean
@@ -26,13 +26,14 @@ interface AddBranoRepertorioDialogProps {
 }
 
 /**
- * Search/select control to add a brano (NomeParte) to a servizio's repertorio,
- * with an editable ordine field for its position in the program. Follows the
- * same search-and-pick pattern as AddPersonaOrganicoDialog, but searches the
- * NomeParte archive server-side via useNomeParti since it can be large.
+ * Search/select control to add a brano (NomeParte) to a servizio's or prova's
+ * repertorio, with an editable ordine field for its position in the program.
+ * Follows the same search-and-pick pattern as AddPersonaOrganicoDialog, but
+ * searches the NomeParte archive server-side via useNomeParti since it can be
+ * large.
  */
 export default function AddBranoRepertorioDialog({
-  servizioId,
+  container,
   nextOrdine,
   open,
   onOpenChange,
@@ -76,7 +77,8 @@ export default function AddBranoRepertorioDialog({
   const handleSelect = async (nomeParteId: number) => {
     try {
       await createRepertorioItem.mutateAsync({
-        servizio_id: servizioId,
+        servizio_id: container.servizioId ?? null,
+        prova_id: container.provaId ?? null,
         nome_parte_id: nomeParteId,
         ordine,
       })
@@ -93,8 +95,7 @@ export default function AddBranoRepertorioDialog({
         <DialogHeader>
           <DialogTitle>Aggiungi brano</DialogTitle>
           <DialogDescription>
-            Cerca e seleziona un brano dall'archivio spartiti da aggiungere al repertorio del
-            servizio.
+            Cerca e seleziona un brano dall'archivio spartiti da aggiungere al repertorio.
           </DialogDescription>
         </DialogHeader>
 

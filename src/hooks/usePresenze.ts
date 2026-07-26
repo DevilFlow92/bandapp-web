@@ -4,8 +4,13 @@ import type { PagedResponse, Presenza, StatoPresenza } from "@/types/presenza"
 
 export const PRESENZE_KEY = ["presenze"] as const
 
+/** Discriminates the organico's parent: a servizio or a prova, mutually exclusive. */
+export type OrganicoContainer =
+  { servizioId: number; provaId?: never } | { servizioId?: never; provaId: number }
+
 export interface CreatePresenzaInput {
-  servizio_id: number
+  servizio_id?: number | null
+  prova_id?: number | null
   persona_id: number
   note?: string | null
 }
@@ -16,25 +21,28 @@ export interface UpdatePresenzaInput {
 }
 
 /**
- * Lists the organico (presenze) of a single servizio, persona expanded. The
- * endpoint caps page_size at 100; a servizio's organico is assumed to fit in
- * a single page, mirroring the Ricevute/Iscrizioni panels which also skip UI
- * pagination for scoped child lists.
+ * Lists the organico (presenze) of a single servizio or prova, persona
+ * expanded. The endpoint caps page_size at 100; a servizio/prova's organico is
+ * assumed to fit in a single page, mirroring the Ricevute/Iscrizioni panels
+ * which also skip UI pagination for scoped child lists.
  */
-export function useOrganicoServizio(servizioId: number) {
+export function useOrganico(container: OrganicoContainer) {
+  const id = container.servizioId ?? container.provaId ?? 0
+  const path =
+    container.servizioId != null
+      ? `/presenze/servizio/${container.servizioId}`
+      : `/presenze/prova/${container.provaId}`
   return useQuery({
-    queryKey: [...PRESENZE_KEY, servizioId],
+    queryKey: [...PRESENZE_KEY, container.servizioId != null ? "servizio" : "prova", id],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<Presenza>>(`/presenze/servizio/${servizioId}`, {
-        params: { page_size: 100 },
-      })
+      const { data } = await api.get<PagedResponse<Presenza>>(path, { params: { page_size: 100 } })
       return data
     },
-    enabled: servizioId > 0,
+    enabled: id > 0,
   })
 }
 
-/** Adds a persona to a servizio's organico. Stato starts unset (null). */
+/** Adds a persona to a servizio's or prova's organico. Stato starts unset (null). */
 export function useCreatePresenza() {
   const queryClient = useQueryClient()
   return useMutation({

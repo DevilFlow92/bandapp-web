@@ -17,6 +17,7 @@ import SocioDetailPage from "@/pages/SocioDetailPage"
 import EsterniPage from "@/pages/EsterniPage"
 import EsternoWizardPage from "@/pages/EsternoWizardPage"
 import ServiziPage from "@/pages/ServiziPage"
+import ProvePage from "@/pages/ProvePage"
 import CommittentiPage from "@/pages/CommittentiPage"
 import SpartitiPage from "@/pages/SpartitiPage"
 import DocumentiPage from "@/pages/DocumentiPage"
@@ -66,6 +67,7 @@ export default function App() {
                       <Route path="esterni/nuovo" element={<EsternoWizardPage />} />
                     </Route>
                     <Route path="servizi" element={<ServiziPage />} />
+                    <Route path="prove" element={<ProvePage />} />
                     <Route path="committenti" element={<CommittentiPage />} />
                     <Route path="spartiti" element={<SpartitiPage />} />
                     <Route path="documenti" element={<DocumentiPage />} />

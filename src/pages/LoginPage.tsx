@@ -156,6 +156,7 @@ export default function LoginPage() {
                   </Button>
                 </div>
                 {/* Divider */}
+                {/* TODO - Restore SSO login
                 <div className="relative my-2">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t" />
@@ -164,6 +165,7 @@ export default function LoginPage() {
                     <span className="bg-background px-2 text-muted-foreground">oppure</span>
                   </div>
                 </div>
+                */}
                 <SocialLoginButtons />
               </CardContent>
             </form>

@@ -4,8 +4,13 @@ import type { PagedResponse, RepertorioItem } from "@/types/repertorio"
 
 export const REPERTORIO_KEY = ["repertorio"] as const
 
+/** Discriminates the repertorio's parent: a servizio or a prova, mutually exclusive. */
+export type RepertorioContainer =
+  { servizioId: number; provaId?: never } | { servizioId?: never; provaId: number }
+
 export interface CreateRepertorioItemInput {
-  servizio_id: number
+  servizio_id?: number | null
+  prova_id?: number | null
   ordine: number
   nome_parte_id: number
   note?: string | null
@@ -16,17 +21,21 @@ export interface UpdateRepertorioItemInput {
   note?: string | null
 }
 
-export function useRepertorioServizio(servizioId: number) {
+export function useRepertorio(container: RepertorioContainer) {
+  const id = container.servizioId ?? container.provaId ?? 0
+  const path =
+    container.servizioId != null
+      ? `/repertorio/servizio/${container.servizioId}`
+      : `/repertorio/prova/${container.provaId}`
   return useQuery({
-    queryKey: [...REPERTORIO_KEY, servizioId],
+    queryKey: [...REPERTORIO_KEY, container.servizioId != null ? "servizio" : "prova", id],
     queryFn: async () => {
-      const { data } = await api.get<PagedResponse<RepertorioItem>>(
-        `/repertorio/servizio/${servizioId}`,
-        { params: { page_size: 100 } },
-      )
+      const { data } = await api.get<PagedResponse<RepertorioItem>>(path, {
+        params: { page_size: 100 },
+      })
       return data
     },
-    enabled: servizioId > 0,
+    enabled: id > 0,
   })
 }
 

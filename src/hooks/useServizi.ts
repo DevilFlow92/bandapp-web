@@ -57,6 +57,31 @@ export function useServizi(
   })
 }
 
+/**
+ * Loads every servizio of a banda across all pages, for client-side search
+ * (e.g. the ServizioPicker used from the Prova form to orient a prova to an
+ * existing servizio).
+ */
+export function useAllServizi(bandaCodice: number, enabled = true) {
+  return useQuery({
+    queryKey: [...SERVIZI_KEY, bandaCodice, "all"],
+    queryFn: async () => {
+      const pageSize = 100
+      let items: Servizio[] = []
+      let totalPages = 1
+      for (let page = 1; page <= totalPages; page += 1) {
+        const { data } = await api.get<PagedResponse<Servizio>>("/servizi/", {
+          params: { page, page_size: pageSize, banda_codice: bandaCodice },
+        })
+        items = items.concat(data.items)
+        totalPages = data.meta.total_pages
+      }
+      return items
+    },
+    enabled: enabled && bandaCodice > 0,
+  })
+}
+
 /** Creates a new servizio. */
 export function useCreateServizio() {
   const queryClient = useQueryClient()

@@ -19,6 +19,7 @@ import EsternoWizardPage from "@/pages/EsternoWizardPage"
 import ServiziPage from "@/pages/ServiziPage"
 import ServizioWizardPage from "@/pages/ServizioWizardPage"
 import ProvePage from "@/pages/ProvePage"
+import ProvaWizardPage from "@/pages/ProvaWizardPage"
 import CommittentiPage from "@/pages/CommittentiPage"
 import SpartitiPage from "@/pages/SpartitiPage"
 import DocumentiPage from "@/pages/DocumentiPage"
@@ -72,6 +73,9 @@ export default function App() {
                       <Route path="servizi/nuovo" element={<ServizioWizardPage />} />
                     </Route>
                     <Route path="prove" element={<ProvePage />} />
+                    <Route element={<PermissionGuard permission="servizi:write" />}>
+                      <Route path="prove/nuovo" element={<ProvaWizardPage />} />
+                    </Route>
                     <Route path="committenti" element={<CommittentiPage />} />
                     <Route path="spartiti" element={<SpartitiPage />} />
                     <Route path="documenti" element={<DocumentiPage />} />

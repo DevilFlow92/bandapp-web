@@ -24,9 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import ServizioFormDialog, {
-  formatIndirizzoServizio,
-} from "@/components/servizi/ServizioFormDialog"
+import ServizioFormDialog from "@/components/servizi/ServizioFormDialog"
+import { formatIndirizzoServizio } from "@/components/indirizzi/IndirizzoField"
 import DeleteServizioDialog from "@/components/servizi/DeleteServizioDialog"
 import RicevutaFormDialog from "@/components/ricevute/RicevutaFormDialog"
 import DeleteRicevutaDialog from "@/components/ricevute/DeleteRicevutaDialog"

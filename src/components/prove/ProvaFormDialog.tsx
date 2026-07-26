@@ -6,7 +6,6 @@ import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useBanda } from "@/context/BandaContext"
 import type { Prova } from "@/types/prova"
-import { formatIndirizzoServizio } from "@/components/servizi/ServizioFormDialog"
 import ServizioPicker from "@/components/prove/ServizioPicker"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,17 +18,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import ComuneSelect from "@/components/ui/ComuneSelect"
-
-/** Default tipo indirizzo "Servizio" (codice 4), pre-selected for new prove. */
-const DEFAULT_TIPO_INDIRIZZO_CODICE = "4"
+import IndirizzoField, {
+  emptyIndirizzoForm,
+  resolveIndirizzoId,
+  type IndirizzoFormState,
+} from "@/components/indirizzi/IndirizzoField"
 
 interface ProvaFormDialogProps {
   open: boolean
@@ -50,22 +43,6 @@ const emptyForm: ProvaFormState = {
   note: "",
 }
 
-interface IndirizzoFormState {
-  tipo_indirizzo_codice: string
-  prima_riga: string
-  numero_civico: string
-  cap: string
-  comune_codice: number | null
-}
-
-const emptyIndirizzo: IndirizzoFormState = {
-  tipo_indirizzo_codice: DEFAULT_TIPO_INDIRIZZO_CODICE,
-  prima_riga: "",
-  numero_civico: "",
-  cap: "",
-  comune_codice: null,
-}
-
 export default function ProvaFormDialog({ open, onOpenChange, prova }: ProvaFormDialogProps) {
   const isEdit = Boolean(prova)
   const { toast } = useToast()
@@ -77,13 +54,13 @@ export default function ProvaFormDialog({ open, onOpenChange, prova }: ProvaForm
   const tipiIndirizzo = useLookupTipiIndirizzo()
 
   const [form, setForm] = useState<ProvaFormState>(emptyForm)
-  const [indirizzo, setIndirizzo] = useState<IndirizzoFormState>(emptyIndirizzo)
+  const [indirizzo, setIndirizzo] = useState<IndirizzoFormState>(emptyIndirizzoForm)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
     setError(null)
-    setIndirizzo(emptyIndirizzo)
+    setIndirizzo(emptyIndirizzoForm)
     if (prova) {
       setForm({
         // datetime-local expects "YYYY-MM-DDTHH:MM".
@@ -104,41 +81,26 @@ export default function ProvaFormDialog({ open, onOpenChange, prova }: ProvaForm
 
     try {
       if (isEdit && prova) {
-        // Edit mode keeps the existing indirizzo; it is not re-created here.
+        // The existing indirizzo (if any) is kept as-is; only fill it in when
+        // the prova doesn't have one yet.
+        const indirizzo_id =
+          prova.indirizzo_id == null
+            ? await resolveIndirizzoId(indirizzo, createIndirizzo.mutateAsync)
+            : undefined
+
         await updateProva.mutateAsync({
           id: prova.id,
           input: {
             data_prova: form.data_prova,
             servizio_id: form.servizio_id,
             note: form.note.trim() || null,
+            ...(indirizzo_id !== undefined ? { indirizzo_id } : {}),
           },
         })
         toast({ title: "Prova aggiornata" })
       } else {
         // Create an indirizzo inline only when address details were entered.
-        const primaRiga = indirizzo.prima_riga.trim()
-        const anyAddressFilled =
-          primaRiga !== "" ||
-          indirizzo.numero_civico.trim() !== "" ||
-          indirizzo.cap.trim() !== "" ||
-          indirizzo.comune_codice !== null
-
-        if (anyAddressFilled && !primaRiga) {
-          setError("La via / piazza è obbligatoria se inserisci un indirizzo.")
-          return
-        }
-
-        let indirizzo_id: number | undefined
-        if (primaRiga) {
-          const created = await createIndirizzo.mutateAsync({
-            tipo_indirizzo_codice: Number(indirizzo.tipo_indirizzo_codice),
-            prima_riga: primaRiga,
-            numero_civico: indirizzo.numero_civico.trim() || null,
-            cap: indirizzo.cap.trim() || null,
-            comune_codice: indirizzo.comune_codice,
-          })
-          indirizzo_id = created.id
-        }
+        const indirizzo_id = await resolveIndirizzoId(indirizzo, createIndirizzo.mutateAsync)
 
         await createProva.mutateAsync({
           banda_codice: banda!.codice,
@@ -201,91 +163,13 @@ export default function ProvaFormDialog({ open, onOpenChange, prova }: ProvaForm
           <fieldset className="space-y-4">
             <legend className="text-sm font-semibold">Indirizzo</legend>
 
-            {isEdit ? (
-              <div className="space-y-1 rounded-md border px-3 py-2 text-sm">
-                <p>{formatIndirizzoServizio(prova?.indirizzo)}</p>
-                {prova?.indirizzo_id != null && (
-                  <p className="text-xs text-muted-foreground">
-                    Indirizzo già associato (ID: {prova.indirizzo_id}). Per modificare l'indirizzo,
-                    gestirlo separatamente.
-                  </p>
-                )}
-              </div>
-            ) : (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  Facoltativo. Compila la via per creare e associare un nuovo indirizzo.
-                </p>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="tipo_indirizzo">Tipo</Label>
-                    <Select
-                      value={indirizzo.tipo_indirizzo_codice}
-                      onValueChange={(value) =>
-                        setIndirizzo((i) => ({
-                          ...i,
-                          tipo_indirizzo_codice: value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger id="tipo_indirizzo">
-                        <SelectValue placeholder="Seleziona…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tipiIndirizzo.data?.map((tipo) => (
-                          <SelectItem key={tipo.codice} value={String(tipo.codice)}>
-                            {tipo.descrizione}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="numero_civico">Numero civico</Label>
-                    <Input
-                      id="numero_civico"
-                      value={indirizzo.numero_civico}
-                      onChange={(e) =>
-                        setIndirizzo((i) => ({
-                          ...i,
-                          numero_civico: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="prima_riga">Via / Piazza</Label>
-                  <Input
-                    id="prima_riga"
-                    value={indirizzo.prima_riga}
-                    onChange={(e) =>
-                      setIndirizzo((i) => ({
-                        ...i,
-                        prima_riga: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2 sm:max-w-[12rem]">
-                  <Label htmlFor="cap">CAP</Label>
-                  <Input
-                    id="cap"
-                    value={indirizzo.cap}
-                    onChange={(e) => setIndirizzo((i) => ({ ...i, cap: e.target.value }))}
-                  />
-                </div>
-
-                <ComuneSelect
-                  value={indirizzo.comune_codice}
-                  onChange={(codice) => setIndirizzo((i) => ({ ...i, comune_codice: codice }))}
-                  label="Comune"
-                />
-              </>
-            )}
+            <IndirizzoField
+              existingIndirizzoId={prova?.indirizzo_id}
+              existingIndirizzo={prova?.indirizzo}
+              value={indirizzo}
+              onChange={setIndirizzo}
+              tipiIndirizzo={tipiIndirizzo.data}
+            />
           </fieldset>
 
           <div className="space-y-2">

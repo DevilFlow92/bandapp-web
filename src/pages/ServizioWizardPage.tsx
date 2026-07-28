@@ -343,7 +343,6 @@ export default function ServizioWizardPage() {
                   value={indirizzo}
                   onChange={setIndirizzo}
                   tipiIndirizzo={tipiIndirizzo.data}
-                  required
                 />
               </fieldset>
 

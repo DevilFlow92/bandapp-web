@@ -227,7 +227,6 @@ export default function ServizioFormDialog({
               value={indirizzo}
               onChange={setIndirizzo}
               tipiIndirizzo={tipiIndirizzo.data}
-              required
             />
           </fieldset>
 

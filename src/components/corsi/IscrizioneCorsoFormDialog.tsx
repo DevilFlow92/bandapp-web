@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import { Loader2 } from "lucide-react"
+import { isAxiosError } from "axios"
 import {
   useCreateIscrizioneCorso,
   useUpdateIscrizioneCorso,
@@ -8,6 +9,11 @@ import {
 import { useUploadDocumento } from "@/hooks/useDocumenti"
 import { useSoci } from "@/hooks/useSoci"
 import { useEsterni } from "@/hooks/useEsterni"
+import {
+  useSchedaAlunno,
+  useCreateSchedaAlunno,
+  useUpdateSchedaAlunno,
+} from "@/hooks/useSchedeAlunno"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useBanda } from "@/context/BandaContext"
@@ -15,6 +21,7 @@ import type { IscrizioneCorso } from "@/types/iscrizione_corso"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
   SelectContent,
@@ -118,6 +125,16 @@ export default function IscrizioneCorsoFormDialog({
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Scheda alunno (card #21): risorsa 1:1 indipendente dall'iscrizione, con
+  // submit proprio disaccoppiato da stato/note/documento (come già oggi per
+  // documento, gestito a parte). Visibile solo in modifica.
+  const createSchedaAlunno = useCreateSchedaAlunno()
+  const updateSchedaAlunno = useUpdateSchedaAlunno()
+  const schedaAlunnoQuery = useSchedaAlunno(iscrizione?.id ?? 0, open && isEdit)
+  const scheda = schedaAlunnoQuery.data
+  const [schedaForm, setSchedaForm] = useState({ programma: "", note: "" })
+  const [schedaError, setSchedaError] = useState<string | null>(null)
+
   const isLoadingRoster = tipo === "socio" ? sociQuery.isLoading : esterniQuery.isLoading
 
   const options = useMemo(() => {
@@ -157,6 +174,44 @@ export default function IscrizioneCorsoFormDialog({
       setForm({ ...emptyForm, data_iscrizione: today() })
     }
   }, [open, iscrizione])
+
+  useEffect(() => {
+    if (!open || !isEdit) return
+    setSchedaError(null)
+    setSchedaForm({ programma: scheda?.programma ?? "", note: scheda?.note ?? "" })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEdit, scheda?.id])
+
+  const isSchedaSubmitting = createSchedaAlunno.isPending || updateSchedaAlunno.isPending
+
+  const handleSchedaSubmit = async () => {
+    if (!iscrizione) return
+    setSchedaError(null)
+    const input = {
+      programma: schedaForm.programma.trim() || null,
+      note: schedaForm.note.trim() || null,
+    }
+    try {
+      if (scheda) {
+        await updateSchedaAlunno.mutateAsync({ id: scheda.id, input })
+        toast({ title: "Scheda alunno aggiornata" })
+      } else {
+        await createSchedaAlunno.mutateAsync({ iscrizione_corso_id: iscrizione.id, ...input })
+        toast({ title: "Scheda alunno creata" })
+      }
+    } catch (err) {
+      if (isAxiosError(err) && err.response?.status === 409) {
+        toast({
+          variant: "destructive",
+          title: "Scheda alunno già esistente",
+          description: getErrorMessage(err),
+        })
+        schedaAlunnoQuery.refetch()
+      } else {
+        setSchedaError(getErrorMessage(err))
+      }
+    }
+  }
 
   const isSubmitting =
     createIscrizioneCorso.isPending || updateIscrizioneCorso.isPending || uploadDocumento.isPending
@@ -377,6 +432,61 @@ export default function IscrizioneCorsoFormDialog({
               </>
             )}
           </fieldset>
+
+          {isEdit && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-semibold">Scheda alunno</legend>
+              {schedaAlunnoQuery.isLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ) : (
+                <>
+                  {schedaError && (
+                    <div
+                      role="alert"
+                      className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    >
+                      {schedaError}
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="scheda_programma">Programma</Label>
+                    <textarea
+                      id="scheda_programma"
+                      rows={3}
+                      className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      value={schedaForm.programma}
+                      disabled={isSchedaSubmitting}
+                      onChange={(e) => setSchedaForm((f) => ({ ...f, programma: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="scheda_note">Note scheda</Label>
+                    <textarea
+                      id="scheda_note"
+                      rows={3}
+                      className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      value={schedaForm.note}
+                      disabled={isSchedaSubmitting}
+                      onChange={(e) => setSchedaForm((f) => ({ ...f, note: e.target.value }))}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isSchedaSubmitting}
+                    onClick={handleSchedaSubmit}
+                  >
+                    {isSchedaSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {scheda ? "Salva scheda alunno" : "Crea scheda alunno"}
+                  </Button>
+                </>
+              )}
+            </fieldset>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="note">Note</Label>

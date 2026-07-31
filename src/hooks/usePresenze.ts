@@ -4,13 +4,24 @@ import type { PagedResponse, Presenza, StatoPresenza } from "@/types/presenza"
 
 export const PRESENZE_KEY = ["presenze"] as const
 
-/** Discriminates the organico's parent: a servizio or a prova, mutually exclusive. */
+/**
+ * Discriminates the organico's parent: a servizio o una prova, mutuamente
+ * esclusivi. Resta a 2 rami perché è condiviso con RepertorioContainer e
+ * LibrettoContainer (repertorio/libretto non esistono per le Lezioni).
+ */
 export type OrganicoContainer =
   { servizioId: number; provaId?: never } | { servizioId?: never; provaId: number }
+
+/** Discriminante a 3 rami per le presenze: servizio, prova o lezione, mutuamente esclusivi. */
+export type PresenzaContainer =
+  | { servizioId: number; provaId?: never; lezioneId?: never }
+  | { servizioId?: never; provaId: number; lezioneId?: never }
+  | { servizioId?: never; provaId?: never; lezioneId: number }
 
 export interface CreatePresenzaInput {
   servizio_id?: number | null
   prova_id?: number | null
+  lezione_id?: number | null
   persona_id: number
   note?: string | null
 }
@@ -32,14 +43,13 @@ export interface BulkUpdatePresenzeItem {
  * assumed to fit in a single page, mirroring the Ricevute/Iscrizioni panels
  * which also skip UI pagination for scoped child lists.
  */
-export function useOrganico(container: OrganicoContainer) {
-  const id = container.servizioId ?? container.provaId ?? 0
-  const path =
-    container.servizioId != null
-      ? `/presenze/servizio/${container.servizioId}`
-      : `/presenze/prova/${container.provaId}`
+export function useOrganico(container: PresenzaContainer) {
+  const id = container.servizioId ?? container.provaId ?? container.lezioneId ?? 0
+  const kind =
+    container.servizioId != null ? "servizio" : container.provaId != null ? "prova" : "lezione"
+  const path = `/presenze/${kind}/${id}`
   return useQuery({
-    queryKey: [...PRESENZE_KEY, container.servizioId != null ? "servizio" : "prova", id],
+    queryKey: [...PRESENZE_KEY, kind, id],
     queryFn: async () => {
       const { data } = await api.get<PagedResponse<Presenza>>(path, { params: { page_size: 100 } })
       return data

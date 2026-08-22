@@ -15,6 +15,7 @@ import BandaSelectPage from "@/pages/BandaSelectPage"
 import MieIscrizioniPage from "@/pages/portale/MieIscrizioniPage"
 import CalendarioLezioniPage from "@/pages/portale/CalendarioLezioniPage"
 import ProgrammaPage from "@/pages/portale/ProgrammaPage"
+import PagamentiPage from "@/pages/portale/PagamentiPage"
 import SociPage from "@/pages/SociPage"
 import SocioWizardPage from "@/pages/SocioWizardPage"
 import SocioDetailPage from "@/pages/SocioDetailPage"
@@ -74,6 +75,10 @@ export default function App() {
                     <Route
                       path="iscrizioni/:iscrizioneCorsoId/programma"
                       element={<ProgrammaPage />}
+                    />
+                    <Route
+                      path="iscrizioni/:iscrizioneCorsoId/pagamenti"
+                      element={<PagamentiPage />}
                     />
                   </Route>
 

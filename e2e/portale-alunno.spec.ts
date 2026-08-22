@@ -13,10 +13,17 @@ import {
 } from "./helpers"
 
 /**
- * Card #22b/#22c/#22d — portale alunno: rotta /portale, riuso di
+ * Card #22b/#22c/#22d/#22e — portale alunno: rotta /portale, riuso di
  * login/selezione banda, vista "Le mie iscrizioni" + calendario
- * lezioni/presenze + programma (scheda alunno), e guardia sulla rotta index
- * "/" per gli alunni puri (nessun permesso, nessun superuser).
+ * lezioni/presenze + programma (scheda alunno) + pagamenti, e guardia sulla
+ * rotta index "/" per gli alunni puri (nessun permesso, nessun superuser).
+ *
+ * Pagamenti (card #22e): il solo scenario "nessun pagamento" è coperto qui.
+ * Uno scenario con pagamento reale richiederebbe creare un PagamentoCorso via
+ * POST /pagamenti-corso/, che in locale fallisce con 422 "Configurazione
+ * contabile mancante: imposta una voce per le rette corsi nella
+ * configurazione anno 2999" — quella configurazione tocca contabilità reale
+ * e non va creata al volo come effetto collaterale di un test e2e.
  */
 
 test.describe.configure({ mode: "serial" })
@@ -111,6 +118,21 @@ test("un alunno puro apre il programma dopo che è stato condiviso e vede progra
   } finally {
     await pulisciSchedaAlunnoDiTest(api, datiScheda)
   }
+})
+
+test("un alunno puro apre i pagamenti e vede il messaggio nessun pagamento registrato", async ({
+  page,
+}) => {
+  await loginComeAlunnoPuro(page)
+
+  const riga = page.getByRole("row", { name: new RegExp(String(ANNO_TEST)) })
+  await riga.getByRole("button", { name: "Vedi pagamenti" }).click()
+
+  await page.waitForURL((url) => /\/portale\/iscrizioni\/\d+\/pagamenti$/.test(url.pathname), {
+    timeout: 15_000,
+  })
+  await expect(page.getByRole("heading", { name: "Pagamenti" })).toBeVisible()
+  await expect(page.getByText("Nessun pagamento registrato al momento")).toBeVisible()
 })
 
 test("un alunno puro che tenta / vede la modale e viene rediretto a /portale", async ({ page }) => {

@@ -29,11 +29,19 @@ import {
 
 const RUOLI_PAGE_SIZE = 100
 
+interface PersonaPreselezionata {
+  personaId: number
+  label: string
+  tipo: "socio" | "esterno" | "allievo"
+}
+
 interface UtenteFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** When provided the dialog opens in edit mode. */
   utente?: Utente | null
+  /** Create mode only: preselects la persona, saltando la ricerca. */
+  personaPreselezionata?: PersonaPreselezionata | null
 }
 
 interface UtenteFormState {
@@ -70,7 +78,12 @@ const emptyForm: UtenteFormState = {
   ruoli: [],
 }
 
-export default function UtenteFormDialog({ open, onOpenChange, utente }: UtenteFormDialogProps) {
+export default function UtenteFormDialog({
+  open,
+  onOpenChange,
+  utente,
+  personaPreselezionata,
+}: UtenteFormDialogProps) {
   const isEdit = Boolean(utente)
   const { toast } = useToast()
   const { banda } = useBanda()
@@ -99,9 +112,9 @@ export default function UtenteFormDialog({ open, onOpenChange, utente }: UtenteF
   useEffect(() => {
     if (!open) return
     setError(null)
-    setTipo("socio")
     setSearch("")
     if (utente) {
+      setTipo("socio")
       setForm({
         email: utente.email,
         nome_completo: utente.nome_completo ?? "",
@@ -112,11 +125,19 @@ export default function UtenteFormDialog({ open, onOpenChange, utente }: UtenteF
         ruoli: utente.ruoli.map((r) => r.id),
       })
       setSelectedPersona(null)
+    } else if (personaPreselezionata) {
+      setTipo(personaPreselezionata.tipo)
+      setForm(emptyForm)
+      setSelectedPersona({
+        personaId: personaPreselezionata.personaId,
+        label: personaPreselezionata.label,
+      })
     } else {
+      setTipo("socio")
       setForm(emptyForm)
       setSelectedPersona(null)
     }
-  }, [open, utente])
+  }, [open, utente, personaPreselezionata])
 
   useEffect(() => {
     if (!personaAttualeQuery.data) return

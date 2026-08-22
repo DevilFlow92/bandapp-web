@@ -51,6 +51,31 @@ export function useUtenti(page: number, pageSize: number) {
   })
 }
 
+/**
+ * Loads every utente across all pages, for client-side derivations (e.g.
+ * mapping persona_id -> utente esistente). The endpoint has no persona_id
+ * filter, so this fetches the whole (system-wide, not banda-scoped) roster.
+ */
+export function useAllUtenti(enabled = true) {
+  return useQuery({
+    queryKey: [...UTENTI_KEY, "all"],
+    queryFn: async () => {
+      const pageSize = 100
+      let items: Utente[] = []
+      let totalPages = 1
+      for (let page = 1; page <= totalPages; page += 1) {
+        const { data } = await api.get<PagedResponse<Utente>>("/utenti/", {
+          params: { page, page_size: pageSize },
+        })
+        items = items.concat(data.items)
+        totalPages = data.meta.total_pages
+      }
+      return items
+    },
+    enabled,
+  })
+}
+
 /** Creates a new utente. */
 export function useCreateUtente() {
   const queryClient = useQueryClient()

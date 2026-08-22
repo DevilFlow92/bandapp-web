@@ -43,6 +43,15 @@ export function usePermission(codice: string): boolean {
   return user?.superuser === true || user?.permessi?.includes(codice) === true
 }
 
+/**
+ * A "pure student": no superuser flag and no granted permessi, so they have
+ * no access to the gestionale and must land on /portale instead of "/".
+ */
+export function isAlunnoPuro(user?: Pick<User, "superuser" | "permessi"> | null): boolean {
+  if (!user) return false
+  return !user.superuser && user.permessi.length === 0
+}
+
 /** Revokes the current session and clears the cached user. */
 export function useLogout() {
   const queryClient = useQueryClient()

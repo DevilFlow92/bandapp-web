@@ -1,7 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react"
-import { useCurrentUser, useLogin, useRequestPasswordReset, useRegister } from "@/hooks/useAuth"
+import {
+  useCurrentUser,
+  useLogin,
+  useRequestPasswordReset,
+  useRegister,
+  isAlunnoPuro,
+} from "@/hooks/useAuth"
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons"
 import { useBandePublic } from "@/hooks/useBande"
 import { getErrorMessage } from "@/lib/api"
@@ -45,11 +51,13 @@ export default function LoginPage() {
   const [regValidationError, setRegValidationError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (user) navigate("/", { replace: true })
+    if (user) navigate(isAlunnoPuro(user) ? "/portale" : "/", { replace: true })
   }, [user, navigate])
 
   const handleLogin = (e: FormEvent) => {
     e.preventDefault()
+    // POST /auth/login only confirms the session (it doesn't return the user), so the
+    // landing-path decision happens in the effect above once useCurrentUser() re-fetches.
     login.mutate({ email, password }, { onSuccess: () => navigate("/", { replace: true }) })
   }
 

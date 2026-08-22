@@ -9,6 +9,7 @@ import {
 import { useUploadDocumento } from "@/hooks/useDocumenti"
 import { useSoci } from "@/hooks/useSoci"
 import { useEsterni } from "@/hooks/useEsterni"
+import { useAllievi } from "@/hooks/useAllievi"
 import {
   useSchedaAlunno,
   useCreateSchedaAlunno,
@@ -102,10 +103,11 @@ export default function IscrizioneCorsoFormDialog({
   const uploadDocumento = useUploadDocumento()
   const statiIscrizioneCorso = useLookupStatiIscrizioneCorso()
 
-  // Selezione alunno: una Persona, socio o esterno (card backend #174), stesso
-  // pattern di ricerca socio/esterno di RicevutaFormDialog. Non applicabile in
-  // modifica: l'alunno di un'iscrizione esistente non si cambia da qui.
-  const [tipo, setTipo] = useState<"socio" | "esterno">("socio")
+  // Selezione alunno: una Persona, socio, esterno o allievo (card backend
+  // #174, estesa da #166a), stesso pattern di ricerca socio/esterno di
+  // RicevutaFormDialog. Non applicabile in modifica: l'alunno di
+  // un'iscrizione esistente non si cambia da qui.
+  const [tipo, setTipo] = useState<"socio" | "esterno" | "allievo">("socio")
   const sociQuery = useSoci(
     1,
     100,
@@ -117,6 +119,12 @@ export default function IscrizioneCorsoFormDialog({
     100,
     banda?.codice ?? 0,
     open && !isEdit && tipo === "esterno" && !!banda,
+  )
+  const allieviQuery = useAllievi(
+    1,
+    100,
+    banda?.codice ?? 0,
+    open && !isEdit && tipo === "allievo" && !!banda,
   )
   const [search, setSearch] = useState("")
   const [selectedPersona, setSelectedPersona] = useState<SelectedPersona | null>(null)
@@ -135,7 +143,12 @@ export default function IscrizioneCorsoFormDialog({
   const [schedaForm, setSchedaForm] = useState({ programma: "", note: "" })
   const [schedaError, setSchedaError] = useState<string | null>(null)
 
-  const isLoadingRoster = tipo === "socio" ? sociQuery.isLoading : esterniQuery.isLoading
+  const isLoadingRoster =
+    tipo === "socio"
+      ? sociQuery.isLoading
+      : tipo === "esterno"
+        ? esterniQuery.isLoading
+        : allieviQuery.isLoading
 
   const options = useMemo(() => {
     if (tipo === "socio") {
@@ -144,11 +157,17 @@ export default function IscrizioneCorsoFormDialog({
         label: personaLabel(s.persona, s.codice_socio),
       }))
     }
-    return (esterniQuery.data?.items ?? []).map((e) => ({
-      personaId: e.persona_id,
-      label: personaLabel(e.persona, e.codice_esterno),
+    if (tipo === "esterno") {
+      return (esterniQuery.data?.items ?? []).map((e) => ({
+        personaId: e.persona_id,
+        label: personaLabel(e.persona, e.codice_esterno),
+      }))
+    }
+    return (allieviQuery.data?.items ?? []).map((a) => ({
+      personaId: a.persona_id,
+      label: personaLabel(a.persona, a.codice_allievo),
     }))
-  }, [tipo, sociQuery.data, esterniQuery.data])
+  }, [tipo, sociQuery.data, esterniQuery.data, allieviQuery.data])
 
   const trimmedSearch = search.trim()
   const filteredOptions = useMemo(() => {
@@ -267,7 +286,7 @@ export default function IscrizioneCorsoFormDialog({
           <DialogDescription>
             {isEdit
               ? "Aggiorna stato, note o documento dell'iscrizione."
-              : "Iscrivi un alunno (socio o esterno) al corso."}
+              : "Iscrivi un alunno (socio, esterno o allievo) al corso."}
           </DialogDescription>
         </DialogHeader>
 
@@ -328,6 +347,17 @@ export default function IscrizioneCorsoFormDialog({
                     >
                       Esterno
                     </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={tipo === "allievo" ? "default" : "outline"}
+                      onClick={() => {
+                        setTipo("allievo")
+                        setSearch("")
+                      }}
+                    >
+                      Allievo
+                    </Button>
                   </div>
                   <Input
                     placeholder="Cerca per nome, cognome o codice…"
@@ -359,7 +389,11 @@ export default function IscrizioneCorsoFormDialog({
                       </ul>
                     ) : (
                       <div className="px-3 py-2 text-sm text-muted-foreground">
-                        {tipo === "socio" ? "Nessun socio trovato" : "Nessun esterno trovato"}
+                        {tipo === "socio"
+                          ? "Nessun socio trovato"
+                          : tipo === "esterno"
+                            ? "Nessun esterno trovato"
+                            : "Nessun allievo trovato"}
                       </div>
                     )}
                   </div>

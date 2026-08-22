@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Music } from "lucide-react"
 import { useBande } from "@/hooks/useBande"
+import { useCurrentUser, isAlunnoPuro } from "@/hooks/useAuth"
 import { useBanda } from "@/context/BandaContext"
 import type { Banda } from "@/types/banda"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,10 +12,13 @@ export default function BandaSelectPage() {
   const navigate = useNavigate()
   const { setBanda } = useBanda()
   const { data: bande, isLoading } = useBande()
+  const { data: user } = useCurrentUser()
+
+  const landingPath = isAlunnoPuro(user) ? "/portale" : "/"
 
   const handleSelect = (banda: Banda) => {
     setBanda(banda)
-    navigate("/", { replace: true })
+    navigate(landingPath, { replace: true })
   }
 
   // With a single banda there's nothing to choose: auto-select and redirect.
@@ -22,9 +26,9 @@ export default function BandaSelectPage() {
   useEffect(() => {
     if (autoSelect && bande) {
       setBanda(bande[0])
-      navigate("/", { replace: true })
+      navigate(landingPath, { replace: true })
     }
-  }, [autoSelect, bande, setBanda, navigate])
+  }, [autoSelect, bande, setBanda, navigate, landingPath])
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">

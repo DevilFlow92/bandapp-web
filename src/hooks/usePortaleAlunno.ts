@@ -5,11 +5,13 @@ import type { IscrizioneCorso, PagedResponse } from "@/types/iscrizione_corso"
 import type { Lezione } from "@/types/lezione"
 import type { Presenza } from "@/types/presenza"
 import type { SchedaAlunno } from "@/types/scheda_alunno"
+import type { PagamentoCorso } from "@/types/pagamento_corso"
 
 export const ME_ISCRIZIONI_CORSO_KEY = ["me", "iscrizioni-corso"] as const
 export const ME_LEZIONI_KEY = ["me", "iscrizioni-corso", "lezioni"] as const
 export const ME_PRESENZE_KEY = ["me", "iscrizioni-corso", "presenze"] as const
 export const ME_SCHEDA_KEY = ["me", "iscrizioni-corso", "scheda"] as const
+export const ME_PAGAMENTI_KEY = ["me", "iscrizioni-corso", "pagamenti"] as const
 
 /** Lists the current user's own iscrizioni corso (portale alunno, read-only). */
 export function useMieIscrizioniCorso(page: number = 1, pageSize: number = 100) {
@@ -89,4 +91,26 @@ export function useMiaScheda(iscrizioneCorsoId: number) {
     enabled: iscrizioneCorsoId > 0,
   })
   return { ...query, notFound: query.isSuccess && query.data === null }
+}
+
+/**
+ * Lists the current user's own pagamenti for a given iscrizione corso
+ * (row-level, portale alunno, read-only).
+ */
+export function useMieiPagamenti(
+  iscrizioneCorsoId: number,
+  page: number = 1,
+  pageSize: number = 100,
+) {
+  return useQuery({
+    queryKey: [...ME_PAGAMENTI_KEY, iscrizioneCorsoId, page, pageSize],
+    queryFn: async () => {
+      const { data } = await api.get<PagedResponse<PagamentoCorso>>(
+        `/me/iscrizioni-corso/${iscrizioneCorsoId}/pagamenti`,
+        { params: { page, page_size: pageSize } },
+      )
+      return data
+    },
+    enabled: iscrizioneCorsoId > 0,
+  })
 }

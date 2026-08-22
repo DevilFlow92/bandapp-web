@@ -15,6 +15,7 @@ const navGroups: NavGroup[] = [
     label: "Anagrafica",
     items: [
       { to: "/soci", label: "Soci" },
+      { to: "/allievi", label: "Allievi" },
       { to: "/esterni", label: "Esterni" },
       { to: "/committenti", label: "Committenti" },
     ],
@@ -25,7 +26,6 @@ const navGroups: NavGroup[] = [
       { to: "/servizi", label: "Servizi" },
       { to: "/prove", label: "Prove" },
       { to: "/corsi", label: "Corsi" },
-      { to: "/allievi", label: "Allievi" },
     ],
   },
   {

@@ -263,3 +263,60 @@ export async function creaSchedaAlunnoDiTest(
 export async function pulisciSchedaAlunnoDiTest(api: APIRequestContext, dati: SchedaAlunnoDiTest) {
   await api.delete(`schede-alunno/${dati.schedaAlunno.id}`).catch(() => {})
 }
+
+export interface TemplateDiTest {
+  id: number
+}
+
+/**
+ * Crea un template di modulistica con i mergefield indicati (contenuto_json
+ * minimale in formato TipTap con un nodo "mergefield" per ciascuna chiave).
+ */
+export async function creaTemplateDiTest(
+  api: APIRequestContext,
+  nome: string,
+  chiavi: string[],
+): Promise<TemplateDiTest> {
+  const entitaRichieste = [...new Set(chiavi.map((chiave) => chiave.split(".")[0]))]
+  const contenuto_json = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: chiavi.flatMap((chiave, i) => [
+          ...(i > 0 ? [{ type: "text", text: " — " }] : []),
+          { type: "mergefield", attrs: { chiave } },
+        ]),
+      },
+    ],
+  }
+
+  const templateRes = await api.post("templates/", {
+    data: { nome, contenuto_json, entita_richieste: entitaRichieste },
+  })
+  if (!templateRes.ok()) throw new Error(`Creazione template fallita: ${await templateRes.text()}`)
+  const template = await templateRes.json()
+  return { id: template.id }
+}
+
+/** Elimina il template di test. */
+export async function pulisciTemplateDiTest(api: APIRequestContext, dati: TemplateDiTest) {
+  await api.delete(`templates/${dati.id}`).catch(() => {})
+}
+
+/** Legge il documento_id attualmente collegato a un'iscrizione corso (o null). */
+export async function getDocumentoIdIscrizioneCorso(
+  api: APIRequestContext,
+  iscrizioneCorsoId: number,
+): Promise<number | null> {
+  const res = await api.get(`iscrizioni-corso/${iscrizioneCorsoId}`)
+  if (!res.ok()) throw new Error(`Lettura iscrizione corso fallita: ${await res.text()}`)
+  const iscrizione = await res.json()
+  return iscrizione.documento_id ?? null
+}
+
+/** Elimina un documento generato durante il test, se presente. */
+export async function pulisciDocumentoDiTest(api: APIRequestContext, documentoId: number | null) {
+  if (documentoId == null) return
+  await api.delete(`documenti/${documentoId}`).catch(() => {})
+}

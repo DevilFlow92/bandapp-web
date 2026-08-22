@@ -10,6 +10,7 @@ import { useUploadDocumento } from "@/hooks/useDocumenti"
 import { useSoci } from "@/hooks/useSoci"
 import { useEsterni } from "@/hooks/useEsterni"
 import { useAllievi } from "@/hooks/useAllievi"
+import GeneraDocumentoIscrizioneCorso from "@/components/corsi/GeneraDocumentoIscrizioneCorso"
 import {
   useSchedaAlunno,
   useCreateSchedaAlunno,
@@ -133,6 +134,11 @@ export default function IscrizioneCorsoFormDialog({
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Modalità del fieldset "Modulo di richiesta" in edit mode: l'utente
+  // sceglie esplicitamente tra caricare un file o generarlo da un modulo,
+  // senza alcuna precedenza automatica tra le due vie.
+  const [modoDocumento, setModoDocumento] = useState<"nessuno" | "upload" | "genera">("nessuno")
+
   // Scheda alunno (card #21): risorsa 1:1 indipendente dall'iscrizione, con
   // submit proprio disaccoppiato da stato/note/documento (come già oggi per
   // documento, gestito a parte). Visibile solo in modifica.
@@ -180,6 +186,7 @@ export default function IscrizioneCorsoFormDialog({
     if (!open) return
     setError(null)
     setFile(null)
+    setModoDocumento("nessuno")
     setTipo("socio")
     setSearch("")
     setSelectedPersona(null)
@@ -446,14 +453,7 @@ export default function IscrizioneCorsoFormDialog({
 
           <fieldset className="space-y-2">
             <legend className="text-sm font-semibold">Modulo di richiesta</legend>
-            {iscrizione?.documento_id != null ? (
-              <div className="space-y-1 rounded-md border px-3 py-2 text-sm">
-                <p>{iscrizione.documento?.nome ?? `Documento #${iscrizione.documento_id}`}</p>
-                <p className="text-xs text-muted-foreground">
-                  Documento già collegato. Per sostituirlo, gestiscilo separatamente.
-                </p>
-              </div>
-            ) : (
+            {!isEdit ? (
               <>
                 <p className="text-xs text-muted-foreground">
                   Facoltativo. Carica il modulo di richiesta firmato per collegarlo all'iscrizione.
@@ -463,6 +463,79 @@ export default function IscrizioneCorsoFormDialog({
                   disabled={isSubmitting}
                   onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 />
+              </>
+            ) : modoDocumento === "genera" ? (
+              <div className="space-y-2">
+                <GeneraDocumentoIscrizioneCorso
+                  iscrizioneCorsoId={iscrizione!.id}
+                  bandaCodice={banda?.codice ?? 0}
+                  documentoAttuale={
+                    iscrizione?.documento_id != null
+                      ? {
+                          id: iscrizione.documento_id,
+                          nome:
+                            iscrizione.documento?.nome ?? `Documento #${iscrizione.documento_id}`,
+                        }
+                      : null
+                  }
+                  onDocumentoCollegato={() => onOpenChange(false)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setModoDocumento("nessuno")}
+                >
+                  Annulla
+                </Button>
+              </div>
+            ) : modoDocumento === "upload" ? (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Il file verrà collegato salvando le modifiche (Salva).
+                </p>
+                <Input
+                  type="file"
+                  disabled={isSubmitting}
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFile(null)
+                    setModoDocumento("nessuno")
+                  }}
+                >
+                  Annulla
+                </Button>
+              </div>
+            ) : (
+              <>
+                {iscrizione?.documento_id != null && (
+                  <div className="rounded-md border px-3 py-2 text-sm">
+                    <p>{iscrizione.documento?.nome ?? `Documento #${iscrizione.documento_id}`}</p>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setModoDocumento("upload")}
+                  >
+                    {iscrizione?.documento_id != null ? "Sostituisci con upload" : "Carica file"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setModoDocumento("genera")}
+                  >
+                    {iscrizione?.documento_id != null ? "Rigenera da template" : "Genera da modulo"}
+                  </Button>
+                </div>
               </>
             )}
           </fieldset>

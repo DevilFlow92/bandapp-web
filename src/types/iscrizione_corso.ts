@@ -1,8 +1,14 @@
 export type { PagedResponse, PageMeta } from "@/types/socio"
 
+export interface TipoCorsoInCorso {
+  codice: number
+  descrizione: string
+}
+
 export interface CorsoInIscrizioneCorso {
   id: number
   anno: number
+  tipo_corso: TipoCorsoInCorso
 }
 
 export interface PersonaInIscrizioneCorso {

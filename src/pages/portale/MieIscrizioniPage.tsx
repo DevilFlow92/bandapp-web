@@ -77,7 +77,10 @@ export default function MieIscrizioniPage() {
                   ) : (
                     iscrizioni.map((iscrizione) => (
                       <TableRow key={iscrizione.id}>
-                        <TableCell>Corso #{iscrizione.corso?.id ?? iscrizione.corso_id}</TableCell>
+                        <TableCell>
+                          {iscrizione.corso?.tipo_corso?.descrizione ??
+                            `Corso #${iscrizione.corso?.id ?? iscrizione.corso_id}`}
+                        </TableCell>
                         <TableCell>{iscrizione.corso?.anno ?? "—"}</TableCell>
                         <TableCell>
                           <Badge

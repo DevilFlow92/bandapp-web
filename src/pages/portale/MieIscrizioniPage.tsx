@@ -1,7 +1,10 @@
+import { useNavigate } from "react-router-dom"
+import { CalendarDays } from "lucide-react"
 import { useMieIscrizioniCorso } from "@/hooks/usePortaleAlunno"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -27,6 +30,7 @@ function statoBadgeClass(descrizione?: string): string {
 }
 
 export default function MieIscrizioniPage() {
+  const navigate = useNavigate()
   const { data, isLoading, isError } = useMieIscrizioniCorso()
   const iscrizioni = data?.items ?? []
 
@@ -55,13 +59,14 @@ export default function MieIscrizioniPage() {
                     <TableHead>Anno</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead>Data iscrizione</TableHead>
+                    <TableHead className="text-right">Calendario</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 3 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: 4 }).map((__, j) => (
+                        {Array.from({ length: 5 }).map((__, j) => (
                           <TableCell key={j}>
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
@@ -70,7 +75,7 @@ export default function MieIscrizioniPage() {
                     ))
                   ) : iscrizioni.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
                         Nessuna iscrizione al momento
                       </TableCell>
                     </TableRow>
@@ -92,6 +97,16 @@ export default function MieIscrizioniPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>{formatDataIscrizione(iscrizione.data_iscrizione)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/portale/iscrizioni/${iscrizione.id}/lezioni`)}
+                          >
+                            <CalendarDays className="mr-2 h-4 w-4" />
+                            Vedi calendario
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}

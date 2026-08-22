@@ -13,6 +13,8 @@ export interface Presenza {
   id: number
   persona_id: number
   servizio_id: number | null
+  prova_id: number | null
+  lezione_id: number | null
   stato: StatoPresenza | null
   note: string | null
   persona?: PersonaInPresenza | null

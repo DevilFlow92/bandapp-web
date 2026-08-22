@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom"
-import { CalendarDays } from "lucide-react"
+import { CalendarDays, FileText } from "lucide-react"
 import { useMieIscrizioniCorso } from "@/hooks/usePortaleAlunno"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -60,13 +60,14 @@ export default function MieIscrizioniPage() {
                     <TableHead>Stato</TableHead>
                     <TableHead>Data iscrizione</TableHead>
                     <TableHead className="text-right">Calendario</TableHead>
+                    <TableHead className="text-right">Programma</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     Array.from({ length: 3 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: 5 }).map((__, j) => (
+                        {Array.from({ length: 6 }).map((__, j) => (
                           <TableCell key={j}>
                             <Skeleton className="h-4 w-full" />
                           </TableCell>
@@ -75,7 +76,7 @@ export default function MieIscrizioniPage() {
                     ))
                   ) : iscrizioni.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
                         Nessuna iscrizione al momento
                       </TableCell>
                     </TableRow>
@@ -105,6 +106,18 @@ export default function MieIscrizioniPage() {
                           >
                             <CalendarDays className="mr-2 h-4 w-4" />
                             Vedi calendario
+                          </Button>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              navigate(`/portale/iscrizioni/${iscrizione.id}/programma`)
+                            }
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Vedi programma
                           </Button>
                         </TableCell>
                       </TableRow>

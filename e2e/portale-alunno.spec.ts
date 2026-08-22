@@ -6,15 +6,17 @@ import {
   pulisciAlunnoPuroDiTest,
   creaLezioneEPresenzaDiTest,
   pulisciLezioneEPresenzaDiTest,
+  creaSchedaAlunnoDiTest,
+  pulisciSchedaAlunnoDiTest,
   type AlunnoPuroDiTest,
   type LezioneEPresenzaDiTest,
 } from "./helpers"
 
 /**
- * Card #22b/#22c — portale alunno: rotta /portale, riuso di login/selezione
- * banda, vista "Le mie iscrizioni" + calendario lezioni/presenze, e guardia
- * sulla rotta index "/" per gli alunni puri (nessun permesso, nessun
- * superuser).
+ * Card #22b/#22c/#22d — portale alunno: rotta /portale, riuso di
+ * login/selezione banda, vista "Le mie iscrizioni" + calendario
+ * lezioni/presenze + programma (scheda alunno), e guardia sulla rotta index
+ * "/" per gli alunni puri (nessun permesso, nessun superuser).
  */
 
 test.describe.configure({ mode: "serial" })
@@ -71,6 +73,44 @@ test("un alunno puro apre il calendario lezioni e vede la propria presenza", asy
   const rigaLezione = page.getByRole("row", { name: "e2e calendario lezioni" })
   await expect(rigaLezione).toBeVisible()
   await expect(rigaLezione.getByText("Presente")).toBeVisible()
+})
+
+test("un alunno puro apre il programma prima che sia condiviso e vede il messaggio informativo", async ({
+  page,
+}) => {
+  await loginComeAlunnoPuro(page)
+
+  const riga = page.getByRole("row", { name: new RegExp(String(ANNO_TEST)) })
+  await riga.getByRole("button", { name: "Vedi programma" }).click()
+
+  await page.waitForURL((url) => /\/portale\/iscrizioni\/\d+\/programma$/.test(url.pathname), {
+    timeout: 15_000,
+  })
+  await expect(page.getByRole("heading", { name: "Programma" })).toBeVisible()
+  await expect(
+    page.getByText("Il programma non è stato ancora condiviso dall'insegnante."),
+  ).toBeVisible()
+})
+
+test("un alunno puro apre il programma dopo che è stato condiviso e vede programma e note", async ({
+  page,
+}) => {
+  const datiScheda = await creaSchedaAlunnoDiTest(api, datiTest.iscrizione.id)
+  try {
+    await loginComeAlunnoPuro(page)
+
+    const riga = page.getByRole("row", { name: new RegExp(String(ANNO_TEST)) })
+    await riga.getByRole("button", { name: "Vedi programma" }).click()
+
+    await page.waitForURL((url) => /\/portale\/iscrizioni\/\d+\/programma$/.test(url.pathname), {
+      timeout: 15_000,
+    })
+    await expect(page.getByRole("heading", { name: "Programma" })).toBeVisible()
+    await expect(page.getByText("e2e programma di test")).toBeVisible()
+    await expect(page.getByText("e2e note scheda alunno")).toBeVisible()
+  } finally {
+    await pulisciSchedaAlunnoDiTest(api, datiScheda)
+  }
 })
 
 test("un alunno puro che tenta / vede la modale e viene rediretto a /portale", async ({ page }) => {

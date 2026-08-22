@@ -14,6 +14,7 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage"
 import BandaSelectPage from "@/pages/BandaSelectPage"
 import MieIscrizioniPage from "@/pages/portale/MieIscrizioniPage"
 import CalendarioLezioniPage from "@/pages/portale/CalendarioLezioniPage"
+import ProgrammaPage from "@/pages/portale/ProgrammaPage"
 import SociPage from "@/pages/SociPage"
 import SocioWizardPage from "@/pages/SocioWizardPage"
 import SocioDetailPage from "@/pages/SocioDetailPage"
@@ -69,6 +70,10 @@ export default function App() {
                     <Route
                       path="iscrizioni/:iscrizioneCorsoId/lezioni"
                       element={<CalendarioLezioniPage />}
+                    />
+                    <Route
+                      path="iscrizioni/:iscrizioneCorsoId/programma"
+                      element={<ProgrammaPage />}
                     />
                   </Route>
 

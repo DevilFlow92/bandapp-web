@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react"
 import { useBanda } from "@/context/BandaContext"
 import { useSoci } from "@/hooks/useSoci"
 import { useEsterni } from "@/hooks/useEsterni"
+import { useAllievi } from "@/hooks/useAllievi"
 import { useBande } from "@/hooks/useBande"
 import { usePersonaContatti, useLookupRuoliContatto } from "@/hooks/useContatti"
 import { useIscrizioni, useLookupStatiIscrizione } from "@/hooks/useIscrizioni"
@@ -11,6 +12,7 @@ import { useRicevuteList } from "@/hooks/useRicevute"
 import { extractEntitiesFromContent } from "@/lib/mergefields"
 import type { Socio } from "@/types/socio"
 import type { Esterno } from "@/types/esterno"
+import type { Allievo } from "@/types/allievo"
 import type { Contatto } from "@/types/contatto"
 import type { Iscrizione } from "@/types/iscrizione"
 import type { Servizio } from "@/types/servizio"
@@ -37,9 +39,11 @@ interface EntitySelectorProps {
 const ENTITY_LABELS: Record<string, string> = {
   socio: "Socio",
   esterno: "Esterno",
+  allievo: "Allievo",
   banda: "Banda",
   contatto: "Contatto",
   iscrizione: "Iscrizione",
+  iscrizione_corso: "Iscrizione Corso",
   servizio: "Servizio",
   ricevuta: "Ricevuta",
 }
@@ -194,12 +198,19 @@ export default function EntitySelector({
     banda?.codice ?? 0,
     entitaRilevate.has("esterno") && !!banda,
   )
+  const allieviQuery = useAllievi(
+    1,
+    50,
+    banda?.codice ?? 0,
+    entitaRilevate.has("allievo") && !!banda,
+  )
   const bandeQuery = useBande()
   const ruoliContattoQuery = useLookupRuoliContatto()
   const statiIscrizioneQuery = useLookupStatiIscrizione()
 
   const socioSelezionato = sociQuery.data?.items.find((s) => s.id === value.socio)
   const esternoSelezionato = esterniQuery.data?.items.find((e) => e.id === value.esterno)
+  const allievoSelezionato = allieviQuery.data?.items.find((a) => a.id === value.allievo)
   const contattoPersonaId = socioSelezionato?.persona?.id ?? esternoSelezionato?.persona?.id ?? null
 
   const contattiQuery = usePersonaContatti(
@@ -258,6 +269,12 @@ export default function EntitySelector({
         return esternoSelezionato
           ? personLabel(esternoSelezionato.persona, esternoSelezionato.codice_esterno)
           : "—"
+      case "allievo":
+        return allievoSelezionato
+          ? personLabel(allievoSelezionato.persona, allievoSelezionato.codice_allievo)
+          : "—"
+      case "iscrizione_corso":
+        return value.iscrizione_corso != null ? `Iscrizione Corso #${value.iscrizione_corso}` : "—"
       case "banda":
         return bandaSelezionata?.descrizione ?? "—"
       case "contatto":
@@ -327,6 +344,19 @@ export default function EntitySelector({
                     onClear={() => clearEntity("esterno")}
                     placeholder="Cerca per nome, cognome o codice…"
                     emptyLabel="Nessun esterno trovato"
+                  />
+                )}
+                {entita === "allievo" && (
+                  <SearchPicker
+                    items={allieviQuery.data?.items ?? []}
+                    isLoading={allieviQuery.isLoading}
+                    getId={(a: Allievo) => a.id}
+                    getLabel={(a: Allievo) => personLabel(a.persona, a.codice_allievo)}
+                    selectedId={value.allievo}
+                    onSelect={(id) => setEntity("allievo", id)}
+                    onClear={() => clearEntity("allievo")}
+                    placeholder="Cerca per nome, cognome o codice…"
+                    emptyLabel="Nessun allievo trovato"
                   />
                 )}
                 {entita === "banda" && (
@@ -410,6 +440,7 @@ export default function EntitySelector({
                 )}
                 {entita !== "socio" &&
                   entita !== "esterno" &&
+                  entita !== "allievo" &&
                   entita !== "banda" &&
                   entita !== "contatto" &&
                   entita !== "iscrizione" &&

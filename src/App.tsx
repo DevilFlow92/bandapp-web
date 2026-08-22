@@ -13,6 +13,7 @@ import LoginPage from "@/pages/LoginPage"
 import ResetPasswordPage from "@/pages/ResetPasswordPage"
 import BandaSelectPage from "@/pages/BandaSelectPage"
 import MieIscrizioniPage from "@/pages/portale/MieIscrizioniPage"
+import CalendarioLezioniPage from "@/pages/portale/CalendarioLezioniPage"
 import SociPage from "@/pages/SociPage"
 import SocioWizardPage from "@/pages/SocioWizardPage"
 import SocioDetailPage from "@/pages/SocioDetailPage"
@@ -65,6 +66,10 @@ export default function App() {
                   {/* Portale alunno: same auth + banda context, dedicated minimal layout. */}
                   <Route path="/portale" element={<PortaleLayout />}>
                     <Route index element={<MieIscrizioniPage />} />
+                    <Route
+                      path="iscrizioni/:iscrizioneCorsoId/lezioni"
+                      element={<CalendarioLezioniPage />}
+                    />
                   </Route>
 
                   <Route path="/" element={<AppLayout />}>

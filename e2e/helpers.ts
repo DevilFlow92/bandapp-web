@@ -186,3 +186,49 @@ export async function pulisciAlunnoPuroDiTest(api: APIRequestContext, dati: Alun
   await api.delete(`corsi/${dati.corso.id}`).catch(() => {})
   await api.delete(`persone/${dati.persona.id}`).catch(() => {})
 }
+
+export interface LezioneEPresenzaDiTest {
+  lezione: { id: number }
+  presenza: { id: number }
+}
+
+/**
+ * Crea una Lezione sul corso indicato e una Presenza collegata (stato
+ * PRESENTE) per la persona indicata, per verificare end-to-end il join
+ * client-side lezioni/presenze del calendario portale alunno (card #22c).
+ */
+export async function creaLezioneEPresenzaDiTest(
+  api: APIRequestContext,
+  corsoId: number,
+  personaId: number,
+): Promise<LezioneEPresenzaDiTest> {
+  const lezioneRes = await api.post("lezioni/", {
+    data: { corso_id: corsoId, data_lezione: today(), note: "e2e calendario lezioni" },
+  })
+  if (!lezioneRes.ok()) throw new Error(`Creazione lezione fallita: ${await lezioneRes.text()}`)
+  const lezione = await lezioneRes.json()
+
+  const presenzaRes = await api.post("presenze/", {
+    data: { lezione_id: lezione.id, persona_id: personaId },
+  })
+  if (!presenzaRes.ok()) {
+    throw new Error(`Creazione presenza fallita: ${await presenzaRes.text()}`)
+  }
+  const presenza = await presenzaRes.json()
+
+  const updateRes = await api.patch(`presenze/${presenza.id}`, { data: { stato: "PRESENTE" } })
+  if (!updateRes.ok()) {
+    throw new Error(`Aggiornamento stato presenza fallito: ${await updateRes.text()}`)
+  }
+
+  return { lezione: { id: lezione.id }, presenza: { id: presenza.id } }
+}
+
+/** Elimina in ordine presenza -> lezione per non lasciare dati di test nel DB. */
+export async function pulisciLezioneEPresenzaDiTest(
+  api: APIRequestContext,
+  dati: LezioneEPresenzaDiTest,
+) {
+  await api.delete(`presenze/${dati.presenza.id}`).catch(() => {})
+  await api.delete(`lezioni/${dati.lezione.id}`).catch(() => {})
+}

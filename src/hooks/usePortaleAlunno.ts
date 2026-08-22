@@ -1,12 +1,15 @@
 import { useQuery } from "@tanstack/react-query"
+import { isAxiosError } from "axios"
 import api from "@/lib/api"
 import type { IscrizioneCorso, PagedResponse } from "@/types/iscrizione_corso"
 import type { Lezione } from "@/types/lezione"
 import type { Presenza } from "@/types/presenza"
+import type { SchedaAlunno } from "@/types/scheda_alunno"
 
 export const ME_ISCRIZIONI_CORSO_KEY = ["me", "iscrizioni-corso"] as const
 export const ME_LEZIONI_KEY = ["me", "iscrizioni-corso", "lezioni"] as const
 export const ME_PRESENZE_KEY = ["me", "iscrizioni-corso", "presenze"] as const
+export const ME_SCHEDA_KEY = ["me", "iscrizioni-corso", "scheda"] as const
 
 /** Lists the current user's own iscrizioni corso (portale alunno, read-only). */
 export function useMieIscrizioniCorso(page: number = 1, pageSize: number = 100) {
@@ -59,4 +62,31 @@ export function useMiePresenze(
     },
     enabled: iscrizioneCorsoId > 0,
   })
+}
+
+/**
+ * Fetches the current user's own scheda alunno (programma/note) for a given
+ * iscrizione corso (row-level, portale alunno, read-only). Un 404 significa
+ * "l'insegnante non ha ancora condiviso il programma" — non è un errore di
+ * query: viene intercettato in queryFn e risolto a `data: null`, cosicché
+ * `notFound` (data === null a query riuscita) resti distinto da `isError`
+ * (veri errori HTTP, es. 403).
+ */
+export function useMiaScheda(iscrizioneCorsoId: number) {
+  const query = useQuery({
+    queryKey: [...ME_SCHEDA_KEY, iscrizioneCorsoId],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get<SchedaAlunno>(`/schede-alunno/me/${iscrizioneCorsoId}`)
+        return data
+      } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 404) {
+          return null
+        }
+        throw error
+      }
+    },
+    enabled: iscrizioneCorsoId > 0,
+  })
+  return { ...query, notFound: query.isSuccess && query.data === null }
 }

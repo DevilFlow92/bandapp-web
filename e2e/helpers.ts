@@ -232,3 +232,34 @@ export async function pulisciLezioneEPresenzaDiTest(
   await api.delete(`presenze/${dati.presenza.id}`).catch(() => {})
   await api.delete(`lezioni/${dati.lezione.id}`).catch(() => {})
 }
+
+export interface SchedaAlunnoDiTest {
+  schedaAlunno: { id: number }
+}
+
+/**
+ * Crea la scheda alunno (programma/note) per l'iscrizione indicata, per
+ * verificare end-to-end la vista "Programma" del portale alunno (card #22d).
+ */
+export async function creaSchedaAlunnoDiTest(
+  api: APIRequestContext,
+  iscrizioneCorsoId: number,
+): Promise<SchedaAlunnoDiTest> {
+  const schedaRes = await api.post("schede-alunno/", {
+    data: {
+      iscrizione_corso_id: iscrizioneCorsoId,
+      programma: "e2e programma di test",
+      note: "e2e note scheda alunno",
+    },
+  })
+  if (!schedaRes.ok()) {
+    throw new Error(`Creazione scheda alunno fallita: ${await schedaRes.text()}`)
+  }
+  const schedaAlunno = await schedaRes.json()
+  return { schedaAlunno: { id: schedaAlunno.id } }
+}
+
+/** Elimina la scheda alunno per non lasciare dati di test nel DB. */
+export async function pulisciSchedaAlunnoDiTest(api: APIRequestContext, dati: SchedaAlunnoDiTest) {
+  await api.delete(`schede-alunno/${dati.schedaAlunno.id}`).catch(() => {})
+}

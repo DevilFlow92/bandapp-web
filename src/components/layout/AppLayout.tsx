@@ -25,6 +25,7 @@ const navGroups: NavGroup[] = [
       { to: "/servizi", label: "Servizi" },
       { to: "/prove", label: "Prove" },
       { to: "/corsi", label: "Corsi" },
+      { to: "/allievi", label: "Allievi" },
     ],
   },
   {

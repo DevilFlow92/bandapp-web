@@ -17,6 +17,7 @@ export interface Utente {
   id: number
   email: string
   nome_completo: string | null
+  persona_id: number | null
   tipo: "umano" | "servizio"
   attivo: boolean
   superuser: boolean

@@ -7,10 +7,12 @@ import ErrorBoundary from "@/components/ErrorBoundary"
 import AuthGuard from "@/components/layout/AuthGuard"
 import PermissionGuard from "@/components/layout/PermissionGuard"
 import AppLayout from "@/components/layout/AppLayout"
+import PortaleLayout from "@/components/layout/PortaleLayout"
+import IndexRouteGuard from "@/components/layout/IndexRouteGuard"
 import LoginPage from "@/pages/LoginPage"
 import ResetPasswordPage from "@/pages/ResetPasswordPage"
 import BandaSelectPage from "@/pages/BandaSelectPage"
-import DashboardPage from "@/pages/DashboardPage"
+import MieIscrizioniPage from "@/pages/portale/MieIscrizioniPage"
 import SociPage from "@/pages/SociPage"
 import SocioWizardPage from "@/pages/SocioWizardPage"
 import SocioDetailPage from "@/pages/SocioDetailPage"
@@ -22,6 +24,8 @@ import ProvePage from "@/pages/ProvePage"
 import ProvaWizardPage from "@/pages/ProvaWizardPage"
 import CommittentiPage from "@/pages/CommittentiPage"
 import CorsiPage from "@/pages/CorsiPage"
+import AllieviPage from "@/pages/AllieviPage"
+import AllievoWizardPage from "@/pages/AllievoWizardPage"
 import SpartitiPage from "@/pages/SpartitiPage"
 import DocumentiPage from "@/pages/DocumentiPage"
 import ModulisticaPage from "@/pages/ModulisticaPage"
@@ -58,8 +62,13 @@ export default function App() {
                   {/* Banda selection lives inside auth but outside the app shell. */}
                   <Route path="/banda" element={<BandaSelectPage />} />
 
+                  {/* Portale alunno: same auth + banda context, dedicated minimal layout. */}
+                  <Route path="/portale" element={<PortaleLayout />}>
+                    <Route index element={<MieIscrizioniPage />} />
+                  </Route>
+
                   <Route path="/" element={<AppLayout />}>
-                    <Route index element={<DashboardPage />} />
+                    <Route index element={<IndexRouteGuard />} />
                     <Route path="soci" element={<SociPage />} />
                     <Route element={<PermissionGuard permission="anagrafica:write" />}>
                       <Route path="soci/nuovo" element={<SocioWizardPage />} />
@@ -78,6 +87,10 @@ export default function App() {
                       <Route path="prove/nuovo" element={<ProvaWizardPage />} />
                     </Route>
                     <Route path="corsi" element={<CorsiPage />} />
+                    <Route path="allievi" element={<AllieviPage />} />
+                    <Route element={<PermissionGuard permission="corsi:write" />}>
+                      <Route path="allievi/nuovo" element={<AllievoWizardPage />} />
+                    </Route>
                     <Route path="committenti" element={<CommittentiPage />} />
                     <Route path="spartiti" element={<SpartitiPage />} />
                     <Route path="documenti" element={<DocumentiPage />} />

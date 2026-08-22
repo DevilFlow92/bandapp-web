@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import { Loader2 } from "lucide-react"
 import { useCreateUtente, useRuoli, useUpdateUtente } from "@/hooks/useAdmin"
+import { useSoci, usePersona } from "@/hooks/useSoci"
+import { useEsterni } from "@/hooks/useEsterni"
+import { useAllievi } from "@/hooks/useAllievi"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { useBanda } from "@/context/BandaContext"
 import type { Utente } from "@/types/admin"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,6 +46,20 @@ interface UtenteFormState {
   ruoli: number[]
 }
 
+interface SelectedPersona {
+  personaId: number
+  label: string
+}
+
+function personaLabel(
+  persona: { nome: string; cognome: string } | null | undefined,
+  codice: string,
+): string {
+  const nome = persona?.nome ?? ""
+  const cognome = persona?.cognome ?? ""
+  return `${nome} ${cognome} — ${codice}`.trim()
+}
+
 const emptyForm: UtenteFormState = {
   email: "",
   nome_completo: "",
@@ -55,6 +73,7 @@ const emptyForm: UtenteFormState = {
 export default function UtenteFormDialog({ open, onOpenChange, utente }: UtenteFormDialogProps) {
   const isEdit = Boolean(utente)
   const { toast } = useToast()
+  const { banda } = useBanda()
 
   const createUtente = useCreateUtente()
   const updateUtente = useUpdateUtente()
@@ -63,9 +82,25 @@ export default function UtenteFormDialog({ open, onOpenChange, utente }: UtenteF
   const [form, setForm] = useState<UtenteFormState>(emptyForm)
   const [error, setError] = useState<string | null>(null)
 
+  // Selezione Persona opzionale (card #22a, estesa da #166a), stesso pattern
+  // toggle Socio/Esterno/Allievo + ricerca di IscrizioneCorsoFormDialog.
+  const [tipo, setTipo] = useState<"socio" | "esterno" | "allievo">("socio")
+  const [search, setSearch] = useState("")
+  const [selectedPersona, setSelectedPersona] = useState<SelectedPersona | null>(null)
+  const sociQuery = useSoci(1, 100, banda?.codice ?? 0, open && tipo === "socio" && !!banda)
+  const esterniQuery = useEsterni(1, 100, banda?.codice ?? 0, open && tipo === "esterno" && !!banda)
+  const allieviQuery = useAllievi(1, 100, banda?.codice ?? 0, open && tipo === "allievo" && !!banda)
+
+  const personaAttualeQuery = usePersona(
+    utente?.persona_id ?? 0,
+    open && isEdit && utente?.persona_id != null,
+  )
+
   useEffect(() => {
     if (!open) return
     setError(null)
+    setTipo("socio")
+    setSearch("")
     if (utente) {
       setForm({
         email: utente.email,
@@ -76,10 +111,54 @@ export default function UtenteFormDialog({ open, onOpenChange, utente }: UtenteF
         superuser: utente.superuser,
         ruoli: utente.ruoli.map((r) => r.id),
       })
+      setSelectedPersona(null)
     } else {
       setForm(emptyForm)
+      setSelectedPersona(null)
     }
   }, [open, utente])
+
+  useEffect(() => {
+    if (!personaAttualeQuery.data) return
+    const persona = personaAttualeQuery.data
+    setSelectedPersona({
+      personaId: persona.id,
+      label: `${persona.nome} ${persona.cognome}`.trim(),
+    })
+  }, [personaAttualeQuery.data])
+
+  const isLoadingRoster =
+    tipo === "socio"
+      ? sociQuery.isLoading
+      : tipo === "esterno"
+        ? esterniQuery.isLoading
+        : allieviQuery.isLoading
+
+  const options = useMemo(() => {
+    if (tipo === "socio") {
+      return (sociQuery.data?.items ?? []).map((s) => ({
+        personaId: s.persona_id,
+        label: personaLabel(s.persona, s.codice_socio),
+      }))
+    }
+    if (tipo === "esterno") {
+      return (esterniQuery.data?.items ?? []).map((e) => ({
+        personaId: e.persona_id,
+        label: personaLabel(e.persona, e.codice_esterno),
+      }))
+    }
+    return (allieviQuery.data?.items ?? []).map((a) => ({
+      personaId: a.persona_id,
+      label: personaLabel(a.persona, a.codice_allievo),
+    }))
+  }, [tipo, sociQuery.data, esterniQuery.data, allieviQuery.data])
+
+  const trimmedSearch = search.trim()
+  const filteredOptions = useMemo(() => {
+    const q = trimmedSearch.toLowerCase()
+    if (!q) return options
+    return options.filter((o) => o.label.toLowerCase().includes(q))
+  }, [options, trimmedSearch])
 
   const isSubmitting = createUtente.isPending || updateUtente.isPending
   const ruoliList = useMemo(() => ruoli.data?.items ?? [], [ruoli.data])
@@ -101,6 +180,7 @@ export default function UtenteFormDialog({ open, onOpenChange, utente }: UtenteF
           id: utente.id,
           input: {
             nome_completo: form.nome_completo.trim() || null,
+            persona_id: selectedPersona?.personaId ?? null,
             attivo: form.attivo,
             superuser: form.superuser,
             ruoli: form.ruoli,
@@ -119,6 +199,7 @@ export default function UtenteFormDialog({ open, onOpenChange, utente }: UtenteF
         await createUtente.mutateAsync({
           email: form.email.trim(),
           nome_completo: form.nome_completo.trim() || null,
+          persona_id: selectedPersona?.personaId ?? null,
           tipo: form.tipo,
           password: form.password || undefined,
           superuser: form.superuser,
@@ -170,6 +251,99 @@ export default function UtenteFormDialog({ open, onOpenChange, utente }: UtenteF
               value={form.nome_completo}
               onChange={(e) => setForm((f) => ({ ...f, nome_completo: e.target.value }))}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Persona collegata</Label>
+            {selectedPersona ? (
+              <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                <span>{selectedPersona.label}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedPersona(null)}
+                >
+                  Rimuovi
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={tipo === "socio" ? "default" : "outline"}
+                    onClick={() => {
+                      setTipo("socio")
+                      setSearch("")
+                    }}
+                  >
+                    Socio
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={tipo === "esterno" ? "default" : "outline"}
+                    onClick={() => {
+                      setTipo("esterno")
+                      setSearch("")
+                    }}
+                  >
+                    Esterno
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={tipo === "allievo" ? "default" : "outline"}
+                    onClick={() => {
+                      setTipo("allievo")
+                      setSearch("")
+                    }}
+                  >
+                    Allievo
+                  </Button>
+                </div>
+                <Input
+                  placeholder="Cerca per nome, cognome o codice…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <div className="max-h-48 overflow-y-auto rounded-md border">
+                  {isLoadingRoster ? (
+                    <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Caricamento…
+                    </div>
+                  ) : filteredOptions.length > 0 ? (
+                    <ul className="divide-y">
+                      {filteredOptions.map((option) => (
+                        <li key={option.personaId}>
+                          <button
+                            type="button"
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                            onClick={() => {
+                              setSelectedPersona(option)
+                              setSearch("")
+                            }}
+                          >
+                            {option.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                      {tipo === "socio"
+                        ? "Nessun socio trovato"
+                        : tipo === "esterno"
+                          ? "Nessun esterno trovato"
+                          : "Nessun allievo trovato"}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {!isEdit && (

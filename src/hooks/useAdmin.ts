@@ -9,6 +9,7 @@ export const PERMESSI_KEY = ["permessi"] as const
 export interface CreateUtenteInput {
   email: string
   nome_completo?: string | null
+  persona_id?: number | null
   tipo: "umano" | "servizio"
   password?: string
   superuser: boolean
@@ -17,6 +18,7 @@ export interface CreateUtenteInput {
 
 export interface UpdateUtenteInput {
   nome_completo?: string | null
+  persona_id?: number | null
   attivo?: boolean
   superuser?: boolean
   ruoli?: number[]

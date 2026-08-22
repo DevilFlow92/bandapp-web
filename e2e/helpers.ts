@@ -114,3 +114,75 @@ export async function pulisciCorsoDiTest(api: APIRequestContext, dati: CorsoDiTe
   }
   await api.delete(`corsi/${dati.corso.id}`).catch(() => {})
 }
+
+export interface AlunnoPuroDiTest {
+  persona: { id: number }
+  corso: { id: number }
+  iscrizione: { id: number }
+  utente: { id: number; email: string; password: string }
+}
+
+/**
+ * Crea persona + corso + iscrizione + utente "alunno puro" (superuser=false,
+ * zero ruoli/permessi) per i test end-to-end del portale alunno (card #22b).
+ */
+export async function creaAlunnoPuroDiTest(api: APIRequestContext): Promise<AlunnoPuroDiTest> {
+  const bandaRes = await api.get("bande/")
+  const banda = (await bandaRes.json()).items[0]
+
+  const personaRes = await api.post("persone/", {
+    data: { banda_codice: banda.codice, nome: "E2E", cognome: "PortaleAlunno" },
+  })
+  if (!personaRes.ok()) throw new Error(`Creazione persona fallita: ${await personaRes.text()}`)
+  const persona = await personaRes.json()
+
+  const corsoRes = await api.post("corsi/", {
+    data: {
+      banda_codice: banda.codice,
+      tipo_corso_codice: 1,
+      anno: ANNO_TEST,
+      note: "e2e portale alunno",
+    },
+  })
+  if (!corsoRes.ok()) throw new Error(`Creazione corso fallita: ${await corsoRes.text()}`)
+  const corso = await corsoRes.json()
+
+  const iscrizioneRes = await api.post("iscrizioni-corso/", {
+    data: {
+      corso_id: corso.id,
+      persona_id: persona.id,
+      stato_iscrizione_corso_codice: 1,
+      data_iscrizione: today(),
+    },
+  })
+  if (!iscrizioneRes.ok()) {
+    throw new Error(`Creazione iscrizione fallita: ${await iscrizioneRes.text()}`)
+  }
+  const iscrizione = await iscrizioneRes.json()
+
+  const email = `e2e-alunno-puro-${Date.now()}@example.com`
+  const password = "AlunnoPuroTest2999!"
+  const utenteRes = await api.post("utenti/", {
+    data: {
+      email,
+      nome_completo: "E2E Portale Alunno",
+      persona_id: persona.id,
+      tipo: "umano",
+      password,
+      superuser: false,
+      ruoli: [],
+    },
+  })
+  if (!utenteRes.ok()) throw new Error(`Creazione utente fallita: ${await utenteRes.text()}`)
+  const utente = await utenteRes.json()
+
+  return { persona, corso, iscrizione, utente: { id: utente.id, email, password } }
+}
+
+/** Elimina in ordine utente -> iscrizione -> corso -> persona per non lasciare dati di test nel DB. */
+export async function pulisciAlunnoPuroDiTest(api: APIRequestContext, dati: AlunnoPuroDiTest) {
+  await api.delete(`utenti/${dati.utente.id}`).catch(() => {})
+  await api.delete(`iscrizioni-corso/${dati.iscrizione.id}`).catch(() => {})
+  await api.delete(`corsi/${dati.corso.id}`).catch(() => {})
+  await api.delete(`persone/${dati.persona.id}`).catch(() => {})
+}

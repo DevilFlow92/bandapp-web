@@ -65,6 +65,18 @@ export function useAllSoci(bandaCodice: number, enabled = true) {
   })
 }
 
+/** Loads a single persona by id. */
+export function usePersona(id: number, enabled = true) {
+  return useQuery({
+    queryKey: ["persona", id],
+    queryFn: async () => {
+      const { data } = await api.get<Persona>(`/persone/${id}`)
+      return data
+    },
+    enabled: enabled && id > 0,
+  })
+}
+
 /** Loads a single socio by id, with nested persona, ruolo_banda and strumento. */
 export function useSocio(id: number) {
   return useQuery({

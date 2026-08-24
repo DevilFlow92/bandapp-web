@@ -8,6 +8,10 @@ import {
   pulisciLezioneEPresenzaDiTest,
   creaSchedaAlunnoDiTest,
   pulisciSchedaAlunnoDiTest,
+  creaVoceCatalogoDiTest,
+  pulisciVoceCatalogoDiTest,
+  creaVoceSchedaAlunnoDiTest,
+  getPrimaCategoriaVoceProgramma,
   type AlunnoPuroDiTest,
   type LezioneEPresenzaDiTest,
 } from "./helpers"
@@ -99,11 +103,15 @@ test("un alunno puro apre il programma prima che sia condiviso e vede il messagg
   ).toBeVisible()
 })
 
-test("un alunno puro apre il programma dopo che è stato condiviso e vede programma e note", async ({
+test("un alunno puro apre il programma dopo che è stato condiviso e vede voci e note", async ({
   page,
 }) => {
+  // tipo_corso_codice: 1 come in creaAlunnoPuroDiTest, che non lo espone nel tipo di ritorno.
+  const categoriaCodice = await getPrimaCategoriaVoceProgramma(api)
+  const datiVoceCatalogo = await creaVoceCatalogoDiTest(api, 1, categoriaCodice)
   const datiScheda = await creaSchedaAlunnoDiTest(api, datiTest.iscrizione.id)
   try {
+    await creaVoceSchedaAlunnoDiTest(api, datiScheda.schedaAlunno.id, datiVoceCatalogo.id)
     await loginComeAlunnoPuro(page)
 
     const riga = page.getByRole("row", { name: new RegExp(String(ANNO_TEST)) })
@@ -113,10 +121,12 @@ test("un alunno puro apre il programma dopo che è stato condiviso e vede progra
       timeout: 15_000,
     })
     await expect(page.getByRole("heading", { name: "Programma" })).toBeVisible()
-    await expect(page.getByText("e2e programma di test")).toBeVisible()
+    await expect(page.getByText(datiVoceCatalogo.testo)).toBeVisible()
+    await expect(page.getByText("Da iniziare")).toBeVisible()
     await expect(page.getByText("e2e note scheda alunno")).toBeVisible()
   } finally {
     await pulisciSchedaAlunnoDiTest(api, datiScheda)
+    await pulisciVoceCatalogoDiTest(api, datiVoceCatalogo)
   }
 })
 

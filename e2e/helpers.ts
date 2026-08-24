@@ -98,7 +98,7 @@ export async function creaCorsoConIscrizioni(
   return { corso, iscrizioni }
 }
 
-/** Elimina in ordine scheda alunno -> iscrizioni -> corso per non lasciare dati di test nel DB. */
+/** Elimina in ordine voci -> scheda alunno -> iscrizioni -> corso per non lasciare dati di test nel DB. */
 export async function pulisciCorsoDiTest(api: APIRequestContext, dati: CorsoDiTest) {
   for (const iscrizione of dati.iscrizioni) {
     const schedeRes = await api.get("schede-alunno/", {
@@ -107,6 +107,13 @@ export async function pulisciCorsoDiTest(api: APIRequestContext, dati: CorsoDiTe
     if (schedeRes.ok()) {
       const schede = (await schedeRes.json()).items ?? []
       for (const scheda of schede) {
+        // DELETE /schede-alunno/{id} risponde 409 se la scheda ha ancora
+        // voci agganciate: vanno rimosse prima, altrimenti il .catch qui
+        // sotto silenzia il 409 e lascia orfane scheda/iscrizione/corso.
+        const voci = scheda.voci ?? []
+        for (const voce of voci) {
+          await api.delete(`schede-alunno/${scheda.id}/voci/${voce.id}`).catch(() => {})
+        }
         await api.delete(`schede-alunno/${scheda.id}`).catch(() => {})
       }
     }
@@ -238,8 +245,10 @@ export interface SchedaAlunnoDiTest {
 }
 
 /**
- * Crea la scheda alunno (programma/note) per l'iscrizione indicata, per
- * verificare end-to-end la vista "Programma" del portale alunno (card #22d).
+ * Crea la scheda alunno (note) per l'iscrizione indicata, per verificare
+ * end-to-end la vista "Programma" del portale alunno (card #22d). Il
+ * programma non è più un campo testuale sulla scheda (card #201): le voci
+ * di programma si aggiungono con `creaVoceSchedaAlunnoDiTest`.
  */
 export async function creaSchedaAlunnoDiTest(
   api: APIRequestContext,
@@ -248,7 +257,6 @@ export async function creaSchedaAlunnoDiTest(
   const schedaRes = await api.post("schede-alunno/", {
     data: {
       iscrizione_corso_id: iscrizioneCorsoId,
-      programma: "e2e programma di test",
       note: "e2e note scheda alunno",
     },
   })
@@ -262,6 +270,68 @@ export async function creaSchedaAlunnoDiTest(
 /** Elimina la scheda alunno per non lasciare dati di test nel DB. */
 export async function pulisciSchedaAlunnoDiTest(api: APIRequestContext, dati: SchedaAlunnoDiTest) {
   await api.delete(`schede-alunno/${dati.schedaAlunno.id}`).catch(() => {})
+}
+
+/** Legge il codice della prima categoria voce programma disponibile (dato di seed, non creata dal test). */
+export async function getPrimaCategoriaVoceProgramma(api: APIRequestContext): Promise<number> {
+  const res = await api.get("categorie-voce-programma/", { params: { page_size: "1" } })
+  if (!res.ok()) throw new Error(`Lettura categorie voce programma fallita: ${await res.text()}`)
+  const categorie = (await res.json()).items
+  if (categorie.length === 0) {
+    throw new Error("Nessuna categoria voce programma nel DB di test: seed mancante.")
+  }
+  return categorie[0].codice
+}
+
+export interface VoceCatalogoDiTest {
+  id: number
+  testo: string
+}
+
+/**
+ * Crea una voce di catalogo programmi per il tipo corso indicato (card #201).
+ * Usa `Date.now()` nel testo per non collidere con voci reali/altri run e2e
+ * in parallelo (il backend impone unicità testo+tipo_corso).
+ */
+export async function creaVoceCatalogoDiTest(
+  api: APIRequestContext,
+  tipoCorsoCodice: number,
+  categoriaCodice: number,
+): Promise<VoceCatalogoDiTest> {
+  const testo = `E2E voce catalogo ${Date.now()}`
+  const voceRes = await api.post("catalogo-programmi/", {
+    data: {
+      tipo_corso_codice: tipoCorsoCodice,
+      categoria_codice: categoriaCodice,
+      testo,
+      livello: 1,
+    },
+  })
+  if (!voceRes.ok()) {
+    throw new Error(`Creazione voce di catalogo fallita: ${await voceRes.text()}`)
+  }
+  const voce = await voceRes.json()
+  return { id: voce.id, testo: voce.testo }
+}
+
+/** Disattiva la voce di catalogo di test (nessuna DELETE fisica lato backend). */
+export async function pulisciVoceCatalogoDiTest(api: APIRequestContext, dati: VoceCatalogoDiTest) {
+  await api.patch(`catalogo-programmi/${dati.id}`, { data: { attiva: false } }).catch(() => {})
+}
+
+/** Aggiunge una voce di programma (da catalogo) alla scheda alunno indicata. */
+export async function creaVoceSchedaAlunnoDiTest(
+  api: APIRequestContext,
+  schedaAlunnoId: number,
+  voceCatalogoId: number,
+) {
+  const voceRes = await api.post(`schede-alunno/${schedaAlunnoId}/voci`, {
+    data: { voce_catalogo_id: voceCatalogoId, stato: "da_iniziare", ordine: 0 },
+  })
+  if (!voceRes.ok()) {
+    throw new Error(`Creazione voce scheda alunno fallita: ${await voceRes.text()}`)
+  }
+  return await voceRes.json()
 }
 
 export interface TemplateDiTest {

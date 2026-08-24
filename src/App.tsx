@@ -27,6 +27,7 @@ import ProvePage from "@/pages/ProvePage"
 import ProvaWizardPage from "@/pages/ProvaWizardPage"
 import CommittentiPage from "@/pages/CommittentiPage"
 import CorsiPage from "@/pages/CorsiPage"
+import CatalogoProgrammaPage from "@/pages/CatalogoProgrammaPage"
 import AllieviPage from "@/pages/AllieviPage"
 import AllievoWizardPage from "@/pages/AllievoWizardPage"
 import SpartitiPage from "@/pages/SpartitiPage"
@@ -102,6 +103,9 @@ export default function App() {
                       <Route path="prove/nuovo" element={<ProvaWizardPage />} />
                     </Route>
                     <Route path="corsi" element={<CorsiPage />} />
+                    <Route element={<PermissionGuard permission="corsi:write" />}>
+                      <Route path="corsi/catalogo-programma" element={<CatalogoProgrammaPage />} />
+                    </Route>
                     <Route path="allievi" element={<AllieviPage />} />
                     <Route element={<PermissionGuard permission="corsi:write" />}>
                       <Route path="allievi/nuovo" element={<AllievoWizardPage />} />

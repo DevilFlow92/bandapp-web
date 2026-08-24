@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 
-type NavItem = { to: string; label: string; icon?: React.ReactNode }
+type NavItem = { to: string; label: string; icon?: React.ReactNode; permission?: string }
 type NavGroup = { label: string; items: NavItem[] }
 
 const navGroups: NavGroup[] = [
@@ -26,6 +26,7 @@ const navGroups: NavGroup[] = [
       { to: "/servizi", label: "Servizi" },
       { to: "/prove", label: "Prove" },
       { to: "/corsi", label: "Corsi" },
+      { to: "/corsi/catalogo-programma", label: "Catalogo programmi", permission: "corsi:write" },
     ],
   },
   {
@@ -132,8 +133,12 @@ export default function AppLayout() {
   const canUtenti = usePermission("utenti:read")
   const canRuoli = usePermission("ruoli:read")
   const canAdmin = user?.superuser === true || canUtenti || canRuoli
+  const hasPermission = (permission?: string) =>
+    !permission || user?.superuser === true || user?.permessi?.includes(permission) === true
   const groups = [
-    ...navGroups.filter((g) => g.label !== "Contabilità" || canContabilita),
+    ...navGroups
+      .filter((g) => g.label !== "Contabilità" || canContabilita)
+      .map((g) => ({ ...g, items: g.items.filter((item) => hasPermission(item.permission)) })),
     ...(canAdmin ? [adminGroup] : []),
   ]
 

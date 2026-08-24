@@ -18,15 +18,23 @@ export function getTestUser(): TestUser {
   return { email, password }
 }
 
-/** Contesto per chiamate API dirette (setup/cleanup dei dati), autenticato via cookie di sessione. */
-export async function createApiContext(): Promise<APIRequestContext> {
+/** Contesto per chiamate API dirette, autenticato via cookie di sessione con le credenziali indicate. */
+export async function createApiContextComeUtente(
+  email: string,
+  password: string,
+): Promise<APIRequestContext> {
   const context = await playwrightRequest.newContext({ baseURL: API_URL })
-  const { email, password } = getTestUser()
   const res = await context.post("auth/login", { data: { email, password } })
   if (!res.ok()) {
     throw new Error(`Login API fallito: ${res.status()} ${await res.text()}`)
   }
   return context
+}
+
+/** Contesto per chiamate API dirette (setup/cleanup dei dati), autenticato come l'utente di test principale (E2E_EMAIL/E2E_PASSWORD). */
+export async function createApiContext(): Promise<APIRequestContext> {
+  const { email, password } = getTestUser()
+  return createApiContextComeUtente(email, password)
 }
 
 function today(): string {
@@ -271,8 +279,24 @@ export async function creaSchedaAlunnoDiTest(
   return { schedaAlunno: { id: schedaAlunno.id } }
 }
 
-/** Elimina la scheda alunno per non lasciare dati di test nel DB. */
+/**
+ * Elimina la scheda alunno per non lasciare dati di test nel DB. DELETE
+ * /schede-alunno/{id} risponde 409/500 se la scheda ha ancora voci o
+ * materiali agganciati (stesso vincolo già gestito in `pulisciCorsoDiTest`):
+ * vanno rimossi prima, altrimenti il .catch qui sotto silenzia l'errore e
+ * lascia orfane scheda/iscrizione/corso/persona.
+ */
 export async function pulisciSchedaAlunnoDiTest(api: APIRequestContext, dati: SchedaAlunnoDiTest) {
+  const schedaRes = await api.get(`schede-alunno/${dati.schedaAlunno.id}`)
+  if (schedaRes.ok()) {
+    const scheda = await schedaRes.json()
+    for (const voce of scheda.voci ?? []) {
+      await api.delete(`schede-alunno/${scheda.id}/voci/${voce.id}`).catch(() => {})
+    }
+    for (const materiale of scheda.materiali ?? []) {
+      await api.delete(`schede-alunno/${scheda.id}/materiali/${materiale.id}`).catch(() => {})
+    }
+  }
   await api.delete(`schede-alunno/${dati.schedaAlunno.id}`).catch(() => {})
 }
 

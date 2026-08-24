@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { isAxiosError } from "axios"
 import api from "@/lib/api"
 import type { IscrizioneCorso, PagedResponse } from "@/types/iscrizione_corso"
 import type { Lezione } from "@/types/lezione"
 import type { Presenza } from "@/types/presenza"
 import type { SchedaAlunno } from "@/types/scheda_alunno"
+import type { SchedaAlunnoAutovalutazione } from "@/types/scheda_alunno_autovalutazione"
 import type { PagamentoCorso } from "@/types/pagamento_corso"
 
 export const ME_ISCRIZIONI_CORSO_KEY = ["me", "iscrizioni-corso"] as const
@@ -91,6 +92,80 @@ export function useMiaScheda(iscrizioneCorsoId: number) {
     enabled: iscrizioneCorsoId > 0,
   })
   return { ...query, notFound: query.isSuccess && query.data === null }
+}
+
+/**
+ * Crea una nuova autovalutazione sulla propria scheda alunno (PRIMA
+ * scrittura del portale alunno — vedi card #204: finora il portale è
+ * sempre stato sola lettura). Indicizzata per `iscrizioneCorsoId`, come
+ * `useMiaScheda`, non per `schedaAlunnoId` che l'alunno non ha mai visto.
+ */
+export function useCreateAutovalutazione() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      iscrizioneCorsoId,
+      testo,
+    }: {
+      iscrizioneCorsoId: number
+      testo: string
+    }) => {
+      const { data } = await api.post<SchedaAlunnoAutovalutazione>(
+        `/schede-alunno/me/${iscrizioneCorsoId}/autovalutazioni`,
+        { testo },
+      )
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ME_SCHEDA_KEY })
+    },
+  })
+}
+
+/** Aggiorna il testo di una propria autovalutazione esistente. */
+export function useUpdateAutovalutazione() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      iscrizioneCorsoId,
+      autovalutazioneId,
+      testo,
+    }: {
+      iscrizioneCorsoId: number
+      autovalutazioneId: number
+      testo: string
+    }) => {
+      const { data } = await api.patch<SchedaAlunnoAutovalutazione>(
+        `/schede-alunno/me/${iscrizioneCorsoId}/autovalutazioni/${autovalutazioneId}`,
+        { testo },
+      )
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ME_SCHEDA_KEY })
+    },
+  })
+}
+
+/** Elimina una propria autovalutazione. */
+export function useDeleteAutovalutazione() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      iscrizioneCorsoId,
+      autovalutazioneId,
+    }: {
+      iscrizioneCorsoId: number
+      autovalutazioneId: number
+    }) => {
+      await api.delete(
+        `/schede-alunno/me/${iscrizioneCorsoId}/autovalutazioni/${autovalutazioneId}`,
+      )
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ME_SCHEDA_KEY })
+    },
+  })
 }
 
 /**

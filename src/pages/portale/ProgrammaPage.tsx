@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { useMiaScheda } from "@/hooks/usePortaleAlunno"
 import type { StatoVoceProgramma } from "@/types/scheda_alunno_voce"
+import AutovalutazioniLog from "@/components/corsi/AutovalutazioniLog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -97,6 +98,21 @@ export default function ProgrammaPage() {
           )}
         </CardContent>
       </Card>
+
+      {!isLoading && !isError && !notFound && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Le mie note</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AutovalutazioniLog
+              iscrizioneCorsoId={id}
+              autovalutazioni={scheda?.autovalutazioni ?? []}
+              readOnly={false}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

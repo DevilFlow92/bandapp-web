@@ -1,3 +1,4 @@
+import type { SchedaAlunnoAutovalutazione } from "@/types/scheda_alunno_autovalutazione"
 import type { SchedaAlunnoMateriale } from "@/types/scheda_alunno_materiale"
 import type { SchedaAlunnoVoce } from "@/types/scheda_alunno_voce"
 
@@ -24,4 +25,5 @@ export interface SchedaAlunno {
   aggiornato_da: PersonaInSchedaAlunno | null
   voci: SchedaAlunnoVoce[]
   materiali: SchedaAlunnoMateriale[]
+  autovalutazioni: SchedaAlunnoAutovalutazione[]
 }

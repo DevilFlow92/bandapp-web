@@ -16,6 +16,7 @@ import {
   useCreateSchedaAlunno,
   useUpdateSchedaAlunno,
 } from "@/hooks/useSchedeAlunno"
+import AutovalutazioniLog from "@/components/corsi/AutovalutazioniLog"
 import SchedaAlunnoMaterialiEditor from "@/components/corsi/SchedaAlunnoMaterialiEditor"
 import SchedaAlunnoVociEditor from "@/components/corsi/SchedaAlunnoVociEditor"
 import { getErrorMessage } from "@/lib/api"
@@ -662,6 +663,18 @@ export default function IscrizioneCorsoFormDialog({
                     <SchedaAlunnoMaterialiEditor
                       schedaAlunnoId={scheda?.id ?? null}
                       materiali={scheda?.materiali ?? []}
+                    />
+                  </div>
+
+                  <div className="space-y-2 border-t pt-3">
+                    <Label>Note dell'alunno</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Autovalutazioni scritte dall'alunno nel portale, sola lettura da qui.
+                    </p>
+                    <AutovalutazioniLog
+                      iscrizioneCorsoId={iscrizione?.id ?? 0}
+                      autovalutazioni={scheda?.autovalutazioni ?? []}
+                      readOnly
                     />
                   </div>
                 </>

@@ -1,8 +1,10 @@
+import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
-import { useMiaScheda } from "@/hooks/usePortaleAlunno"
+import { useMiaScheda, useMioStoricoVoci } from "@/hooks/usePortaleAlunno"
 import type { StatoVoceProgramma } from "@/types/scheda_alunno_voce"
 import AutovalutazioniLog from "@/components/corsi/AutovalutazioniLog"
+import StoricoVociLog from "@/components/corsi/StoricoVociLog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,6 +23,9 @@ export default function ProgrammaPage() {
 
   const { data: scheda, isLoading, isError, notFound } = useMiaScheda(id)
   const voci = [...(scheda?.voci ?? [])].sort((a, b) => a.ordine - b.ordine)
+
+  const [storicoPage, setStoricoPage] = useState(1)
+  const storicoVociQuery = useMioStoricoVoci(id, storicoPage)
 
   return (
     <div className="space-y-6">
@@ -109,6 +114,24 @@ export default function ProgrammaPage() {
               iscrizioneCorsoId={id}
               autovalutazioni={scheda?.autovalutazioni ?? []}
               readOnly={false}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {!isLoading && !isError && !notFound && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Cronologia programma</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StoricoVociLog
+              storico={storicoVociQuery.data?.items ?? []}
+              meta={storicoVociQuery.data?.meta}
+              isLoading={storicoVociQuery.isLoading}
+              isError={storicoVociQuery.isError}
+              page={storicoPage}
+              onPageChange={setStoricoPage}
             />
           </CardContent>
         </Card>

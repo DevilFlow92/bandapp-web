@@ -3,8 +3,10 @@ import api from "@/lib/api"
 import type { PagedResponse, SchedaAlunno } from "@/types/scheda_alunno"
 import type { SchedaAlunnoMateriale } from "@/types/scheda_alunno_materiale"
 import type { SchedaAlunnoVoce, StatoVoceProgramma } from "@/types/scheda_alunno_voce"
+import type { SchedaAlunnoVoceStoricoResponse } from "@/types/scheda_alunno_voce_storico"
 
 export const SCHEDE_ALUNNO_KEY = ["schede_alunno"] as const
+export const SCHEDA_ALUNNO_STORICO_VOCI_KEY = ["schede_alunno", "storico-voci"] as const
 
 export interface CreateSchedaAlunnoInput {
   iscrizione_corso_id: number
@@ -133,6 +135,30 @@ export function useDeleteSchedaAlunnoVoce() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SCHEDE_ALUNNO_KEY })
     },
+  })
+}
+
+/**
+ * Storico dei cambi di stato delle voci di programma di una scheda alunno
+ * (sola lettura, card #207 — dati raccolti da #214, mai esposti prima di
+ * #219). Query key indipendente da ``SCHEDE_ALUNNO_KEY`` perché lo storico è
+ * append-only e non è annidato nella ``SchedaAlunnoResponse``.
+ */
+export function useSchedaAlunnoStoricoVoci(
+  schedaAlunnoId: number | null,
+  page: number = 1,
+  pageSize: number = 20,
+) {
+  return useQuery({
+    queryKey: [...SCHEDA_ALUNNO_STORICO_VOCI_KEY, schedaAlunnoId, page, pageSize],
+    queryFn: async () => {
+      const { data } = await api.get<PagedResponse<SchedaAlunnoVoceStoricoResponse>>(
+        `/schede-alunno/${schedaAlunnoId}/storico-voci`,
+        { params: { page, page_size: pageSize } },
+      )
+      return data
+    },
+    enabled: schedaAlunnoId != null,
   })
 }
 

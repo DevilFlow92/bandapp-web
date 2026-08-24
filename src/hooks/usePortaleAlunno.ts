@@ -6,12 +6,14 @@ import type { Lezione } from "@/types/lezione"
 import type { Presenza } from "@/types/presenza"
 import type { SchedaAlunno } from "@/types/scheda_alunno"
 import type { SchedaAlunnoAutovalutazione } from "@/types/scheda_alunno_autovalutazione"
+import type { SchedaAlunnoVoceStoricoResponse } from "@/types/scheda_alunno_voce_storico"
 import type { PagamentoCorso } from "@/types/pagamento_corso"
 
 export const ME_ISCRIZIONI_CORSO_KEY = ["me", "iscrizioni-corso"] as const
 export const ME_LEZIONI_KEY = ["me", "iscrizioni-corso", "lezioni"] as const
 export const ME_PRESENZE_KEY = ["me", "iscrizioni-corso", "presenze"] as const
 export const ME_SCHEDA_KEY = ["me", "iscrizioni-corso", "scheda"] as const
+export const ME_STORICO_VOCI_KEY = ["me", "iscrizioni-corso", "storico-voci"] as const
 export const ME_PAGAMENTI_KEY = ["me", "iscrizioni-corso", "pagamenti"] as const
 
 /** Lists the current user's own iscrizioni corso (portale alunno, read-only). */
@@ -24,6 +26,29 @@ export function useMieIscrizioniCorso(page: number = 1, pageSize: number = 100) 
       })
       return data
     },
+  })
+}
+
+/**
+ * Storico dei cambi di stato delle voci di programma della propria scheda
+ * alunno (sola lettura, card #207, row-level come ``useMiaScheda`` — stessa
+ * guardia lato backend, ``assert_puo_leggere_scheda``).
+ */
+export function useMioStoricoVoci(
+  iscrizioneCorsoId: number,
+  page: number = 1,
+  pageSize: number = 20,
+) {
+  return useQuery({
+    queryKey: [...ME_STORICO_VOCI_KEY, iscrizioneCorsoId, page, pageSize],
+    queryFn: async () => {
+      const { data } = await api.get<PagedResponse<SchedaAlunnoVoceStoricoResponse>>(
+        `/schede-alunno/me/${iscrizioneCorsoId}/storico-voci`,
+        { params: { page, page_size: pageSize } },
+      )
+      return data
+    },
+    enabled: iscrizioneCorsoId > 0,
   })
 }
 

@@ -23,8 +23,8 @@ The app is a single-page client that talks to [**associazione-api**](https://git
 - **Cookie-based session auth** — route access is gated by `AuthGuard`, and permission-based sections by `PermissionGuard`.
 - **Role-Based Access Control (RBAC)** — fine-grained permission checks (e.g., `anagrafica:write`, `corsi:write`, `contabilita:write`, `utenti:read`) control UI visibility and route access. Permissions are configured on a per-role basis in the admin panel.
 - **Anagrafica** — full CRUD for Soci (members), Allievi (students), Esterni (external collaborators) and Committenti (clients), each with a member/student detail page and enrollment history.
-- **Corsi (courses)** — course rosters with enrollments (*iscrizioni corso*), per-student *scheda alunno* (programme/notes), lezioni & presenze tracking, and course payments.
-- **Portale Alunno** — a dedicated, minimal-layout portal (`/portale`) where a student account sees only its own enrollments, lesson calendar & attendance, programme and payments (read-only).
+- **Corsi (courses)** — course rosters with enrollments (*iscrizioni corso*), per-student *scheda alunno* (programme/notes, materials, self-assessments, and a read-only history of programme status changes), lezioni & presenze tracking, and course payments.
+- **Portale Alunno** — a dedicated, minimal-layout portal (`/portale`) where a student account sees its own enrollments, lesson calendar & attendance, programme (with change history) and payments, and can write its own self-assessment notes.
 - **Servizi & Prove** — CRUD for services performed by the band and rehearsals, with receipts (*ricevute*) rendered with expandable rows for line-item detail.
 - **Modulistica** — a TipTap-based rich text template editor with mergefields (e.g. `socio.nome`, `iscrizione_corso.tipo_corso`); templates generate real `.docx`/`.pdf` documents from live entity data and can be linked back to the record they were generated for (e.g. an iscrizione).
 - **Cascading location picker** — `ComuneSelect` resolves Stato → Regione → Provincia → Comune step by step.

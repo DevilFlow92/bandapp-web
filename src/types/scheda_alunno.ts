@@ -1,3 +1,4 @@
+import type { SchedaAlunnoMateriale } from "@/types/scheda_alunno_materiale"
 import type { SchedaAlunnoVoce } from "@/types/scheda_alunno_voce"
 
 export type { PagedResponse, PageMeta } from "@/types/socio"
@@ -22,4 +23,5 @@ export interface SchedaAlunno {
   iscrizione_corso: IscrizioneCorsoInSchedaAlunno
   aggiornato_da: PersonaInSchedaAlunno | null
   voci: SchedaAlunnoVoce[]
+  materiali: SchedaAlunnoMateriale[]
 }

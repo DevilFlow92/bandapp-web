@@ -98,7 +98,7 @@ export async function creaCorsoConIscrizioni(
   return { corso, iscrizioni }
 }
 
-/** Elimina in ordine voci -> scheda alunno -> iscrizioni -> corso per non lasciare dati di test nel DB. */
+/** Elimina in ordine voci/materiali -> scheda alunno -> iscrizioni -> corso per non lasciare dati di test nel DB. */
 export async function pulisciCorsoDiTest(api: APIRequestContext, dati: CorsoDiTest) {
   for (const iscrizione of dati.iscrizioni) {
     const schedeRes = await api.get("schede-alunno/", {
@@ -108,11 +108,15 @@ export async function pulisciCorsoDiTest(api: APIRequestContext, dati: CorsoDiTe
       const schede = (await schedeRes.json()).items ?? []
       for (const scheda of schede) {
         // DELETE /schede-alunno/{id} risponde 409 se la scheda ha ancora
-        // voci agganciate: vanno rimosse prima, altrimenti il .catch qui
-        // sotto silenzia il 409 e lascia orfane scheda/iscrizione/corso.
+        // voci o materiali agganciati: vanno rimossi prima, altrimenti il
+        // .catch qui sotto silenzia il 409 e lascia orfane scheda/iscrizione/corso.
         const voci = scheda.voci ?? []
         for (const voce of voci) {
           await api.delete(`schede-alunno/${scheda.id}/voci/${voce.id}`).catch(() => {})
+        }
+        const materiali = scheda.materiali ?? []
+        for (const materiale of materiali) {
+          await api.delete(`schede-alunno/${scheda.id}/materiali/${materiale.id}`).catch(() => {})
         }
         await api.delete(`schede-alunno/${scheda.id}`).catch(() => {})
       }

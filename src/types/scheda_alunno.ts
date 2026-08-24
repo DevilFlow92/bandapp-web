@@ -1,3 +1,5 @@
+import type { SchedaAlunnoVoce } from "@/types/scheda_alunno_voce"
+
 export type { PagedResponse, PageMeta } from "@/types/socio"
 
 export interface PersonaInSchedaAlunno {
@@ -15,9 +17,9 @@ export interface IscrizioneCorsoInSchedaAlunno {
 export interface SchedaAlunno {
   id: number
   iscrizione_corso_id: number
-  programma: string | null
   note: string | null
   aggiornato_da_persona_id: number | null
   iscrizione_corso: IscrizioneCorsoInSchedaAlunno
   aggiornato_da: PersonaInSchedaAlunno | null
+  voci: SchedaAlunnoVoce[]
 }

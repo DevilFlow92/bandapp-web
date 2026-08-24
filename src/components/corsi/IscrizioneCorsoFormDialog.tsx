@@ -16,6 +16,7 @@ import {
   useCreateSchedaAlunno,
   useUpdateSchedaAlunno,
 } from "@/hooks/useSchedeAlunno"
+import SchedaAlunnoVociEditor from "@/components/corsi/SchedaAlunnoVociEditor"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useBanda } from "@/context/BandaContext"
@@ -146,7 +147,7 @@ export default function IscrizioneCorsoFormDialog({
   const updateSchedaAlunno = useUpdateSchedaAlunno()
   const schedaAlunnoQuery = useSchedaAlunno(iscrizione?.id ?? 0, open && isEdit)
   const scheda = schedaAlunnoQuery.data
-  const [schedaForm, setSchedaForm] = useState({ programma: "", note: "" })
+  const [schedaForm, setSchedaForm] = useState({ note: "" })
   const [schedaError, setSchedaError] = useState<string | null>(null)
 
   const isLoadingRoster =
@@ -204,7 +205,7 @@ export default function IscrizioneCorsoFormDialog({
   useEffect(() => {
     if (!open || !isEdit) return
     setSchedaError(null)
-    setSchedaForm({ programma: scheda?.programma ?? "", note: scheda?.note ?? "" })
+    setSchedaForm({ note: scheda?.note ?? "" })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isEdit, scheda?.id])
 
@@ -214,7 +215,6 @@ export default function IscrizioneCorsoFormDialog({
     if (!iscrizione) return
     setSchedaError(null)
     const input = {
-      programma: schedaForm.programma.trim() || null,
       note: schedaForm.note.trim() || null,
     }
     try {
@@ -559,17 +559,6 @@ export default function IscrizioneCorsoFormDialog({
                     </div>
                   )}
                   <div className="space-y-2">
-                    <Label htmlFor="scheda_programma">Programma</Label>
-                    <textarea
-                      id="scheda_programma"
-                      rows={3}
-                      className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      value={schedaForm.programma}
-                      disabled={isSchedaSubmitting}
-                      onChange={(e) => setSchedaForm((f) => ({ ...f, programma: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="scheda_note">Note scheda</Label>
                     <textarea
                       id="scheda_note"
@@ -590,6 +579,15 @@ export default function IscrizioneCorsoFormDialog({
                     {isSchedaSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {scheda ? "Salva scheda alunno" : "Crea scheda alunno"}
                   </Button>
+
+                  <div className="space-y-2 pt-2">
+                    <Label>Voci di programma</Label>
+                    <SchedaAlunnoVociEditor
+                      schedaAlunnoId={scheda?.id ?? null}
+                      voci={scheda?.voci ?? []}
+                      tipoCorsoCodice={iscrizione?.corso?.tipo_corso?.codice ?? 0}
+                    />
+                  </div>
                 </>
               )}
             </fieldset>

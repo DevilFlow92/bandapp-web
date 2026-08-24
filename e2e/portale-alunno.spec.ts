@@ -121,8 +121,12 @@ test("un alunno puro apre il programma dopo che è stato condiviso e vede voci e
       timeout: 15_000,
     })
     await expect(page.getByRole("heading", { name: "Programma" })).toBeVisible()
-    await expect(page.getByText(datiVoceCatalogo.testo)).toBeVisible()
-    await expect(page.getByText("Da iniziare")).toBeVisible()
+    // Scoping alla <ul> delle voci: il testo della voce di catalogo ora
+    // compare anche nella sezione "Cronologia programma" (storico dei cambi
+    // di stato, card #207), sotto — un getByText non scoped sarebbe ambiguo.
+    const listaVoci = page.locator("ul")
+    await expect(listaVoci.getByText(datiVoceCatalogo.testo)).toBeVisible()
+    await expect(listaVoci.getByText("Da iniziare")).toBeVisible()
     await expect(page.getByText("e2e note scheda alunno")).toBeVisible()
   } finally {
     await pulisciSchedaAlunnoDiTest(api, datiScheda)

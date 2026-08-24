@@ -15,10 +15,12 @@ import {
   useSchedaAlunno,
   useCreateSchedaAlunno,
   useUpdateSchedaAlunno,
+  useSchedaAlunnoStoricoVoci,
 } from "@/hooks/useSchedeAlunno"
 import AutovalutazioniLog from "@/components/corsi/AutovalutazioniLog"
 import SchedaAlunnoMaterialiEditor from "@/components/corsi/SchedaAlunnoMaterialiEditor"
 import SchedaAlunnoVociEditor from "@/components/corsi/SchedaAlunnoVociEditor"
+import StoricoVociLog from "@/components/corsi/StoricoVociLog"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useBanda } from "@/context/BandaContext"
@@ -149,6 +151,11 @@ export default function IscrizioneCorsoFormDialog({
   const updateSchedaAlunno = useUpdateSchedaAlunno()
   const schedaAlunnoQuery = useSchedaAlunno(iscrizione?.id ?? 0, open && isEdit)
   const scheda = schedaAlunnoQuery.data
+  const [storicoPage, setStoricoPage] = useState(1)
+  const storicoVociQuery = useSchedaAlunnoStoricoVoci(
+    open && isEdit ? (scheda?.id ?? null) : null,
+    storicoPage,
+  )
   const [schedaForm, setSchedaForm] = useState({ note: "" })
   const [schedaError, setSchedaError] = useState<string | null>(null)
   // Autosave delle note (rifinitura #203): "saving"/"saved" pilotano
@@ -223,6 +230,7 @@ export default function IscrizioneCorsoFormDialog({
     setSchedaError(null)
     setSchedaForm({ note: scheda?.note ?? "" })
     setNoteSaveStatus("idle")
+    setStoricoPage(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isEdit, scheda?.id])
 
@@ -677,6 +685,20 @@ export default function IscrizioneCorsoFormDialog({
                       readOnly
                     />
                   </div>
+
+                  {scheda && (
+                    <div className="space-y-2 border-t pt-3">
+                      <Label>Storico modifiche</Label>
+                      <StoricoVociLog
+                        storico={storicoVociQuery.data?.items ?? []}
+                        meta={storicoVociQuery.data?.meta}
+                        isLoading={storicoVociQuery.isLoading}
+                        isError={storicoVociQuery.isError}
+                        page={storicoPage}
+                        onPageChange={setStoricoPage}
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </fieldset>

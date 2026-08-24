@@ -164,12 +164,16 @@ test("aggiunge, riordina, cambia stato e rimuove voci di programma", async ({ pa
   await creaButton.click()
   await expect(page.getByText("Scheda alunno creata").first()).toBeVisible()
 
-  // Il testo della voce compare sia nella riga renderizzata (<p class="font-medium">)
-  // sia, transitoriamente, nel <select> nativo nascosto che Radix Select
-  // affianca al proprio combobox: scoping a "p.font-medium" evita
-  // ambiguità (getByText su schedaFieldset intera può matchare entrambi).
+  // Scoping alla sezione "Voci di programma" (non all'intero fieldset): da
+  // #207 lo stesso fieldset contiene anche "Storico modifiche", che
+  // renderizza il testo della voce con la stessa classe "p.font-medium" (le
+  // righe di storico restano visibili anche dopo la rimozione della voce),
+  // quindi un match sull'intero fieldset sarebbe ambiguo.
+  const vociSection = schedaFieldset.locator("div.space-y-2.border-t.pt-3", {
+    hasText: "Voci di programma",
+  })
   const testoVoce = (testo: string) =>
-    schedaFieldset.locator("p.font-medium").filter({ hasText: testo })
+    vociSection.locator("p.font-medium").filter({ hasText: testo })
 
   // Aggiunge la prima voce.
   await schedaFieldset.getByRole("button", { name: "Aggiungi voce" }).click()
@@ -185,7 +189,7 @@ test("aggiunge, riordina, cambia stato e rimuove voci di programma", async ({ pa
   await schedaFieldset.getByRole("button", { name: "Conferma" }).click()
   await expect(testoVoce(voceCatalogoB.testo)).toBeVisible()
 
-  const rigaA = schedaFieldset
+  const rigaA = vociSection
     .locator("div.rounded-md.border.p-3")
     .filter({ hasText: voceCatalogoA.testo })
 
@@ -204,7 +208,7 @@ test("aggiunge, riordina, cambia stato e rimuove voci di programma", async ({ pa
   await expect(rigaA.getByRole("button", { name: "Sposta giù" })).toBeDisabled()
 
   // Rimuove la seconda voce (voceCatalogoB), ora in prima posizione.
-  const rigaB = schedaFieldset
+  const rigaB = vociSection
     .locator("div.rounded-md.border.p-3")
     .filter({ hasText: voceCatalogoB.testo })
   await rigaB.getByRole("button", { name: "Rimuovi" }).click()

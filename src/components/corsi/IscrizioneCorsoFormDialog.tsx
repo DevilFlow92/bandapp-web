@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react"
-import { Loader2 } from "lucide-react"
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
+import { Check, Loader2 } from "lucide-react"
 import { isAxiosError } from "axios"
 import {
   useCreateIscrizioneCorso,
@@ -16,6 +16,7 @@ import {
   useCreateSchedaAlunno,
   useUpdateSchedaAlunno,
 } from "@/hooks/useSchedeAlunno"
+import SchedaAlunnoMaterialiEditor from "@/components/corsi/SchedaAlunnoMaterialiEditor"
 import SchedaAlunnoVociEditor from "@/components/corsi/SchedaAlunnoVociEditor"
 import { getErrorMessage } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
@@ -149,6 +150,20 @@ export default function IscrizioneCorsoFormDialog({
   const scheda = schedaAlunnoQuery.data
   const [schedaForm, setSchedaForm] = useState({ note: "" })
   const [schedaError, setSchedaError] = useState<string | null>(null)
+  // Autosave delle note (rifinitura #203): "saving"/"saved" pilotano
+  // l'indicatore inline vicino alla label, "idle" lo nasconde. Il timeout
+  // che riporta a "idle" dopo "saved" è tracciato in un ref per poterlo
+  // cancellare se un nuovo blur riparte prima che scada (altrimenti un
+  // salvataggio più recente potrebbe essere azzerato a "idle" da un
+  // timeout ormai obsoleto).
+  const [noteSaveStatus, setNoteSaveStatus] = useState<"idle" | "saving" | "saved">("idle")
+  const noteSavedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (noteSavedTimeoutRef.current) clearTimeout(noteSavedTimeoutRef.current)
+    }
+  }, [])
 
   const isLoadingRoster =
     tipo === "socio"
@@ -206,25 +221,20 @@ export default function IscrizioneCorsoFormDialog({
     if (!open || !isEdit) return
     setSchedaError(null)
     setSchedaForm({ note: scheda?.note ?? "" })
+    setNoteSaveStatus("idle")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isEdit, scheda?.id])
 
-  const isSchedaSubmitting = createSchedaAlunno.isPending || updateSchedaAlunno.isPending
-
-  const handleSchedaSubmit = async () => {
+  /** Crea la scheda alunno (solo quando non esiste ancora): unica azione esplicita rimasta, l'update di `note` è autosave. */
+  const handleSchedaCreate = async () => {
     if (!iscrizione) return
     setSchedaError(null)
-    const input = {
-      note: schedaForm.note.trim() || null,
-    }
     try {
-      if (scheda) {
-        await updateSchedaAlunno.mutateAsync({ id: scheda.id, input })
-        toast({ title: "Scheda alunno aggiornata" })
-      } else {
-        await createSchedaAlunno.mutateAsync({ iscrizione_corso_id: iscrizione.id, ...input })
-        toast({ title: "Scheda alunno creata" })
-      }
+      await createSchedaAlunno.mutateAsync({
+        iscrizione_corso_id: iscrizione.id,
+        note: schedaForm.note.trim() || null,
+      })
+      toast({ title: "Scheda alunno creata" })
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 409) {
         toast({
@@ -237,6 +247,31 @@ export default function IscrizioneCorsoFormDialog({
         setSchedaError(getErrorMessage(err))
       }
     }
+  }
+
+  /** Autosave delle note on-blur, stesso pattern di `handleDettaglioBlur` in SchedaAlunnoVociEditor: nessuna PATCH se il testo non è cambiato. */
+  const handleNoteBlur = (value: string) => {
+    if (!scheda) return
+    const note = value.trim() || null
+    if (note === scheda.note) return
+    if (noteSavedTimeoutRef.current) {
+      clearTimeout(noteSavedTimeoutRef.current)
+      noteSavedTimeoutRef.current = null
+    }
+    setNoteSaveStatus("saving")
+    updateSchedaAlunno.mutate(
+      { id: scheda.id, input: { note } },
+      {
+        onSuccess: () => {
+          setNoteSaveStatus("saved")
+          noteSavedTimeoutRef.current = setTimeout(() => setNoteSaveStatus("idle"), 2000)
+        },
+        onError: (err) => {
+          setNoteSaveStatus("idle")
+          toast({ variant: "destructive", title: "Errore", description: getErrorMessage(err) })
+        },
+      },
+    )
   }
 
   const isSubmitting =
@@ -558,34 +593,75 @@ export default function IscrizioneCorsoFormDialog({
                       {schedaError}
                     </div>
                   )}
-                  <div className="space-y-2">
-                    <Label htmlFor="scheda_note">Note scheda</Label>
-                    <textarea
-                      id="scheda_note"
-                      rows={3}
-                      className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      value={schedaForm.note}
-                      disabled={isSchedaSubmitting}
-                      onChange={(e) => setSchedaForm((f) => ({ ...f, note: e.target.value }))}
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={isSchedaSubmitting}
-                    onClick={handleSchedaSubmit}
-                  >
-                    {isSchedaSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {scheda ? "Salva scheda alunno" : "Crea scheda alunno"}
-                  </Button>
+                  {scheda ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="scheda_note">Note scheda</Label>
+                        {noteSaveStatus !== "idle" && (
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            {noteSaveStatus === "saving" ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Salvataggio…
+                              </>
+                            ) : (
+                              <>
+                                <Check className="h-3 w-3" />
+                                Salvato
+                              </>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                      <textarea
+                        id="scheda_note"
+                        key={`${scheda.id}-${scheda.note ?? ""}`}
+                        rows={3}
+                        className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        defaultValue={scheda.note ?? ""}
+                        onBlur={(e) => handleNoteBlur(e.target.value)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="scheda_note">Note scheda</Label>
+                      <textarea
+                        id="scheda_note"
+                        rows={3}
+                        className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        value={schedaForm.note}
+                        disabled={createSchedaAlunno.isPending}
+                        onChange={(e) => setSchedaForm((f) => ({ ...f, note: e.target.value }))}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={createSchedaAlunno.isPending}
+                        onClick={handleSchedaCreate}
+                      >
+                        {createSchedaAlunno.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Crea scheda alunno
+                      </Button>
+                    </div>
+                  )}
 
-                  <div className="space-y-2 pt-2">
+                  <div className="space-y-2 border-t pt-3">
                     <Label>Voci di programma</Label>
                     <SchedaAlunnoVociEditor
                       schedaAlunnoId={scheda?.id ?? null}
                       voci={scheda?.voci ?? []}
                       tipoCorsoCodice={iscrizione?.corso?.tipo_corso?.codice ?? 0}
+                    />
+                  </div>
+
+                  <div className="space-y-2 border-t pt-3">
+                    <Label>Materiale didattico</Label>
+                    <SchedaAlunnoMaterialiEditor
+                      schedaAlunnoId={scheda?.id ?? null}
+                      materiali={scheda?.materiali ?? []}
                     />
                   </div>
                 </>

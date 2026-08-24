@@ -1,4 +1,7 @@
 import { test, expect, type Page, type APIRequestContext } from "@playwright/test"
+import * as fs from "fs"
+import * as os from "os"
+import * as path from "path"
 import {
   ANNO_TEST,
   createApiContext,
@@ -73,7 +76,7 @@ async function apriDialogModificaIscrizione(page: Page, personaNome: string) {
   return dialog
 }
 
-test("crea la scheda alunno e gestisce il 409 da doppio submit riallineando il form in modalità update", async ({
+test("crea la scheda alunno e gestisce il 409 da doppio submit riallineando il form in modalità autosave", async ({
   page,
 }) => {
   await login(page)
@@ -99,9 +102,54 @@ test("crea la scheda alunno e gestisce il 409 da doppio submit riallineando il f
 
   await expect(page.getByText("Scheda alunno già esistente").first()).toBeVisible()
 
-  const salvaButton = schedaFieldset.getByRole("button", { name: "Salva scheda alunno" })
-  await expect(salvaButton).toBeVisible()
+  // Dopo il 409 il refetch riallinea la UI in modalità update (rifinitura
+  // #203): niente più pulsante "Salva scheda alunno", il campo note passa
+  // ad autosave e mostra il valore ricaricato dal server.
+  await expect(schedaFieldset.getByRole("button", { name: "Crea scheda alunno" })).toHaveCount(0)
+  await expect(schedaFieldset.getByRole("button", { name: "Salva scheda alunno" })).toHaveCount(0)
   await expect(schedaFieldset.locator("#scheda_note")).toHaveValue("Nota concorrente")
+})
+
+test("autosalva le note della scheda alunno on-blur, senza pulsante esplicito", async ({
+  page,
+}) => {
+  // Riusa la scheda creata dal test precedente sulla stessa iscrizione
+  // (mode "serial", stesso DB).
+  await login(page)
+  const iscrizione = datiTest.iscrizioni[1]
+  const dialog = await apriDialogModificaIscrizione(page, iscrizione.personaNome)
+  const schedaFieldset = dialog.locator("fieldset", { hasText: "Scheda alunno" })
+
+  const noteField = schedaFieldset.locator("#scheda_note")
+  await expect(noteField).toHaveValue("Nota concorrente")
+  await expect(schedaFieldset.getByRole("button", { name: "Salva scheda alunno" })).toHaveCount(0)
+
+  await noteField.fill("Nota aggiornata via autosave")
+  await noteField.blur()
+  await expect(schedaFieldset.getByText("Salvato")).toBeVisible()
+
+  // Blur senza modifiche: nessuna nuova PATCH, nessun indicatore di salvataggio.
+  await noteField.focus()
+  await noteField.blur()
+  await expect(schedaFieldset.getByText("Salvataggio…")).toHaveCount(0)
+
+  // Ricarica il dialog per confermare che la modifica sia persistita lato
+  // server: la riga del corso è già espansa da apriDialogModificaIscrizione,
+  // quindi riapriamo solo cliccando di nuovo "Modifica" (un secondo click
+  // su "Espandi" la richiuderebbe invece di lasciarla aperta).
+  await dialog.getByRole("button", { name: "Annulla" }).click()
+  await expect(dialog).toHaveCount(0)
+  const tabellaIscritti = page.locator("table").filter({ hasText: "Stato iscrizione" }).last()
+  const rigaIscrizione = tabellaIscritti.getByRole("row", {
+    name: new RegExp(iscrizione.personaNome),
+  })
+  await rigaIscrizione.getByRole("button", { name: "Modifica" }).click()
+  const dialogRiaperto = page.getByRole("dialog")
+  await expect(dialogRiaperto).toBeVisible()
+  const schedaFieldsetRiaperto = dialogRiaperto.locator("fieldset", { hasText: "Scheda alunno" })
+  await expect(schedaFieldsetRiaperto.locator("#scheda_note")).toHaveValue(
+    "Nota aggiornata via autosave",
+  )
 })
 
 test("aggiunge, riordina, cambia stato e rimuove voci di programma", async ({ page }) => {
@@ -163,4 +211,67 @@ test("aggiunge, riordina, cambia stato e rimuove voci di programma", async ({ pa
   await page.getByRole("button", { name: "Rimuovi" }).last().click()
   await expect(testoVoce(voceCatalogoB.testo)).toHaveCount(0)
   await expect(testoVoce(voceCatalogoA.testo)).toBeVisible()
+})
+
+test("carica un file, blocca un'estensione non ammessa, aggiunge un link, scarica e rimuove il materiale didattico", async ({
+  page,
+}) => {
+  // Riusa la scheda alunno creata dal test precedente sulla stessa
+  // iscrizione (mode "serial", stesso DB): evita di ricreare note/scheda
+  // solo per testare la sezione materiali.
+  await login(page)
+  const iscrizione = datiTest.iscrizioni[0]
+  const dialog = await apriDialogModificaIscrizione(page, iscrizione.personaNome)
+  const schedaFieldset = dialog.locator("fieldset", { hasText: "Scheda alunno" })
+  await expect(schedaFieldset.locator("#scheda_note")).toHaveValue("Buoni progressi sul ritmo")
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "e2e-materiali-"))
+  const fileInput = schedaFieldset.locator('input[type="file"]')
+
+  // Estensione non ammessa: bloccata lato client, nessuna chiamata al server.
+  const fileNonAmmesso = path.join(tmpDir, "eseguibile.exe")
+  fs.writeFileSync(fileNonAmmesso, "contenuto non rilevante")
+  await fileInput.setInputFiles(fileNonAmmesso)
+  await expect(schedaFieldset.getByText(/Estensione .* non ammessa/)).toBeVisible()
+
+  // Upload di un file valido.
+  const fileValido = path.join(tmpDir, "dispensa-e2e.pdf")
+  fs.writeFileSync(fileValido, "%PDF-1.4 contenuto e2e")
+  await fileInput.setInputFiles(fileValido)
+  await schedaFieldset.locator("#materiale-file-titolo").fill("Dispensa E2E")
+  await schedaFieldset.getByRole("button", { name: "Carica" }).click()
+  const rigaFile = schedaFieldset
+    .locator("div.flex.items-center.justify-between")
+    .filter({ hasText: "Dispensa E2E" })
+  await expect(rigaFile).toBeVisible({ timeout: 10_000 })
+  await expect(rigaFile.getByText("File")).toBeVisible()
+
+  // Aggiunta di un link.
+  await schedaFieldset.getByRole("button", { name: "Aggiungi link" }).click()
+  await schedaFieldset.locator("#materiale-link-titolo").fill("Video E2E")
+  await schedaFieldset.locator("#materiale-link-url").fill("https://example.com/e2e-video")
+  await schedaFieldset.getByRole("button", { name: "Conferma" }).click()
+  const rigaLink = schedaFieldset
+    .locator("div.flex.items-center.justify-between")
+    .filter({ hasText: "Video E2E" })
+  await expect(rigaLink).toBeVisible({ timeout: 10_000 })
+  await expect(rigaLink.getByText("Link")).toBeVisible()
+
+  // Download del file caricato.
+  const downloadPromise = page.waitForEvent("download")
+  await rigaFile.getByRole("button", { name: "Scarica" }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe("dispensa-e2e.pdf")
+
+  // Rimozione del link e del file: la scheda non è eliminabile finché ha
+  // materiali agganciati (stesso vincolo già noto per le voci), quindi il
+  // cleanup in afterAll richiede che entrambi siano rimossi qui o là.
+  await rigaLink.getByRole("button", { name: "Rimuovi" }).click()
+  await page.getByRole("button", { name: "Rimuovi" }).last().click()
+  await expect(schedaFieldset.getByText("Video E2E")).toHaveCount(0)
+
+  await rigaFile.getByRole("button", { name: "Rimuovi" }).click()
+  await page.getByRole("button", { name: "Rimuovi" }).last().click()
+  await expect(schedaFieldset.getByText("Dispensa E2E")).toHaveCount(0)
+  await expect(schedaFieldset.getByText("Nessun materiale didattico inserito.")).toBeVisible()
 })

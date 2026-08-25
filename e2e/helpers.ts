@@ -206,6 +206,101 @@ export async function pulisciAlunnoPuroDiTest(api: APIRequestContext, dati: Alun
   await api.delete(`persone/${dati.persona.id}`).catch(() => {})
 }
 
+export interface AllievoDiTest {
+  persona: { id: number }
+  allievo: { id: number; codice_allievo: string }
+}
+
+/**
+ * Crea una Persona + il relativo record Allievo (card #209 — pagina di
+ * dettaglio allievo, raggiunta da AllieviPage). `codice_allievo` è
+ * `varchar(5)` lato DB: usa le ultime 4 cifre di `Date.now()` (prefissate
+ * da "E") per restare nel limite e non collidere con altri run e2e.
+ */
+export async function creaAllievoDiTest(api: APIRequestContext): Promise<AllievoDiTest> {
+  const bandaRes = await api.get("bande/")
+  const banda = (await bandaRes.json()).items[0]
+
+  const personaRes = await api.post("persone/", {
+    data: { banda_codice: banda.codice, nome: "E2E", cognome: "PercorsoFormativo" },
+  })
+  if (!personaRes.ok()) throw new Error(`Creazione persona fallita: ${await personaRes.text()}`)
+  const persona = await personaRes.json()
+
+  const codiceAllievo = `E${String(Date.now()).slice(-4)}`
+  const allievoRes = await api.post("allievi/", {
+    data: { codice_allievo: codiceAllievo, persona_id: persona.id },
+  })
+  if (!allievoRes.ok()) throw new Error(`Creazione allievo fallita: ${await allievoRes.text()}`)
+  const allievo = await allievoRes.json()
+
+  return {
+    persona: { id: persona.id },
+    allievo: { id: allievo.id, codice_allievo: allievo.codice_allievo },
+  }
+}
+
+/** Elimina in ordine allievo -> persona per non lasciare dati di test nel DB. */
+export async function pulisciAllievoDiTest(api: APIRequestContext, dati: AllievoDiTest) {
+  await api.delete(`allievi/${dati.allievo.id}`).catch(() => {})
+  await api.delete(`persone/${dati.persona.id}`).catch(() => {})
+}
+
+export interface TappaPercorsoFormativoDiTest {
+  corso: { id: number }
+  iscrizione: { id: number }
+}
+
+/**
+ * Crea un corso nell'anno indicato (il percorso formativo pluriennale
+ * copre più anni, quindi a differenza di `creaCorsoConIscrizioni` l'anno
+ * non è fissato a `ANNO_TEST`) e una iscrizione per la persona indicata.
+ */
+export async function creaTappaPercorsoFormativoDiTest(
+  api: APIRequestContext,
+  personaId: number,
+  anno: number,
+  tipoCorsoCodice: number,
+): Promise<TappaPercorsoFormativoDiTest> {
+  const bandaRes = await api.get("bande/")
+  const banda = (await bandaRes.json()).items[0]
+
+  const corsoRes = await api.post("corsi/", {
+    data: {
+      banda_codice: banda.codice,
+      tipo_corso_codice: tipoCorsoCodice,
+      anno,
+      note: "e2e percorso formativo",
+    },
+  })
+  if (!corsoRes.ok()) throw new Error(`Creazione corso fallita: ${await corsoRes.text()}`)
+  const corso = await corsoRes.json()
+
+  const iscrizioneRes = await api.post("iscrizioni-corso/", {
+    data: {
+      corso_id: corso.id,
+      persona_id: personaId,
+      stato_iscrizione_corso_codice: 2,
+      data_iscrizione: today(),
+    },
+  })
+  if (!iscrizioneRes.ok()) {
+    throw new Error(`Creazione iscrizione fallita: ${await iscrizioneRes.text()}`)
+  }
+  const iscrizione = await iscrizioneRes.json()
+
+  return { corso: { id: corso.id }, iscrizione: { id: iscrizione.id } }
+}
+
+/** Elimina in ordine iscrizione -> corso per non lasciare dati di test nel DB. */
+export async function pulisciTappaPercorsoFormativoDiTest(
+  api: APIRequestContext,
+  dati: TappaPercorsoFormativoDiTest,
+) {
+  await api.delete(`iscrizioni-corso/${dati.iscrizione.id}`).catch(() => {})
+  await api.delete(`corsi/${dati.corso.id}`).catch(() => {})
+}
+
 export interface LezioneEPresenzaDiTest {
   lezione: { id: number }
   presenza: { id: number }

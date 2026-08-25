@@ -1,16 +1,6 @@
-import { Fragment, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  Pencil,
-  Plus,
-  Trash2,
-  UserCog,
-  UserPlus,
-} from "lucide-react"
+import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2, UserCog, UserPlus } from "lucide-react"
 import { useAllievi } from "@/hooks/useAllievi"
 import { useAllUtenti } from "@/hooks/useAdmin"
 import { usePermission } from "@/hooks/useAuth"
@@ -30,8 +20,6 @@ import {
 import AllievoFormDialog from "@/components/allievi/AllievoFormDialog"
 import DeleteAllievoDialog from "@/components/allievi/DeleteAllievoDialog"
 import UtenteFormDialog from "@/components/admin/UtenteFormDialog"
-import IndirizziSection from "@/components/anagrafica/IndirizziSection"
-import ContattiSection from "@/components/anagrafica/ContattiSection"
 
 const PAGE_SIZE = 20
 
@@ -47,7 +35,6 @@ export default function AllieviPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Allievo | null>(null)
   const [deleting, setDeleting] = useState<Allievo | null>(null)
-  const [expandedId, setExpandedId] = useState<number | null>(null)
 
   const [portalFormOpen, setPortalFormOpen] = useState(false)
   const [portalUtente, setPortalUtente] = useState<Utente | null>(null)
@@ -110,7 +97,6 @@ export default function AllieviPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-8" />
                 <TableHead>Nome</TableHead>
                 <TableHead>Cognome</TableHead>
                 <TableHead>Codice Allievo</TableHead>
@@ -141,86 +127,63 @@ export default function AllieviPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                allievi.map((allievo) => {
-                  const isExpanded = expandedId === allievo.id
-                  const toggleExpand = () =>
-                    setExpandedId((prev) => (prev === allievo.id ? null : allievo.id))
-                  return (
-                    <Fragment key={allievo.id}>
-                      <TableRow className="cursor-pointer hover:bg-muted/50" onClick={toggleExpand}>
-                        <TableCell>
-                          {isExpanded ? (
-                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                allievi.map((allievo) => (
+                  <TableRow
+                    key={allievo.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => navigate(`/allievi/${allievo.id}`)}
+                  >
+                    <TableCell>{allievo.persona?.nome ?? "—"}</TableCell>
+                    <TableCell>{allievo.persona?.cognome ?? "—"}</TableCell>
+                    <TableCell>{allievo.codice_allievo}</TableCell>
+                    {showActionsColumn && (
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-1">
+                          {canManagePortalAccess &&
+                            (utentiByPersonaId.has(allievo.persona_id) ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openPortalAccess(allievo)}
+                                aria-label="Modifica accesso portale"
+                              >
+                                <UserCog className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openPortalAccess(allievo)}
+                                aria-label="Crea accesso portale"
+                              >
+                                <UserPlus className="h-4 w-4" />
+                              </Button>
+                            ))}
+                          {canWrite && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEdit(allievo)}
+                                aria-label="Modifica"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleting(allievo)}
+                                aria-label="Rimuovi"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </>
                           )}
-                        </TableCell>
-                        <TableCell>{allievo.persona?.nome ?? "—"}</TableCell>
-                        <TableCell>{allievo.persona?.cognome ?? "—"}</TableCell>
-                        <TableCell>{allievo.codice_allievo}</TableCell>
-                        {showActionsColumn && (
-                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex justify-end gap-1">
-                              {canManagePortalAccess &&
-                                (utentiByPersonaId.has(allievo.persona_id) ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => openPortalAccess(allievo)}
-                                    aria-label="Modifica accesso portale"
-                                  >
-                                    <UserCog className="h-4 w-4" />
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => openPortalAccess(allievo)}
-                                    aria-label="Crea accesso portale"
-                                  >
-                                    <UserPlus className="h-4 w-4" />
-                                  </Button>
-                                ))}
-                              {canWrite && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => openEdit(allievo)}
-                                    aria-label="Modifica"
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setDeleting(allievo)}
-                                    aria-label="Rimuovi"
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                      {isExpanded && typeof allievo.persona?.id === "number" && (
-                        <TableRow>
-                          <TableCell colSpan={colCount} className="bg-muted/30 p-0">
-                            <div className="grid gap-6 lg:grid-cols-2 p-4">
-                              <IndirizziSection
-                                personaId={allievo.persona.id}
-                                canWrite={canWrite}
-                              />
-                              <ContattiSection personaId={allievo.persona.id} canWrite={canWrite} />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </Fragment>
-                  )
-                })
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>

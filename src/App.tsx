@@ -30,6 +30,7 @@ import CorsiPage from "@/pages/CorsiPage"
 import CatalogoProgrammaPage from "@/pages/CatalogoProgrammaPage"
 import AllieviPage from "@/pages/AllieviPage"
 import AllievoWizardPage from "@/pages/AllievoWizardPage"
+import AllievoDetailPage from "@/pages/AllievoDetailPage"
 import SpartitiPage from "@/pages/SpartitiPage"
 import DocumentiPage from "@/pages/DocumentiPage"
 import ModulisticaPage from "@/pages/ModulisticaPage"
@@ -110,6 +111,7 @@ export default function App() {
                     <Route element={<PermissionGuard permission="corsi:write" />}>
                       <Route path="allievi/nuovo" element={<AllievoWizardPage />} />
                     </Route>
+                    <Route path="allievi/:id" element={<AllievoDetailPage />} />
                     <Route path="committenti" element={<CommittentiPage />} />
                     <Route path="spartiti" element={<SpartitiPage />} />
                     <Route path="documenti" element={<DocumentiPage />} />

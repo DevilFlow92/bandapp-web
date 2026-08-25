@@ -5,12 +5,13 @@ import type { Allievo, PagedResponse } from "@/types/allievo"
 export const ALLIEVI_KEY = ["allievi"] as const
 
 export interface CreateAllievoInput {
-  codice_allievo: string
   persona_id: number
   indirizzo_id: number | null
 }
 
-export type UpdateAllievoInput = Partial<Omit<CreateAllievoInput, "persona_id">>
+export type UpdateAllievoInput = Partial<Omit<CreateAllievoInput, "persona_id">> & {
+  codice_allievo?: string
+}
 
 /** Lists allievi with server-side pagination, scoped to the selected banda. */
 export function useAllievi(page: number, pageSize: number, bandaCodice: number, enabled = true) {

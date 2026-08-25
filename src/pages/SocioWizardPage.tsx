@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react"
+import { useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Check, Loader2 } from "lucide-react"
 import {
-  useAllSoci,
   useCreatePersona,
   useCreateSocio,
   useLookupRuoliBanda,
@@ -69,43 +68,16 @@ const emptyIndirizzo: CreateIndirizzoInput = {
 }
 
 interface DatiSocioState {
-  codice_socio: string
   data_ingresso: string
   strumento_codice: string
   ruolo_banda_codice: string
 }
 
 const emptyDatiSocio: DatiSocioState = {
-  codice_socio: "",
   data_ingresso: "",
   strumento_codice: NONE_VALUE,
   // No "Nessuno" option in creation: the backend requires ruolo_banda_codice on POST /soci/.
   ruolo_banda_codice: "",
-}
-
-/**
- * Suggests the next codice_socio by taking the highest numeric suffix among
- * existing codes and incrementing it, preserving the prefix/padding of the
- * matching code (e.g. "S023" -> "S024"). Returns "" if nothing is parsable.
- */
-function suggestNextCodiceSocio(codici: string[]): string {
-  let maxNum = -1
-  let bestCode = ""
-  for (const codice of codici) {
-    const match = codice.match(/(\d+)$/)
-    if (!match) continue
-    const num = Number(match[1])
-    if (num > maxNum) {
-      maxNum = num
-      bestCode = codice
-    }
-  }
-  if (maxNum < 0) return ""
-  const match = bestCode.match(/(\d+)$/)!
-  const digits = match[1]
-  const prefix = bestCode.slice(0, bestCode.length - digits.length)
-  const nextDigits = String(maxNum + 1).padStart(digits.length, "0")
-  return prefix + nextDigits
 }
 
 function ErrorBanner({ message }: { message: string }) {
@@ -189,11 +161,9 @@ export default function SocioWizardPage() {
 
   // Step 4 — dati socio
   const [dati, setDati] = useState<DatiSocioState>(emptyDatiSocio)
-  const [codicePrefilled, setCodicePrefilled] = useState(false)
   const strumenti = useLookupStrumenti()
   const ruoli = useLookupRuoliBanda()
   const createSocio = useCreateSocio()
-  const allSoci = useAllSoci(banda!.codice, currentStep === 4)
   const [error4, setError4] = useState<string | null>(null)
 
   // Step 5 — iscrizione (optional)
@@ -212,18 +182,6 @@ export default function SocioWizardPage() {
   )
   const [templateSelezionato, setTemplateSelezionato] = useState(false)
 
-  const suggestedCodice = useMemo(() => {
-    if (!allSoci.data) return ""
-    return suggestNextCodiceSocio(allSoci.data.map((s) => s.codice_socio))
-  }, [allSoci.data])
-
-  useEffect(() => {
-    if (currentStep === 4 && !codicePrefilled && suggestedCodice) {
-      setCodicePrefilled(true)
-      setDati((d) => ({ ...d, codice_socio: suggestedCodice }))
-    }
-  }, [currentStep, codicePrefilled, suggestedCodice])
-
   const resetWizard = () => {
     setCurrentStep(1)
     setPersonaId(null)
@@ -240,7 +198,6 @@ export default function SocioWizardPage() {
     setIndirizzo(emptyIndirizzo)
     setError2(null)
     setDati(emptyDatiSocio)
-    setCodicePrefilled(false)
     setError4(null)
     setIscrizioneForm(emptyIscrizioneForm())
     setIscrizioneCreated(false)
@@ -339,7 +296,6 @@ export default function SocioWizardPage() {
 
     try {
       const socio = await createSocio.mutateAsync({
-        codice_socio: dati.codice_socio,
         data_ingresso: dati.data_ingresso,
         strumento_codice,
         ruolo_banda_codice,
@@ -613,15 +569,6 @@ export default function SocioWizardPage() {
               {error4 && <ErrorBanner message={error4} />}
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="codice_socio">Codice socio *</Label>
-                  <Input
-                    id="codice_socio"
-                    required
-                    value={dati.codice_socio}
-                    onChange={(e) => setDati((d) => ({ ...d, codice_socio: e.target.value }))}
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="data_ingresso">Data di ingresso *</Label>
                   <Input

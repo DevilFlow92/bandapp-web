@@ -148,7 +148,6 @@ export default function EsternoFormDialog({ open, onOpenChange, esterno }: Ester
         }
 
         await createEsterno.mutateAsync({
-          codice_esterno: dati.codice_esterno,
           strumento_codice,
           attivo: dati.attivo,
           persona_id,
@@ -345,15 +344,17 @@ export default function EsternoFormDialog({ open, onOpenChange, esterno }: Ester
             <legend className="text-sm font-semibold">Dati esterno</legend>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="codice_esterno">Codice esterno *</Label>
-                <Input
-                  id="codice_esterno"
-                  required
-                  value={dati.codice_esterno}
-                  onChange={(e) => setDati((d) => ({ ...d, codice_esterno: e.target.value }))}
-                />
-              </div>
+              {isEdit && (
+                <div className="space-y-2">
+                  <Label htmlFor="codice_esterno">Codice esterno *</Label>
+                  <Input
+                    id="codice_esterno"
+                    required
+                    value={dati.codice_esterno}
+                    onChange={(e) => setDati((d) => ({ ...d, codice_esterno: e.target.value }))}
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="strumento">Strumento *</Label>
                 <Select

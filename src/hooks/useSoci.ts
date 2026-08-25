@@ -5,14 +5,15 @@ import type { Lookup, PagedResponse, Persona, Socio } from "@/types/socio"
 export const SOCI_KEY = ["soci"] as const
 
 export interface CreateSocioInput {
-  codice_socio: string
   data_ingresso: string
   strumento_codice?: number | null
   ruolo_banda_codice?: number | null
   persona_id: number
 }
 
-export type UpdateSocioInput = Partial<Omit<CreateSocioInput, "persona_id">>
+export type UpdateSocioInput = Partial<Omit<CreateSocioInput, "persona_id">> & {
+  codice_socio?: string
+}
 
 export interface CreatePersonaInput {
   nome: string

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { ArrowLeft, Check, Loader2 } from "lucide-react"
 import { useCreatePersona, useLookupStrumenti, useSearchPersone } from "@/hooks/useSoci"
-import { useAllEsterni, useCreateEsterno } from "@/hooks/useEsterni"
+import { useCreateEsterno } from "@/hooks/useEsterni"
 import { useAddPersonaIndirizzo, useLookupTipiIndirizzo } from "@/hooks/useIndirizzi"
 import { usePersonaContatti } from "@/hooks/useContatti"
 import {
@@ -60,40 +60,13 @@ const emptyIndirizzo: CreateIndirizzoInput = {
 }
 
 interface DatiEsternoState {
-  codice_esterno: string
   strumento_codice: string
   attivo: boolean
 }
 
 const emptyDatiEsterno: DatiEsternoState = {
-  codice_esterno: "",
   strumento_codice: "",
   attivo: true,
-}
-
-/**
- * Suggests the next codice_esterno by taking the highest numeric suffix among
- * existing codes and incrementing it, preserving the prefix/padding of the
- * matching code (e.g. "E023" -> "E024"). Returns "" if nothing is parsable.
- */
-function suggestNextCodiceEsterno(codici: string[]): string {
-  let maxNum = -1
-  let bestCode = ""
-  for (const codice of codici) {
-    const match = codice.match(/(\d+)$/)
-    if (!match) continue
-    const num = Number(match[1])
-    if (num > maxNum) {
-      maxNum = num
-      bestCode = codice
-    }
-  }
-  if (maxNum < 0) return ""
-  const match = bestCode.match(/(\d+)$/)!
-  const digits = match[1]
-  const prefix = bestCode.slice(0, bestCode.length - digits.length)
-  const nextDigits = String(maxNum + 1).padStart(digits.length, "0")
-  return prefix + nextDigits
 }
 
 function ErrorBanner({ message }: { message: string }) {
@@ -177,10 +150,8 @@ export default function EsternoWizardPage() {
 
   // Step 4 — dati esterno
   const [dati, setDati] = useState<DatiEsternoState>(emptyDatiEsterno)
-  const [codicePrefilled, setCodicePrefilled] = useState(false)
   const strumenti = useLookupStrumenti()
   const createEsterno = useCreateEsterno()
-  const allEsterni = useAllEsterni(banda!.codice, currentStep === 4)
   const [error4, setError4] = useState<string | null>(null)
 
   // Step 5 — genera documento (optional)
@@ -248,18 +219,6 @@ export default function EsternoWizardPage() {
     })
   }, [selectedTemplate, esternoId, banda])
 
-  const suggestedCodice = useMemo(() => {
-    if (!allEsterni.data) return ""
-    return suggestNextCodiceEsterno(allEsterni.data.map((e) => e.codice_esterno))
-  }, [allEsterni.data])
-
-  useEffect(() => {
-    if (currentStep === 4 && !codicePrefilled && suggestedCodice) {
-      setCodicePrefilled(true)
-      setDati((d) => ({ ...d, codice_esterno: suggestedCodice }))
-    }
-  }, [currentStep, codicePrefilled, suggestedCodice])
-
   const resetWizard = () => {
     setCurrentStep(1)
     setPersonaId(null)
@@ -276,7 +235,6 @@ export default function EsternoWizardPage() {
     setIndirizzo(emptyIndirizzo)
     setError2(null)
     setDati(emptyDatiEsterno)
-    setCodicePrefilled(false)
     setError4(null)
     setSelectedTemplateId(null)
     setDocEntities({})
@@ -370,7 +328,6 @@ export default function EsternoWizardPage() {
 
     try {
       const esterno = await createEsterno.mutateAsync({
-        codice_esterno: dati.codice_esterno,
         strumento_codice,
         attivo: dati.attivo,
         persona_id: personaId,
@@ -645,15 +602,6 @@ export default function EsternoWizardPage() {
               {error4 && <ErrorBanner message={error4} />}
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="codice_esterno">Codice esterno *</Label>
-                  <Input
-                    id="codice_esterno"
-                    required
-                    value={dati.codice_esterno}
-                    onChange={(e) => setDati((d) => ({ ...d, codice_esterno: e.target.value }))}
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="strumento">Strumento *</Label>
                   <Select

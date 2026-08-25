@@ -165,7 +165,6 @@ export default function SocioFormDialog({ open, onOpenChange, socio }: SocioForm
         }
 
         await createSocio.mutateAsync({
-          codice_socio: dati.codice_socio,
           data_ingresso: dati.data_ingresso,
           strumento_codice,
           ruolo_banda_codice,
@@ -362,15 +361,17 @@ export default function SocioFormDialog({ open, onOpenChange, socio }: SocioForm
             <legend className="text-sm font-semibold">Dati socio</legend>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="codice_socio">Codice socio *</Label>
-                <Input
-                  id="codice_socio"
-                  required
-                  value={dati.codice_socio}
-                  onChange={(e) => setDati((d) => ({ ...d, codice_socio: e.target.value }))}
-                />
-              </div>
+              {isEdit && (
+                <div className="space-y-2">
+                  <Label htmlFor="codice_socio">Codice socio *</Label>
+                  <Input
+                    id="codice_socio"
+                    required
+                    value={dati.codice_socio}
+                    onChange={(e) => setDati((d) => ({ ...d, codice_socio: e.target.value }))}
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="data_ingresso">Data di ingresso *</Label>
                 <Input

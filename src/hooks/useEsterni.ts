@@ -5,14 +5,15 @@ import type { Esterno, PagedResponse } from "@/types/esterno"
 export const ESTERNI_KEY = ["esterni"] as const
 
 export interface CreateEsternoInput {
-  codice_esterno: string
   strumento_codice: number
   attivo: boolean
   persona_id: number
   banda_codice: number
 }
 
-export type UpdateEsternoInput = Partial<Omit<CreateEsternoInput, "persona_id">>
+export type UpdateEsternoInput = Partial<Omit<CreateEsternoInput, "persona_id">> & {
+  codice_esterno?: string
+}
 
 /** Lists esterni with server-side pagination, scoped to the selected banda. */
 export function useEsterni(page: number, pageSize: number, bandaCodice: number, enabled = true) {

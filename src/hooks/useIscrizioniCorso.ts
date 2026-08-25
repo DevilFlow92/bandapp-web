@@ -40,6 +40,18 @@ export function useIscrizioniCorsoByCorso(
   })
 }
 
+/** Loads a single iscrizione corso by id, with nested corso/persona/stato/documento. */
+export function useIscrizioneCorso(id: number, enabled = true) {
+  return useQuery({
+    queryKey: [...ISCRIZIONI_CORSO_KEY, id],
+    queryFn: async () => {
+      const { data } = await api.get<IscrizioneCorso>(`/iscrizioni-corso/${id}`)
+      return data
+    },
+    enabled: enabled && id > 0,
+  })
+}
+
 /** Creates a new iscrizione corso. */
 export function useCreateIscrizioneCorso() {
   const queryClient = useQueryClient()

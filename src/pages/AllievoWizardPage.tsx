@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react"
+import { useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Check, Loader2 } from "lucide-react"
 import { useCreatePersona, useSearchPersone } from "@/hooks/useSoci"
-import { useAllAllievi, useCreateAllievo } from "@/hooks/useAllievi"
+import { useCreateAllievo } from "@/hooks/useAllievi"
 import { useLookupTipiIndirizzo } from "@/hooks/useIndirizzi"
 import { usePersonaContatti } from "@/hooks/useContatti"
 import api, { getErrorMessage } from "@/lib/api"
@@ -38,31 +38,6 @@ const emptyIndirizzo: CreateIndirizzoInput = {
   numero_civico: null,
   cap: null,
   comune_codice: null,
-}
-
-/**
- * Suggests the next codice_allievo by taking the highest numeric suffix among
- * existing codes and incrementing it, preserving the prefix/padding of the
- * matching code (e.g. "A023" -> "A024"). Returns "" if nothing is parsable.
- */
-function suggestNextCodiceAllievo(codici: string[]): string {
-  let maxNum = -1
-  let bestCode = ""
-  for (const codice of codici) {
-    const match = codice.match(/(\d+)$/)
-    if (!match) continue
-    const num = Number(match[1])
-    if (num > maxNum) {
-      maxNum = num
-      bestCode = codice
-    }
-  }
-  if (maxNum < 0) return ""
-  const match = bestCode.match(/(\d+)$/)!
-  const digits = match[1]
-  const prefix = bestCode.slice(0, bestCode.length - digits.length)
-  const nextDigits = String(maxNum + 1).padStart(digits.length, "0")
-  return prefix + nextDigits
 }
 
 function ErrorBanner({ message }: { message: string }) {
@@ -142,23 +117,8 @@ export default function AllievoWizardPage() {
   const contatti = usePersonaContatti(personaId ?? 0, personaId != null)
 
   // Step 4 — dati allievo
-  const [codiceAllievo, setCodiceAllievo] = useState("")
-  const [codicePrefilled, setCodicePrefilled] = useState(false)
   const createAllievo = useCreateAllievo()
-  const allAllievi = useAllAllievi(banda!.codice, currentStep === 4)
   const [error4, setError4] = useState<string | null>(null)
-
-  const suggestedCodice = useMemo(() => {
-    if (!allAllievi.data) return ""
-    return suggestNextCodiceAllievo(allAllievi.data.map((a) => a.codice_allievo))
-  }, [allAllievi.data])
-
-  useEffect(() => {
-    if (currentStep === 4 && !codicePrefilled && suggestedCodice) {
-      setCodicePrefilled(true)
-      setCodiceAllievo(suggestedCodice)
-    }
-  }, [currentStep, codicePrefilled, suggestedCodice])
 
   const handleSelectPersona = (persona: Persona) => {
     setSelectedPersona(persona)
@@ -240,14 +200,9 @@ export default function AllievoWizardPage() {
       setError4("Persona non definita.")
       return
     }
-    if (!codiceAllievo.trim()) {
-      setError4("Il codice allievo è obbligatorio.")
-      return
-    }
 
     try {
       await createAllievo.mutateAsync({
-        codice_allievo: codiceAllievo.trim(),
         persona_id: personaId,
         indirizzo_id: indirizzoId,
       })
@@ -483,17 +438,6 @@ export default function AllievoWizardPage() {
           <CardContent>
             <form onSubmit={handleSubmitDatiAllievo} className="space-y-4">
               {error4 && <ErrorBanner message={error4} />}
-
-              <div className="space-y-2">
-                <Label htmlFor="codice_allievo">Codice allievo *</Label>
-                <Input
-                  id="codice_allievo"
-                  required
-                  maxLength={5}
-                  value={codiceAllievo}
-                  onChange={(e) => setCodiceAllievo(e.target.value)}
-                />
-              </div>
 
               <dl className="grid grid-cols-2 gap-4 text-sm">
                 <div className="space-y-1">

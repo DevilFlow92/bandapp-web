@@ -213,9 +213,8 @@ export interface AllievoDiTest {
 
 /**
  * Crea una Persona + il relativo record Allievo (card #209 — pagina di
- * dettaglio allievo, raggiunta da AllieviPage). `codice_allievo` è
- * `varchar(5)` lato DB: usa le ultime 4 cifre di `Date.now()` (prefissate
- * da "E") per restare nel limite e non collidere con altri run e2e.
+ * dettaglio allievo, raggiunta da AllieviPage). `codice_allievo` è assegnato
+ * in modo autoritativo dal backend alla creazione (card #211).
  */
 export async function creaAllievoDiTest(api: APIRequestContext): Promise<AllievoDiTest> {
   const bandaRes = await api.get("bande/")
@@ -227,9 +226,8 @@ export async function creaAllievoDiTest(api: APIRequestContext): Promise<Allievo
   if (!personaRes.ok()) throw new Error(`Creazione persona fallita: ${await personaRes.text()}`)
   const persona = await personaRes.json()
 
-  const codiceAllievo = `E${String(Date.now()).slice(-4)}`
   const allievoRes = await api.post("allievi/", {
-    data: { codice_allievo: codiceAllievo, persona_id: persona.id },
+    data: { persona_id: persona.id },
   })
   if (!allievoRes.ok()) throw new Error(`Creazione allievo fallita: ${await allievoRes.text()}`)
   const allievo = await allievoRes.json()
